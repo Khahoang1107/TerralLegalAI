@@ -8,3 +8,5 @@ node_modules/
 *.log
 data/**/*.pdf
 data/*.pdf
+implementation_plan.md
+RAG_Land_QA_System.md
