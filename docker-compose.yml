@@ -52,6 +52,47 @@ services:
       - qdrant
     # Access Qdrant built-in dashboard at http://localhost:6333/dashboard
 
+  # ─── Backend ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: terralegal_backend
+    env_file: .env
+    environment:
+      - QDRANT_HOST=qdrant
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+      # Cập nhật DATABASE_URL để trỏ vào container postgres thay vì localhost
+      - DATABASE_URL=postgresql+asyncpg://terralegal_user:terralegal_pass_dev@postgres:5432/terralegal
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # ─── Frontend ─────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: terralegal_frontend
+    environment:
+      # LƯU Ý: Nếu gửi qua máy khác và truy cập từ xa, hãy đổi 'localhost' thành IP của máy đó (vd: http://192.168.1.100:8000)
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   qdrant_data:
   postgres_data:

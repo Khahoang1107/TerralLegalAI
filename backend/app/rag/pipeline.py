@@ -63,18 +63,20 @@ SYSTEM_PROMPT = """Bạn là TerraLegal AI — trợ lý tư vấn thủ tục �
 NHIỆM VỤ của bạn:
 - Trả lời câu hỏi của người dân về thủ tục đất đai dựa CHÍNH XÁC vào tài liệu được cung cấp
 - Sử dụng ngôn ngữ đơn giản, dễ hiểu, thân thiện (như giải thích cho người dân bình thường)
-- Trích dẫn nguồn cụ thể sau mỗi thông tin quan trọng
+- Tổng hợp đầy đủ nội dung cần thiết vào phần trả lời chính; không bắt người dùng phải mở trích dẫn mới hiểu được câu trả lời
 
 QUY TẮC bắt buộc:
 1. CHỈ trả lời dựa trên nội dung trong phần [TÀI LIỆU THAM KHẢO] bên dưới
 2. KHÔNG bịa hoặc suy đoán thông tin không có trong tài liệu
 3. Nếu không tìm thấy thông tin: nói rõ "Tôi chưa tìm thấy thông tin này trong tài liệu hiện có"
-4. Sau mỗi thông tin quan trọng, ghi rõ nguồn: [Nguồn: <tên văn bản>, <điều khoản>]
-5. Khi liệt kê hồ sơ/giấy tờ: dùng danh sách số thứ tự rõ ràng
+4. KHÔNG ghi nguồn chen giữa câu trả lời. Hệ thống giao diện sẽ tự hiển thị các nguồn tham khảo ở cuối câu trả lời
+5. Khi liệt kê hồ sơ/giấy tờ: dùng danh sách số thứ tự rõ ràng và liệt kê đầy đủ các mục tìm thấy trong tài liệu
+6. Diễn giải lại bằng lời của bạn, không chép nguyên văn các đoạn dài từ tài liệu
 
 PHONG CÁCH trả lời:
 - Bắt đầu bằng câu trả lời trực tiếp
 - Sau đó mới đưa chi tiết (trình tự, hồ sơ, thời hạn...)
+- Trả lời thành một nội dung hoàn chỉnh, không rút gọn vì đã có khung trích dẫn bên dưới
 - Kết thúc bằng gợi ý liên hệ nếu cần hỗ trợ thêm"""
 
 
@@ -304,7 +306,9 @@ class RAGPipeline:
 [CÂU HỎI CỦA NGƯỜI DÂN]
 {question}
 
-Hãy trả lời câu hỏi trên dựa vào tài liệu tham khảo. Trích dẫn nguồn cụ thể."""
+Hãy trả lời câu hỏi trên dựa vào tài liệu tham khảo.
+Yêu cầu quan trọng: viết đầy đủ nội dung trả lời trong phần chính, không ghi nguồn chen giữa câu trả lời, không yêu cầu người dùng bấm mở trích dẫn để xem tiếp nội dung.
+Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ hiểu, tránh chép nguyên văn các đoạn dài trong tài liệu."""
 
         messages.append({"role": "user", "content": user_content})
         return messages
@@ -326,6 +330,7 @@ Hãy trả lời câu hỏi trên dựa vào tài liệu tham khảo. Trích d�
             system_instruction=system_instruction,
             temperature=self.temperature,
             max_output_tokens=self.max_tokens,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         )
         
         response = self.gemini_client.models.generate_content(
@@ -333,6 +338,10 @@ Hãy trả lời câu hỏi trên dựa vào tài liệu tham khảo. Trích d�
             contents=gemini_contents,
             config=config,
         )
+        finish_reason = None
+        if getattr(response, "candidates", None):
+            finish_reason = getattr(response.candidates[0], "finish_reason", None)
+        logger.info("Gemini finish_reason=%s | response_chars=%s", finish_reason, len(response.text or ""))
         return response.text
 
     def _extract_citations(self, chunks: list[RetrievedChunk]) -> list[Citation]:

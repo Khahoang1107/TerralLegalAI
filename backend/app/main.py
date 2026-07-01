@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
 from backend.app.core.security import get_current_user
-from backend.app.api.v1 import auth, chat, documents, health
+from backend.app.api.v1 import auth, chat, documents, health, conversations, evaluation
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,6 +51,7 @@ async def lifespan(app: FastAPI):
         gemini_client=client,
         gemini_model=settings.gemini_model,
         top_k=settings.retrieval_top_k,
+        reranker_top_k=settings.reranker_top_k,
         similarity_threshold=settings.similarity_threshold,
         temperature=settings.gemini_temperature,
         max_tokens=settings.gemini_max_tokens,
@@ -83,6 +84,8 @@ app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"], dependencies=[Depends(get_current_user)])
 app.include_router(documents.router, prefix="/api/v1", tags=["Documents"], dependencies=[Depends(get_current_user)])
+app.include_router(conversations.router, prefix="/api/v1", tags=["Conversations"], dependencies=[Depends(get_current_user)])
+app.include_router(evaluation.router, prefix="/api/v1", tags=["Evaluation"], dependencies=[Depends(get_current_user)])
 
 
 @app.get("/")

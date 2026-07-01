@@ -27,10 +27,12 @@ async def get_db() -> AsyncSession:
 async def init_db():
     """Khởi tạo database schema nếu cần."""
     from backend.app.models.base import Base
-    import backend.app.models.document  # noqa
+    import backend.app.models.document      # noqa
     import backend.app.models.conversation  # noqa
-    import backend.app.models.user  # noqa
-    
+    import backend.app.models.user          # noqa
+    import backend.app.models.evaluation    # noqa
+
     async with engine.begin() as conn:
         # Trong production nên dùng Alembic, ở đây tạo bảng tạm cho Phase 1
         await conn.run_sync(Base.metadata.create_all)
+
