@@ -1,0 +1,36 @@
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from backend.app.core.config import settings
+
+# Create async engine for PostgreSQL
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
+
+# Async session factory
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+async def get_db() -> AsyncSession:
+    """FastAPI Dependency for database sessions."""
+    async with AsyncSessionLocal() as session:
+        yield session
+
+async def init_db():
+    """Khởi tạo database schema nếu cần."""
+    from backend.app.models.base import Base
+    import backend.app.models.document  # noqa
+    import backend.app.models.conversation  # noqa
+    import backend.app.models.user  # noqa
+    
+    async with engine.begin() as conn:
+        # Trong production nên dùng Alembic, ở đây tạo bảng tạm cho Phase 1
+        await conn.run_sync(Base.metadata.create_all)

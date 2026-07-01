@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # ─── Vector Database ──────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: terralegal_qdrant
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+    environment:
+      - QDRANT__LOG_LEVEL=INFO
+
+  # ─── PostgreSQL ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: terralegal_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: terralegal
+      POSTGRES_USER: terralegal_user
+      POSTGRES_PASSWORD: terralegal_pass_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terralegal_user -d terralegal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: terralegal_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # ─── Qdrant Dashboard (Web UI) ────────────────────────────────────
+  qdrant_dashboard:
+    image: qdrant/qdrant:latest
+    container_name: terralegal_qdrant_ui
+    depends_on:
+      - qdrant
+    # Access Qdrant built-in dashboard at http://localhost:6333/dashboard
+
+volumes:
+  qdrant_data:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: terralegal_network
