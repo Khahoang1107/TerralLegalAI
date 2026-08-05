@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
 from backend.app.core.security import get_current_user
-from backend.app.api.v1 import auth, chat, documents, health, conversations, evaluation
+from backend.app.api.v1 import auth, chat, documents, health, conversations, evaluation, settings as app_settings, forms, reports
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +58,10 @@ async def lifespan(app: FastAPI):
     )
     logger.info("✅ RAG Pipeline initialized successfully.")
 
+    from backend.app.rag.agent import FormAgent
+    app.state.form_agent = FormAgent()
+    logger.info("✅ Form Agent initialized successfully.")
+
     yield
     
     logger.info("👋 TerraLegalAI API shutting down...")
@@ -86,6 +90,9 @@ app.include_router(chat.router, prefix="/api/v1", tags=["Chat"], dependencies=[D
 app.include_router(documents.router, prefix="/api/v1", tags=["Documents"], dependencies=[Depends(get_current_user)])
 app.include_router(conversations.router, prefix="/api/v1", tags=["Conversations"], dependencies=[Depends(get_current_user)])
 app.include_router(evaluation.router, prefix="/api/v1", tags=["Evaluation"], dependencies=[Depends(get_current_user)])
+app.include_router(app_settings.router, prefix="/api/v1", tags=["Settings"], dependencies=[Depends(get_current_user)])
+app.include_router(forms.router, prefix="/api/v1", tags=["Forms"], dependencies=[Depends(get_current_user)])
+app.include_router(reports.router, prefix="/api/v1", tags=["Reports"], dependencies=[Depends(get_current_user)])
 
 
 @app.get("/")

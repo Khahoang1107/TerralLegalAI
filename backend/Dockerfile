@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir google-genai
+RUN pip install --no-cache-dir mammoth
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -22,9 +24,13 @@ FROM python:3.11-slim AS runtime
 WORKDIR /app
 
 # Runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     poppler-utils \
+    libreoffice-writer \
+    libreoffice-java-common \
+    default-jre-headless \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages từ builder

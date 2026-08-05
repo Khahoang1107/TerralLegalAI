@@ -59,6 +59,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: terralegal_backend
     env_file: .env
+    command: ["python", "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       - QDRANT_HOST=qdrant
       - POSTGRES_HOST=postgres
@@ -69,6 +70,7 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
+      - ./backend:/app/backend   # hot-reload: code changes apply without rebuild
     depends_on:
       postgres:
         condition: service_healthy

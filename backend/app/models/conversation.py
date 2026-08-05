@@ -14,6 +14,7 @@ class Conversation(Base):
     user_id = Column(String(36), nullable=True, index=True)
     title = Column(String(255), default="Cuộc trò chuyện mới")
     procedure_type = Column(String(50), nullable=True)  # chuyen_nhuong / cap_doi / all
+    state = Column(JSONB, nullable=True)  # form_filling state: form_id, current_step, collected_data
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

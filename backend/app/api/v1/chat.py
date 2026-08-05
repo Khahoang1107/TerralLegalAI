@@ -16,6 +16,7 @@ from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user
 from backend.app.models.user import User
 from backend.app.models.conversation import Conversation, Message
+from backend.app.models.form_schema import FormSchema
 import uuid
 
 router = APIRouter()
@@ -29,8 +30,8 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="ID cuộc hội thoại (để giữ context)")
     procedure_filter: Optional[str] = Field(
         None,
-        description="Filter theo thủ tục: chuyen_nhuong | cap_doi",
-        pattern="^(chuyen_nhuong|cap_doi|tang_cho)$",
+        description="Filter theo thủ tục: chuyen_nhuong | cap_doi | tang_cho | all",
+        pattern="^(chuyen_nhuong|cap_doi|tang_cho|all)$",
     )
 
     model_config = {
@@ -61,6 +62,9 @@ class ChatResponse(BaseModel):
     message_id: Optional[str]
     latency_ms: int
     is_fallback: bool = False
+    form_completed: bool = False
+    form_id: Optional[str] = None
+    collected_data: Optional[dict] = None
 
 
 class FeedbackRequest(BaseModel):
@@ -77,6 +81,11 @@ def get_rag_pipeline(request: Request):
     if not hasattr(request.app.state, "rag_pipeline"):
         raise HTTPException(status_code=500, detail="RAG Pipeline is not initialized")
     return request.app.state.rag_pipeline
+
+def get_form_agent(request: Request):
+    if not hasattr(request.app.state, "form_agent"):
+        raise HTTPException(status_code=500, detail="Form Agent is not initialized")
+    return request.app.state.form_agent
 
 
 # ─── Helper ───────────────────────────────────────────────────────
@@ -120,6 +129,7 @@ async def chat(
 
     try:
         # 1. Manage Conversation
+        conv_record = None
         conversation_id = request.conversation_id
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
@@ -132,6 +142,7 @@ async def chat(
             )
             db.add(new_conv)
             await db.flush()  # flush để lấy ID trước khi add message
+            conv_record = new_conv
         else:
             # Verify ownership
             stmt = select(Conversation).where(
@@ -141,6 +152,61 @@ async def chat(
             existing_conv = await db.scalar(stmt)
             if not existing_conv:
                 raise HTTPException(status_code=404, detail="Không tìm thấy cuộc trò chuyện")
+            conv_record = existing_conv
+
+        # Detect form intent
+        is_form_intent = False
+        active_form = None
+        collected_data = {}
+
+        if conv_record.state and conv_record.state.get("active_form_id"):
+            is_form_intent = True
+            form_id = conv_record.state["active_form_id"]
+            collected_data = conv_record.state.get("collected_data", {})
+            active_form = await db.scalar(select(FormSchema).where(FormSchema.id == form_id))
+        else:
+            # LLM Intent Router: Lấy danh sách biểu mẫu và tự động map câu hỏi
+            forms_result = await db.execute(select(FormSchema).where(FormSchema.is_active == True))
+            available_forms = forms_result.scalars().all()
+            
+            if available_forms:
+                from google import genai
+                from google.genai import types
+                from backend.app.core.config import settings
+                import json
+                
+                form_list_str = "\n".join([f"- ID: {f.id} | Tên: {f.name} | Loại thủ tục: {f.procedure_type}" for f in available_forms])
+                router_prompt = f"""Phân tích câu hỏi của người dùng và xác định xem họ có muốn ĐIỀN BIỂU MẪU hay không.
+Danh sách các biểu mẫu hiện có:
+{form_list_str}
+
+Câu hỏi người dùng: "{request.question}"
+
+Yêu cầu:
+- Nếu người dùng muốn điền một biểu mẫu có trong danh sách, hãy trả về JSON: {{"intent": "form", "form_id": "<id_của_biểu_mẫu>"}}
+- Nếu không (chỉ hỏi thông tin, hỏi luật), hãy trả về JSON: {{"intent": "rag", "form_id": null}}
+"""
+                try:
+                    router_client = genai.Client(api_key=settings.gemini_api_key)
+                    router_resp = await router_client.aio.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=router_prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0
+                        )
+                    )
+                    router_data = json.loads(router_resp.text)
+                    if router_data.get("intent") == "form" and router_data.get("form_id"):
+                        selected_id = router_data.get("form_id")
+                        active_form = next((f for f in available_forms if str(f.id) == str(selected_id)), None)
+                        if active_form:
+                            is_form_intent = True
+                            conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}}
+                            await db.flush()
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Lỗi khi route intent: {e}")
 
         # 2. Load lịch sử hội thoại (cho multi-turn context)
         chat_history = await _load_chat_history(db, conversation_id)
@@ -155,59 +221,127 @@ async def chat(
         db.add(user_msg)
         await db.commit()
 
-        # 4. Call RAG Pipeline (chạy trong thread pool để không block event loop)
-        pipeline = get_rag_pipeline(req)
-        rag_response = await asyncio.to_thread(
-            pipeline.query,
-            question=request.question,
-            procedure_filter=request.procedure_filter,
-            chat_history=chat_history,    # ← fix: truyền history vào pipeline
-        )
+        # 4. Route intent
+        answer_text = ""
+        citations = []
+        retrieved_chunks = []
+        confidence = 1.0
+        intent_val = ""
+        procedure_val = request.procedure_filter or ""
+        latency_ms = 0
+        is_fallback = False
 
-        citations = [
-            CitationSchema(
-                source_name=c.source_name,
-                article=c.article,
-                clause=c.clause,
-                text_snippet=c.text_snippet,
-                relevance_score=c.relevance_score,
+        if is_form_intent and active_form:
+            import time
+            start_time = time.time()
+            
+            # Tích hợp RAG Context lấy kiến thức luật để tự điền biểu mẫu
+            rag_context = ""
+            try:
+                pipeline = get_rag_pipeline(req)
+                query_vector = pipeline.embedding_model.encode_single(active_form.name + " " + active_form.procedure_type)
+                search_proc_type = active_form.procedure_type
+                if search_proc_type in ["chuyen_nhuong", "tang_cho"]:
+                    search_proc_type = [search_proc_type, "dang_ky_bien_dong"]
+                    
+                raw_results = pipeline.vector_store.search(
+                    query_vector=query_vector,
+                    top_k=3,
+                    procedure_type=search_proc_type,
+                    score_threshold=0.6,
+                )
+                if raw_results:
+                    rag_context = "\n\n".join([r["text"] for r in raw_results])
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Lỗi khi lấy RAG context cho biểu mẫu: {e}")
+
+            agent = get_form_agent(req)
+            result = await agent.run_extraction(
+                form_name=active_form.name,
+                form_fields=active_form.fields,
+                collected_data=collected_data,
+                chat_history=chat_history,
+                user_message=request.question,
+                rag_context=rag_context
             )
-            for c in rag_response.citations
-        ]
+            
+            # update collected_data
+            for field in result.extracted_fields:
+                if field.value:
+                    collected_data[field.key] = field.value
+            
+            # save state
+            conv_record.state = {
+                "active_form_id": str(active_form.id),
+                "collected_data": collected_data,
+                "is_complete": result.is_complete
+            }
+            await db.commit()
+
+            answer_text = result.assistant_reply
+            intent_val = "form_filling"
+            procedure_val = active_form.procedure_type
+            latency_ms = int((time.time() - start_time) * 1000)
+        else:
+            # 4. Call RAG Pipeline
+            pipeline = get_rag_pipeline(req)
+            rag_response = await asyncio.to_thread(
+                pipeline.query,
+                question=request.question,
+                procedure_filter=request.procedure_filter,
+                chat_history=chat_history,
+            )
+            answer_text = rag_response.answer
+            intent_val = rag_response.intent
+            procedure_val = rag_response.procedure_type
+            confidence = rag_response.confidence
+            latency_ms = rag_response.latency_ms
+            is_fallback = rag_response.is_fallback
+            retrieved_chunks = [
+                {"text": c.text[:200], "score": c.score, "source_name": c.source_name}
+                for c in rag_response.retrieved_chunks
+            ]
+            citations = [
+                CitationSchema(
+                    source_name=c.source_name,
+                    article=c.article,
+                    clause=c.clause,
+                    text_snippet=c.text_snippet,
+                    relevance_score=c.relevance_score,
+                )
+                for c in rag_response.citations
+            ]
 
         # 5. Save Assistant Message (đầy đủ metadata)
         assistant_msg = Message(
             id=str(uuid.uuid4()),
             conversation_id=conversation_id,
             role="assistant",
-            content=rag_response.answer,
-            intent=rag_response.intent,
-            retrieved_chunks=[
-                {
-                    "text": c.text[:200],
-                    "score": c.score,
-                    "source_name": c.source_name,
-                }
-                for c in rag_response.retrieved_chunks
-            ],
+            content=answer_text,
+            intent=intent_val,
+            retrieved_chunks=retrieved_chunks,
             citations=[c.model_dump() for c in citations],
-            confidence=rag_response.confidence,
-            latency_ms=rag_response.latency_ms,
-            is_fallback=rag_response.is_fallback,
+            confidence=confidence,
+            latency_ms=latency_ms,
+            is_fallback=is_fallback,
         )
         db.add(assistant_msg)
         await db.commit()
 
         return ChatResponse(
-            answer=rag_response.answer,
+            answer=answer_text,
             citations=citations,
-            confidence=rag_response.confidence,
-            intent=rag_response.intent,
-            procedure_type=rag_response.procedure_type,
+            confidence=confidence,
+            intent=intent_val,
+            procedure_type=procedure_val,
             conversation_id=conversation_id,
             message_id=assistant_msg.id,
-            latency_ms=rag_response.latency_ms,
-            is_fallback=rag_response.is_fallback,
+            latency_ms=latency_ms,
+            is_fallback=is_fallback,
+            form_completed=result.is_complete if is_form_intent else False,
+            form_id=str(active_form.id) if (is_form_intent and active_form) else None,
+            collected_data=conv_record.state.get("collected_data") if is_form_intent else None
         )
 
     except HTTPException:

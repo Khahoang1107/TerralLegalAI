@@ -31,8 +31,12 @@ async def init_db():
     import backend.app.models.conversation  # noqa
     import backend.app.models.user          # noqa
     import backend.app.models.evaluation    # noqa
+    import backend.app.models.setting       # noqa
+    import backend.app.models.form_schema   # noqa
+    import backend.app.models.form_submission  # noqa — bảng lịch sử tạo đơn
 
     async with engine.begin() as conn:
         # Trong production nên dùng Alembic, ở đây tạo bảng tạm cho Phase 1
         await conn.run_sync(Base.metadata.create_all)
+
 

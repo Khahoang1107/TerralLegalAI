@@ -110,3 +110,50 @@ async def delete_conversation(
         
     await db.delete(conversation)
     await db.commit()
+
+@router.get("/{conversation_id}/export-form")
+async def export_conversation_form(
+    conversation_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Conversation).where(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+    conversation = await db.scalar(stmt)
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy cuộc trò chuyện")
+    
+    if not conversation.state or not conversation.state.get("is_complete"):
+        raise HTTPException(status_code=400, detail="Biểu mẫu chưa được điền hoàn tất")
+        
+    form_id = conversation.state.get("active_form_id")
+    collected_data = conversation.state.get("collected_data", {})
+    
+    import os
+    from docxtpl import DocxTemplate
+    from fastapi.responses import FileResponse
+    from backend.app.models.form_schema import FormSchema
+    
+    form = await db.scalar(select(FormSchema).where(FormSchema.id == form_id))
+    if not form:
+        raise HTTPException(status_code=404, detail="Không tìm thấy cấu trúc biểu mẫu gốc")
+        
+    template_path = f"backend/data/templates/{form_id}.docx"
+    if not os.path.exists(template_path):
+        template_path = "backend/data/templates/default.docx"
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=404, detail="Không tìm thấy mẫu DOCX")
+            
+    try:
+        doc = DocxTemplate(template_path)
+        doc.render(collected_data)
+        output_dir = "backend/data/exports"
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = f"{output_dir}/{form_id}_{conversation_id}.docx"
+        doc.save(output_path)
+        return FileResponse(
+            output_path, 
+            filename=f"BieuMau_{form.procedure_type}.docx", 
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi tạo file DOCX: {str(e)}")

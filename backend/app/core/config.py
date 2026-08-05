@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
     secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 60
+    jwt_access_token_expire_minutes: int = 720
     cors_origins: list[str] = ["http://localhost:3000"]
 
     # ── Gemini ───────────────────────────────────────────────────

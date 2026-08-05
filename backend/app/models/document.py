@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Text, Float
+from sqlalchemy import Column, String, DateTime, Date, Enum, ForeignKey, Text, Float
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -16,6 +16,14 @@ class Document(Base):
     group_type = Column(String(50), nullable=False, index=True)
     procedure_type = Column(String(50), nullable=False, index=True)
     status = Column(String(20), default="indexed")
+    
+    # Metadata hiệu lực văn bản
+    validity_status = Column(String(50), default="Còn hiệu lực")
+    promulgation_date = Column(Date, nullable=True)
+    effective_date = Column(Date, nullable=True)
+    issuing_agency = Column(String(255), nullable=True)
+    related_documents = Column(JSONB, nullable=True, default=list)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
