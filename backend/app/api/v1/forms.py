@@ -266,6 +266,19 @@ def _cleanup_export_file(path: str) -> None:
 
 #     Endpoints                                                     
 
+@router.get("/{form_id}")
+async def get_form(
+    form_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy chi tiết một biểu mẫu theo ID."""
+    result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+    form = result.scalars().first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+    return form
+
+
 @router.delete("/{form_id}")
 async def delete_form(
     form_id: str,
@@ -287,6 +300,7 @@ class FormUpdateRequest(BaseModel):
     name: str
     procedure_type: str
     description: str = ""
+    fields: Optional[list] = None
 
 
 @router.put("/{form_id}")
@@ -296,7 +310,7 @@ async def update_form(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Cập nhật tên, loại thủ tục và mô tả biểu mẫu."""
+    """Cập nhật tên, loại thủ tục, mô tả và các nhãn (fields) của biểu mẫu."""
     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
     form = result.scalars().first()
     if not form:
@@ -305,6 +319,8 @@ async def update_form(
     form.name = data.name
     form.procedure_type = data.procedure_type
     form.description = data.description
+    if data.fields is not None:
+        form.fields = data.fields
     await db.commit()
     await db.refresh(form)
     return {"message": "Cập nhật thành công", "form_id": str(form.id)}
@@ -379,8 +395,9 @@ async def export_form(
 
     template_path = f"backend/data/templates/{form_id}.docx"
     if not os.path.exists(template_path):
-        raise HTTPException(status_code=404, detail="Kh ng t m th y file DOCX m u")
-
+        template_path = "backend/data/templates/default.docx"
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
 
     try:
         doc = DocxTemplate(template_path)
@@ -416,7 +433,7 @@ async def export_form(
         submission = FormSubmission(
             form_id=form_id,
             user_id=str(current_user.id),
-            data=payload_dict
+            filled_data=payload_dict
         )
         db.add(submission)
         await db.commit()
@@ -449,11 +466,101 @@ async def export_form(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/preview-pdf/{form_id}")
+async def preview_pdf_form(
+    form_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Render DOCX template với dữ liệu người dùng, convert sang PDF và trả về
+    binary PDF để hiển thị inline trên trình duyệt (không download).
+    """
+    from fastapi.responses import Response
+
+    result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+    form = result.scalars().first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+
+    template_path = f"backend/data/templates/{form_id}.docx"
+    if not os.path.exists(template_path):
+        template_path = "backend/data/templates/default.docx"
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+
+    try:
+        # Chuẩn hóa payload (boolean values)
+        TRUE_VALUES = {"có", "co", "yes", "true", "1", "x", "☑"}
+        normalized = {}
+        for k, v in payload.items():
+            if isinstance(v, str) and v.strip().lower() in TRUE_VALUES:
+                normalized[k] = True
+            elif isinstance(v, str) and v.strip().lower() in {"không", "khong", "no", "false", "0", "☐"}:
+                normalized[k] = False
+            else:
+                normalized[k] = v
+
+        doc = DocxTemplate(template_path)
+        doc.render(normalized)
+
+        temp_id = f"preview_{uuid.uuid4().hex}"
+        temp_dir = os.path.join("data", "exports")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        output_docx = os.path.join(temp_dir, f"{temp_id}.docx")
+        output_pdf = os.path.join(temp_dir, f"{temp_id}.pdf")
+        doc.save(output_docx)
+
+        # Convert sang PDF bằng LibreOffice
+        try:
+            subprocess.run([
+                "libreoffice", "--headless", "--convert-to", "pdf",
+                "--outdir", os.path.abspath(temp_dir),
+                os.path.abspath(output_docx)
+            ], check=True, capture_output=True, timeout=30)
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=500,
+                detail="Không tìm thấy LibreOffice trong container. Vui lòng kiểm tra cài đặt."
+            )
+        except subprocess.TimeoutExpired:
+            raise HTTPException(status_code=504, detail="Timeout khi tạo PDF preview")
+
+        if not os.path.exists(output_pdf):
+            raise HTTPException(status_code=500, detail="Lỗi tạo PDF preview")
+
+        with open(output_pdf, "rb") as f:
+            pdf_bytes = f.read()
+
+        # Dọn dẹp file tạm
+        for p in [output_docx, output_pdf]:
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "inline"},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi tạo PDF preview: {str(e)}")
+
+
 @router.post("/analyze-docx")
 async def analyze_docx(file: UploadFile = File(...)):
     """
     d ng PyMuPDF b c t ch t a    X,Y,W,H v  x a tag  n tr n PDF.
     """
+
     try:
         temp_id = f"temp_{uuid.uuid4().hex}"
         temp_dir = os.path.join("data", "uploaded")

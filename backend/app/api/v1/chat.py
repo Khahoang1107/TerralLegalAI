@@ -12,6 +12,7 @@ import asyncio
 from backend.app.core.config import settings
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user
 from backend.app.models.user import User
@@ -91,21 +92,22 @@ def get_form_agent(request: Request):
 # ─── Helper ───────────────────────────────────────────────────────
 
 async def _load_chat_history(
-    db: AsyncSession, conversation_id: str, max_messages: int = 6
+    db: AsyncSession, conversation_id: str, max_messages: int = 20
 ) -> list[dict]:
     """
     Load lịch sử chat gần nhất của một conversation để đưa vào LLM.
-    Chỉ load các message đã có content, tối đa max_messages tin nhắn.
+    Load từ cuối lên (ORDER BY DESC, LIMIT n) rồi đảo lại để đảm bảo lấy đúng n tin nhắn MỚI NHẤT.
     """
     stmt = (
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.desc())
         .limit(max_messages)
     )
     result = await db.execute(stmt)
     messages = result.scalars().all()
-    return [{"role": m.role, "content": m.content} for m in messages]
+    # Đảo lại để có thứ tự tăng dần (cũ → mới)
+    return [{"role": m.role, "content": m.content} for m in reversed(messages)]
 
 
 # ─── Endpoints ────────────────────────────────────────────────────
@@ -158,12 +160,53 @@ async def chat(
         is_form_intent = False
         active_form = None
         collected_data = {}
+        last_asked_field = None  # {"key": ..., "name": ...} — field asked in previous turn
+        result = None  # FormExtractionResult — only set in form path
 
         if conv_record.state and conv_record.state.get("active_form_id"):
             is_form_intent = True
             form_id = conv_record.state["active_form_id"]
             collected_data = conv_record.state.get("collected_data", {})
+            last_asked_field = conv_record.state.get("last_asked_field")  # may be None
             active_form = await db.scalar(select(FormSchema).where(FormSchema.id == form_id))
+
+            # ── Nếu form đã hoàn thành trước đó, trả về hướng dẫn xem biểu mẫu ──
+            if conv_record.state.get("is_complete") and active_form:
+                chat_history = await _load_chat_history(db, conversation_id)
+                user_msg = Message(
+                    id=str(uuid.uuid4()),
+                    conversation_id=conversation_id,
+                    role="user",
+                    content=request.question,
+                )
+                db.add(user_msg)
+                
+                answer_text = "Biểu mẫu của bạn đã hoàn thành! Bạn có thể nhấn nút **\"Xem & Chỉnh sửa biểu mẫu\"** phía trên để xem lại và tải xuống."
+                assistant_msg = Message(
+                    id=str(uuid.uuid4()),
+                    conversation_id=conversation_id,
+                    role="assistant",
+                    content=answer_text,
+                    intent="form_filling",
+                )
+                db.add(assistant_msg)
+                await db.commit()
+                
+                return ChatResponse(
+                    answer=answer_text,
+                    citations=[],
+                    confidence=1.0,
+                    intent="form_filling",
+                    procedure_type=active_form.procedure_type,
+                    conversation_id=conversation_id,
+                    message_id=assistant_msg.id,
+                    latency_ms=0,
+                    is_fallback=False,
+                    form_completed=True,
+                    form_id=str(active_form.id),
+                    collected_data=collected_data,
+                )
+            # ─────────────────────────────────────────────────────────────────────
         else:
             # LLM Intent Router: Lấy danh sách biểu mẫu và tự động map câu hỏi
             forms_result = await db.execute(select(FormSchema).where(FormSchema.is_active == True))
@@ -203,6 +246,7 @@ Yêu cầu:
                         if active_form:
                             is_form_intent = True
                             conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}}
+                            flag_modified(conv_record, "state")
                             await db.flush()
                 except Exception as e:
                     import logging
@@ -239,19 +283,22 @@ Yêu cầu:
             rag_context = ""
             try:
                 pipeline = get_rag_pipeline(req)
-                query_vector = pipeline.embedding_model.encode_single(active_form.name + " " + active_form.procedure_type)
-                search_proc_type = active_form.procedure_type
-                if search_proc_type in ["chuyen_nhuong", "tang_cho"]:
-                    search_proc_type = [search_proc_type, "dang_ky_bien_dong"]
-                    
-                raw_results = pipeline.vector_store.search(
-                    query_vector=query_vector,
-                    top_k=3,
-                    procedure_type=search_proc_type,
-                    score_threshold=0.6,
-                )
-                if raw_results:
-                    rag_context = "\n\n".join([r["text"] for r in raw_results])
+                
+                def get_rag_context_sync():
+                    query_vector = pipeline.embedding_model.encode_single(active_form.name + " " + active_form.procedure_type)
+                    search_proc_type = active_form.procedure_type
+                    if search_proc_type in ["chuyen_nhuong", "tang_cho"]:
+                        search_proc_type = [search_proc_type, "dang_ky_bien_dong"]
+                        
+                    raw_results = pipeline.vector_store.search(
+                        query_vector=query_vector,
+                        top_k=3,
+                        procedure_type=search_proc_type,
+                        score_threshold=0.6,
+                    )
+                    return "\n\n".join([r["text"] for r in (raw_results or [])])
+                
+                rag_context = await asyncio.to_thread(get_rag_context_sync)
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Lỗi khi lấy RAG context cho biểu mẫu: {e}")
@@ -263,20 +310,74 @@ Yêu cầu:
                 collected_data=collected_data,
                 chat_history=chat_history,
                 user_message=request.question,
-                rag_context=rag_context
+                rag_context=rag_context,
+                last_asked_field=last_asked_field,
             )
             
-            # update collected_data
+            # update collected_data — chỉ ghi khi có giá trị (bảo vệ dữ liệu cũ)
             for field in result.extracted_fields:
                 if field.value:
-                    collected_data[field.key] = field.value
-            
+                    if field.value == "__SKIPPED__":
+                        collected_data[field.key] = ""  # để trống nhưng đánh dấu đã hỏi
+                    else:
+                        collected_data[field.key] = field.value
+
+            # ── GROUND-TRUTH COMPLETION CHECK (không tin hoàn toàn vào LLM) ──────
+            # Backend tự kiểm tra: tất cả trường cá nhân bắt buộc đã có dữ liệu chưa?
+            personal_required_fields = [
+                f for f in (active_form.fields or [])
+                if f.get("required") and "[TU_DONG_DIEN]" not in f.get("description", "")
+            ]
+            all_personal_filled = all(
+                bool(collected_data.get(f.get("key", "")))
+                for f in personal_required_fields
+            )
+
+            # Nếu thực tế đã đủ → force is_complete=True dù LLM nói gì
+            if all_personal_filled and not result.is_complete:
+                logger.info("Ground-truth check: all personal fields filled → forcing is_complete=True")
+                from backend.app.rag.agent import FormExtractionResult
+                result = FormExtractionResult(
+                    extracted_fields=result.extracted_fields,
+                    is_complete=True,
+                    assistant_reply="Dạ, tôi đã thu thập đủ thông tin cần thiết để hoàn thiện biểu mẫu. Biểu mẫu của bạn đã sẵn sàng để xem và tải xuống.",
+                    next_field_key=None,
+                    next_field_name=None,
+                )
+            # Nếu LLM nói xong nhưng thực tế chưa đủ → force is_complete=False
+            elif result.is_complete and not all_personal_filled:
+                missing = [
+                    f.get("name", f.get("key", "?"))
+                    for f in personal_required_fields
+                    if not collected_data.get(f.get("key", ""))
+                ]
+                logger.warning(f"LLM claimed complete but missing: {missing} → forcing is_complete=False")
+                from backend.app.rag.agent import FormExtractionResult
+                result = FormExtractionResult(
+                    extracted_fields=result.extracted_fields,
+                    is_complete=False,
+                    assistant_reply=result.assistant_reply,
+                    next_field_key=result.next_field_key,
+                    next_field_name=result.next_field_name,
+                )
+            # ─────────────────────────────────────────────────────────────────────
+
+            # Lưu last_asked_field để lượt sau biết trường nào vừa được hỏi
+            new_last_asked = None
+            if not result.is_complete and result.next_field_key:
+                new_last_asked = {
+                    "key": result.next_field_key,
+                    "name": result.next_field_name or result.next_field_key,
+                }
+
             # save state
             conv_record.state = {
                 "active_form_id": str(active_form.id),
                 "collected_data": collected_data,
-                "is_complete": result.is_complete
+                "is_complete": result.is_complete,
+                "last_asked_field": new_last_asked,
             }
+            flag_modified(conv_record, "state")
             await db.commit()
 
             answer_text = result.assistant_reply
@@ -339,7 +440,7 @@ Yêu cầu:
             message_id=assistant_msg.id,
             latency_ms=latency_ms,
             is_fallback=is_fallback,
-            form_completed=result.is_complete if is_form_intent else False,
+            form_completed=(result.is_complete if result is not None else False) if is_form_intent else False,
             form_id=str(active_form.id) if (is_form_intent and active_form) else None,
             collected_data=conv_record.state.get("collected_data") if is_form_intent else None
         )
@@ -348,6 +449,14 @@ Yêu cầu:
         raise
     except Exception as e:
         logger.error(f"Chat error: {e}", exc_info=True)
+        
+        # Xử lý riêng lỗi hết credits từ Gemini API
+        if "429" in str(e) and "RESOURCE_EXHAUSTED" in str(e):
+            raise HTTPException(
+                status_code=429,
+                detail="Hệ thống AI đang tạm hết hạn mức (credits). Vui lòng cấu hình lại API Key hoặc liên hệ quản trị viên."
+            )
+            
         raise HTTPException(
             status_code=500,
             detail=f"Lỗi xử lý câu hỏi: {str(e)}",

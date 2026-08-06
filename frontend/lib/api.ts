@@ -316,7 +316,7 @@ export const formsApi = {
   async deleteForm(id: string): Promise<void> {
     await client.delete(`/forms/${id}`);
   },
-  async updateForm(id: string, payload: { name: string; procedure_type: string; description?: string }): Promise<any> {
+  async updateForm(id: string, payload: { name: string; procedure_type: string; description?: string; fields?: any[] }): Promise<any> {
     const { data } = await client.put(`/forms/${id}`, payload);
     return data;
   },

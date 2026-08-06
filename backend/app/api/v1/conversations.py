@@ -34,6 +34,7 @@ class MessageResponse(BaseModel):
 
 class ConversationDetailResponse(ConversationResponse):
     messages: List[MessageResponse]
+    form_state: Optional[dict] = None  # conversation.state: {active_form_id, collected_data, is_complete}
 
 
 class UpdateConversationRequest(BaseModel):
@@ -72,7 +73,8 @@ async def get_conversation(
         id=conversation.id,
         title=conversation.title,
         created_at=conversation.created_at,
-        messages=messages
+        messages=messages,
+        form_state=conversation.state,
     )
 
 

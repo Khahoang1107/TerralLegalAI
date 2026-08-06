@@ -101,9 +101,18 @@ def ingest_one(
     logger.info(f"   Group: {group_type} | Procedure: {procedure_type}")
 
     try:
-        # Step 1: Parse PDF
-        logger.info("  Step 1/4: Parsing PDF...")
-        parser = PDFParser()
+        # Step 1: Parse Document
+        logger.info(f"  Step 1/4: Parsing {file_path_obj.suffix.upper()}...")
+        ext = file_path_obj.suffix.lower()
+        if ext == ".json":
+            from backend.app.document_processing.json_parser import JSONParser
+            parser = JSONParser()
+        elif ext == ".xml":
+            from backend.app.document_processing.xml_parser import XMLParser
+            parser = XMLParser()
+        else:
+            parser = PDFParser()
+            
         parsed = parser.parse(file_path)
         logger.info(f"  → {parsed.total_pages} trang, {len(parsed.full_text):,} ký tự")
 
@@ -167,9 +176,9 @@ def list_documents():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="TerraLegalAI — Ingest tài liệu PDF vào Qdrant"
+        description="TerraLegalAI — Ingest tài liệu PDF, JSON, XML vào Qdrant"
     )
-    parser.add_argument("--file", help="Đường dẫn file PDF cần ingest")
+    parser.add_argument("--file", help="Đường dẫn file (PDF, JSON, XML) cần ingest")
     parser.add_argument("--source-name", help="Tên nguồn tài liệu (VD: QĐ 1085/QĐ-UBND)")
     parser.add_argument(
         "--group",

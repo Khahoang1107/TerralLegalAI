@@ -652,6 +652,7 @@ function FormsView() {
   const [editProcedure, setEditProcedure] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [editFields, setEditFields] = useState<any[]>([]);
 
   // Visual Builder State
   const [step, setStep] = useState(1);
@@ -898,6 +899,7 @@ function FormsView() {
     setEditName(form.name);
     setEditProcedure(form.procedure_type);
     setEditDesc(form.description || "");
+    setEditFields(form.fields || []);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -1000,10 +1002,55 @@ function FormsView() {
               Loại thủ tục *
               <input value={editProcedure} onChange={(e) => setEditProcedure(e.target.value)} style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
               Mô tả ngắn
               <input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Mô tả tùy chọn..." style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
             </label>
+            
+            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Nhãn biểu mẫu (Fields)</span>
+              <div style={{ maxHeight: "250px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6, padding: "10px", display: "flex", flexDirection: "column", gap: 12, background: "#f8fafc" }}>
+                {editFields.length === 0 && <span style={{ fontSize: 12, color: "#64748b" }}>Không có nhãn nào.</span>}
+                {editFields.map((field, idx) => (
+                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px", background: "white", border: "1px solid #cbd5e1", borderRadius: 6 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input 
+                        value={field.name} 
+                        onChange={(e) => {
+                          const newFields = [...editFields];
+                          newFields[idx].name = e.target.value;
+                          setEditFields(newFields);
+                        }}
+                        placeholder="Tên hiển thị"
+                        style={{ flex: 1, border: "1px solid #cbd5e1", padding: "6px", borderRadius: 4, fontSize: 12 }} 
+                      />
+                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }}>
+                        <input 
+                          type="checkbox" 
+                          checked={field.required}
+                          onChange={(e) => {
+                            const newFields = [...editFields];
+                            newFields[idx].required = e.target.checked;
+                            setEditFields(newFields);
+                          }}
+                        /> Bắt buộc
+                      </label>
+                    </div>
+                    <input 
+                      value={field.description} 
+                      onChange={(e) => {
+                        const newFields = [...editFields];
+                        newFields[idx].description = e.target.value;
+                        setEditFields(newFields);
+                      }}
+                      placeholder="Mô tả / Hướng dẫn (thêm [TU_DONG_DIEN] nếu muốn AI tự động tra cứu KTT)"
+                      style={{ border: "1px solid #cbd5e1", padding: "6px", borderRadius: 4, fontSize: 12 }} 
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="dialog-actions">
               <button type="button" className="secondary-button" onClick={() => setEditingForm(null)}>Hủy</button>
               <button type="submit" className="primary-button" disabled={editSaving}>{editSaving ? "Đang lưu..." : "Lưu thay đổi"}</button>
