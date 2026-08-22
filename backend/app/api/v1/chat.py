@@ -4,6 +4,7 @@ POST /api/v1/chat           — Gửi câu hỏi, nhận câu trả lời RAG
 POST /api/v1/messages/{id}/feedback — Gửi feedback 👍/👎
 """
 import logging
+import re
 from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -161,6 +162,7 @@ async def chat(
         active_form = None
         collected_data = {}
         last_asked_field = None  # {"key": ..., "name": ...} — field asked in previous turn
+        invalid_fields: list = []  # field keys where collected value is invalid
         result = None  # FormExtractionResult — only set in form path
 
         if conv_record.state and conv_record.state.get("active_form_id"):
@@ -168,6 +170,7 @@ async def chat(
             form_id = conv_record.state["active_form_id"]
             collected_data = conv_record.state.get("collected_data", {})
             last_asked_field = conv_record.state.get("last_asked_field")  # may be None
+            invalid_fields = conv_record.state.get("invalid_fields", [])  # persisted from prev turn
             active_form = await db.scalar(select(FormSchema).where(FormSchema.id == form_id))
 
             # ── Nếu form đã hoàn thành trước đó, trả về hướng dẫn xem biểu mẫu ──
@@ -312,26 +315,76 @@ Yêu cầu:
                 user_message=request.question,
                 rag_context=rag_context,
                 last_asked_field=last_asked_field,
+                invalid_fields=invalid_fields,
             )
             
-            # update collected_data — chỉ ghi khi có giá trị (bảo vệ dữ liệu cũ)
-            for field in result.extracted_fields:
-                if field.value:
-                    if field.value == "__SKIPPED__":
-                        collected_data[field.key] = ""  # để trống nhưng đánh dấu đã hỏi
-                    else:
-                        collected_data[field.key] = field.value
+            # ── UPDATE collected_data + DATA QUALITY VALIDATION ────────────────
+            from backend.app.rag.agent import is_auto_fill_field, quick_validate_value, get_friendly_name
+            field_map: dict = {f.get("key", ""): f for f in (active_form.fields or [])}
+            new_invalid_fields: list = []
+
+            for extracted in result.extracted_fields:
+                if not extracted.value:
+                    continue
+                if extracted.value == "__SKIPPED__":
+                    collected_data[extracted.key] = "__SKIPPED__"
+                    continue
+
+                field_def = field_map.get(extracted.key, {})
+                # Chỉ validate trường cá nhân (không validate trường tự điền)
+                if not is_auto_fill_field(field_def):
+                    if not quick_validate_value(field_def, extracted.value):
+                        # Giá trị sai kiểu → KHÔNG lưu, đánh dấu invalid để hỏi lại
+                        logger.warning(
+                            f"Invalid value for '{extracted.key}' ({field_def.get('name', '?')}): "
+                            f"'{extracted.value}' — removing from collected_data"
+                        )
+                        # Xóa khỏi collected_data nếu đã tồn tại
+                        collected_data.pop(extracted.key, None)
+                        new_invalid_fields.append(extracted.key)
+                        continue
+
+                collected_data[extracted.key] = extracted.value
+
+            # Xác định các parent bị bỏ qua hoặc trả lời "Không" để auto-skip các child
+            skipped_parents = []
+            for k, v in collected_data.items():
+                if v == "__SKIPPED__" or (isinstance(v, str) and v.lower() in {"không", "khong", "no", "false", "0", "☐"}):
+                    # Tìm label của field này (VD: "[20]")
+                    f = field_map.get(k)
+                    if f:
+                        name = f.get("name", "")
+                        m = re.search(r'\[(\d+)\]', name)
+                        if m:
+                            skipped_parents.append(m.group(1)) # Lưu "20"
+            
+            # Auto-skip các child
+            if skipped_parents:
+                for f in active_form.fields:
+                    name = f.get("name", "")
+                    m = re.search(r'\[(\d+)\.\d+\]', name)
+                    if m and m.group(1) in skipped_parents:
+                        child_key = f.get("key")
+                        if child_key and child_key not in collected_data:
+                            collected_data[child_key] = "__SKIPPED__"
+
+            # Kết hợp invalid_fields cũ (chưa được hỏi lại) với mới phát hiện
+            # Loại bỏ khỏi invalid_fields những key vừa được điền thành công
+            successfully_filled = {e.key for e in result.extracted_fields if e.key in collected_data and collected_data[e.key] != "__SKIPPED__"}
+            persisted_invalid = [k for k in invalid_fields if k not in successfully_filled]
+            invalid_fields = list(set(persisted_invalid + new_invalid_fields))
+            # ─────────────────────────────────────────────────────────────────────
 
             # ── GROUND-TRUTH COMPLETION CHECK (không tin hoàn toàn vào LLM) ──────
-            # Backend tự kiểm tra: tất cả trường cá nhân bắt buộc đã có dữ liệu chưa?
-            personal_required_fields = [
+            # Dùng is_auto_fill_field() thay vì check chuỗi [TU_DONG_DIEN] — chính xác hơn
+            personal_fields = [
                 f for f in (active_form.fields or [])
-                if f.get("required") and "[TU_DONG_DIEN]" not in f.get("description", "")
+                if not is_auto_fill_field(f)
             ]
             all_personal_filled = all(
-                bool(collected_data.get(f.get("key", "")))
-                for f in personal_required_fields
-            )
+                bool(collected_data.get(f.get("key", ""))) or collected_data.get(f.get("key", "")) == "__SKIPPED__"
+                for f in personal_fields
+            ) and not invalid_fields  # invalid fields chưa fix → chưa thể complete
 
             # Nếu thực tế đã đủ → force is_complete=True dù LLM nói gì
             if all_personal_filled and not result.is_complete:
@@ -344,21 +397,32 @@ Yêu cầu:
                     next_field_key=None,
                     next_field_name=None,
                 )
-            # Nếu LLM nói xong nhưng thực tế chưa đủ → force is_complete=False
+            # Nếu LLM nói xong nhưng thực tế chưa đủ → force is_complete=False + sinh câu hỏi tiếp
             elif result.is_complete and not all_personal_filled:
-                missing = [
-                    f.get("name", f.get("key", "?"))
-                    for f in personal_required_fields
-                    if not collected_data.get(f.get("key", ""))
+                missing_fields = [
+                    f for f in personal_fields
+                    if not collected_data.get(f.get("key", "")) and collected_data.get(f.get("key", "")) != "__SKIPPED__"
                 ]
-                logger.warning(f"LLM claimed complete but missing: {missing} → forcing is_complete=False")
-                from backend.app.rag.agent import FormExtractionResult
+                # Ưu tiên hỏi lại invalid fields trước
+                invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
+                next_field = (invalid_missing or missing_fields)[0] if missing_fields else None
+                missing_names = [
+                    get_friendly_name(f)
+                    for f in missing_fields
+                ]
+                logger.warning(f"LLM claimed complete but missing: {missing_names} → forcing is_complete=False")
+                from backend.app.rag.agent import FormExtractionResult, get_friendly_name
+                # Sinh câu hỏi tiếp theo thay vì dùng reply sai của LLM
+                next_reply = result.assistant_reply
+                if next_field:
+                    field_name = get_friendly_name(next_field)
+                    next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
                 result = FormExtractionResult(
                     extracted_fields=result.extracted_fields,
                     is_complete=False,
-                    assistant_reply=result.assistant_reply,
-                    next_field_key=result.next_field_key,
-                    next_field_name=result.next_field_name,
+                    assistant_reply=next_reply,
+                    next_field_key=next_field.get("key") if next_field else result.next_field_key,
+                    next_field_name=next_field.get("name") if next_field else result.next_field_name,
                 )
             # ─────────────────────────────────────────────────────────────────────
 
@@ -370,12 +434,13 @@ Yêu cầu:
                     "name": result.next_field_name or result.next_field_key,
                 }
 
-            # save state
+            # save state — bao gồm invalid_fields để lượt sau biết trường nào cần hỏi lại
             conv_record.state = {
                 "active_form_id": str(active_form.id),
                 "collected_data": collected_data,
                 "is_complete": result.is_complete,
                 "last_asked_field": new_last_asked,
+                "invalid_fields": invalid_fields,  # MỚI: trường có dữ liệu không hợp lệ
             }
             flag_modified(conv_record, "state")
             await db.commit()

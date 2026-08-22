@@ -1,0 +1,5096 @@
+
+Testing temp_072831ee24624d788b4b43cfb6eb8d57_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_0e53d988153c49b9bfe3e340d4f13e14_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_1b07f9fb203a4ef4834a849770fb6da2_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_1cde3dacb7834f9cb9b3978dd30ea531_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_2822ed4027b54edc988bf638e33c4c53_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_28d74a3349b74102b3c170ef4d647a96_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_2cf285cc68b74410a4143c59f55ed959_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_3321451216ae4cddab77f548105533cb_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_33a3da52eb7447f29a1f57807691a5a0_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_3b1cf033304d4201bde7a8cb87f0188e_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_3eb70def76ee408fb8be81321631d0be_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_44b1964402c54057b5d047a877462b47_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_52a58bc24e0b4d7982ce31dcd1b92c1d_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_583035b5b2b84b6fa180dab531a0ca4c_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_5c8b841b13df41d79d8bdb27cb4bb4dd_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_63d85dc49b3b4dff96ebf1d4d7246516_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_671794186c3f4e839009ff03f0d189c1_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_6a2828bbadcb4c06857debdfec275949_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_6f46b0e25222459391c31f673da0d4de_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_766f1212b3384959be2cb02d8f440109_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_79f86a382eb24d5a904fea2852bf8346_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_7eda852ddb014cad8a50efa06c50bff7_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_7fb21175534d41b5b74d7a9c67f416d7_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_8cfd96454f094a7c872a041a521c153f_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_8f28a93a261e41fea68d9f65c41f50bb_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_8fd4be0f1aa74caf91f9d61c855da04d_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_90db11e3c6cc4dedbbc817575237f6cd_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_927c683ae57b4d7e9deadfd4de51cbfe_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_9b8295a57d4a4b59a4da5749d19d4755_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_a8b996f24b0449dfa4a08d64263d3ed7_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_afd3c272a37648c489ca1aefde9ed7b7_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_b489f9a2c5e94ddeaf6f3e9521933e22_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_b75a2c5ad2244f378dae9ba49bfac33f_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_b87a46d06fe942b5b2c26c415d42d2d0_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_c6c8e33bed74472780036acbc3fd59c7_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_caa515b5bf7440719b04338650ad1658_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_cb633961034549fb9149ddbd9da798eb_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_cc51056a743c46d38494a021f7b9ee21_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_d2a21762c3474826b15a11e992e1b809_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_d38b860363784f028697d8fc89373cdb_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_d40aea79bfce489f85d8cd25eb0b2d60_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_d4445dc837cc493485f81f287be1085f_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_d4d61bbc89b242bc91bab0b3139f787b_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_dac0a69445344adbbcc8fe7725c47abe_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_e1a910acccdf424e8708d38f29c72447_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_e4b31c7a7fb6443ea1d6dffa59cfee1a_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_e97443027b3d458e8827c1fc70c8d7df_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_e993f5d165a94923a61d122d8711be8d_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_ec27361c1a0c42148c6df47e2d86bfe3_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_eccb26d998fc450582beec07bba8b612_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_ef7bcb3af5e24c6e93456f963a0dde32_ai_text.txt
+Index 1: Mẫu số 18
+Index 3: Kính gửi
+Index 4: a) Tên(2)
+Index 5: b) Giấy tờ nhân thân/pháp nhân(2)
+Index 6: c) Địa chỉ(2)
+Index 7: d) Điện thoại liên hệ (nếu có)
+Index 8: Hộp thư điện tử (nếu có)
+Index 11: (2)
+Index 12: (3)
+Index 13: (1) Đối với hộ gia đình, cá nhân, cộng đồng dân cư, người gốc Việt Nam định cư ở nước ngoài thì ghi “Văn phòng đăng ký đất đai/Chi nhánh Văn phòng đăng ký đất đai
+Index 14: Đối với tổ chức trong nước, tổ chức tôn giáo, tổ chức tôn giáo trực thuộc, tổ chức kinh tế có vốn đầu tư nước ngoài, tổ chức nước ngoài có chức năng ngoại giao và tổ chức nước ngoài, cá nhân nước ngoài thì ghi “Văn phòng đăng ký đất đai
+Index 15: (3) Ghi nội dung biến động như: “nhận chuyển nhượng, nhận tặng cho
+Index 16: cấp lại Giấy chứng nhận do bị mất, cấp đổi Giấy chứng nhận
+Index 17: Trường hợp đề nghị cấp lại Giấy chứng nhận do bị mất thì ghi nội dung: “đề nghị cấp lại Giấy chứng nhận do bị mất” và thể hiện thông tin Giấy chứng nhận bị mất, gồm: Số vào sổ cấp Giấy chứng nhận
+Index 18: ; Số phát hành Giấy chứng nhận (Số seri)
+Index 21: ngày
+Index 22: tháng
+Index 23: năm
+
+Testing temp_f2d2a9b73aa5489bb8df6c9ac4d7a914_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_f89441029d9d4d47bc42c3328a59374a_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_fa768247b7934c72828ae77659718f6b_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 137: ngày
+Index 138: tháng
+Index 145: ngày
+Index 146: tháng
+Index 147: năm
+Index 149: ngày
+Index 150: tháng
+Index 151: năm
+
+Testing temp_fbc59debdf504c3a9559d539349e3d64_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_fe9cb63d1eb04ce391ef33a42cd0e61d_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm
+
+Testing temp_fec634efcbdd4632bb84868769929720_ai_text.txt
+Index 1: Kỳ tính thuế: Năm
+Index 2: Lần đầu
+Index 3: Bổ sung lần thứ
+Index 4: 1. Người nộp thuế
+Index 8: Họ và tên
+Index 9: Ngày/tháng/năm sinh
+Index 10: Mã số thuế
+Index 13: Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST)
+Index 14: Ngày cấp
+Index 16: Nơi cấp
+Index 17: Số nhà
+Index 18: Đường/phố
+Index 19: Tổ/thôn
+Index 20: Phường/xã/thị trấn
+Index 21: Quận/huyện
+Index 23: Địa chỉ nhận thông báo thuế
+Index 24: Điện thoại
+Index 25: 2. Đại lý thuế (nếu có)
+Index 28: Tên đại lý thuế
+Index 30: Mã số thuế
+Index 35: Hợp đồng đại lý thuế: Số
+Index 36: Ngày
+Index 37: Số nhà
+Index 38: Đường/ phố
+Index 39: Tổ/thôn
+Index 40: Phường/xã/thị trấn
+Index 41: Quận/huyện
+Index 42: Tỉnh/Thành phố
+Index 43: Là thửa đất duy nhất
+Index 44: Đăng ký kê khai tổng hợp tại (Quận/Huyện)
+Index 45: Số giấy chứng nhận
+Index 46: Ngày cấp
+Index 47: Thửa đất số
+Index 48: Tờ bản đồ số
+Index 49: Diện tích
+Index 50: Loại đất/ Mục đích sử dụng
+Index 51: Diện tích đất sử dụng đúng mục đích
+Index 52: Diện tích đất sử dụng sai mục đích/chưa sử dụng theo đúng quy định
+Index 53: Hạn mức (nếu có)
+Index 54: Diện tích đất lấn, chiếm
+Index 55: Chưa có giấy chứng nhận
+Index 56: Diện tích
+Index 57: Loại đất/ Mục đích đang sử dụng
+Index 58: Thời điểm bắt đầu sử dụng đất
+Index 59: Thời điểm thay đổi thông tin của thửa đất
+Index 61: Loại nhà
+Index 62: Diện tích
+Index 63: Hệ số phân bổ
+Index 64: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 65: )
+Index 67: Họ và tên
+Index 68: Ngày/ tháng/ năm sinh
+Index 69: Mã số thuế
+Index 72: Số CMND/Hộ chiếu/CCCD
+Index 73: Ngày cấp
+Index 74: Nơi cấp
+Index 75: Số nhà
+Index 76: Đường/phố
+Index 77: Tổ/thôn
+Index 78: Phường/xã/thị trấn
+Index 80: Quận/huyện
+Index 81: Tỉnh/Thành phố
+Index 82: Số giấy chứng nhận
+Index 83: Ngày cấp
+Index 84: Thửa đất số
+Index 85: Tờ bản đồ số
+Index 86: Diện tích đất phi nông nghiệp ghi trên GCN
+Index 87: Diện tích thực tế sử dụng cho mục đích phi nông nghiệp
+Index 88: Loại đất/ Mục đích sử dụng
+Index 89: Hạn mức (Hạn mức tại thời điểm cấp GCN)
+Index 90: Chưa có giấy chứng nhận
+Index 91: Diện tích
+Index 92: Loại đất/ Mục đích đang sử dụng
+Index 93: Thời điểm bắt đầu sử dụng đất
+Index 94: Thời điểm thay đổi thông tin của thửa đất
+Index 96: (ghi rõ trường hợp thuộc diện được miễn, giảm thuế như: thương binh, gia đình thương binh liệt sỹ, đối tượng chính sách
+Index 97: )
+Index 98: Diện tích đất thực tế sử dụng
+Index 99: Hạn mức tính thuế
+Index 100: Thông tin xác định giá đất
+Index 101: Loại đất/ mục đích sử dụng
+Index 102: Tên đường/vùng
+Index 103: Đoạn đường/khu vực
+Index 104: Loại đường
+Index 105: Vị trí/hạng
+Index 106: Giá đất
+Index 107: Hệ số (đường/hẻm
+Index 108: )
+Index 109: Giá 1 m2 đất (Giá đất theo mục đích sử dụng)
+Index 110: Tính trên diện tích có quyền sử dụng
+Index 111: Diện tích
+Index 112: Hệ số phân bổ
+Index 113: Diện tích
+Index 114: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 115: Diện tích
+Index 116: Mục đích thực tế đang sử dụng
+Index 117: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 118: Diện tích
+Index 119: Mục đích thực tế đang sử dụng
+Index 120: Hệ số phân bổ (đối với nhà nhiều tầng nhiều hộ ở, nhà chung cư)
+Index 134: Họ và tên
+Index 135: Chứng chỉ hành nghề số
+Index 136: Thanh Hóa, ngày
+Index 137: tháng
+Index 144: ngày
+Index 145: tháng
+Index 146: năm
+Index 148: ngày
+Index 149: tháng
+Index 150: năm

@@ -1,10 +1,12 @@
 import asyncio
-from sqlalchemy import text
+from sqlalchemy import select
 from backend.app.core.database import AsyncSessionLocal
+from backend.app.models.user import User
 
 async def main():
-    async with AsyncSessionLocal() as s:
-        res = await s.execute(text('SELECT id, title FROM conversations;'))
-        print(res.fetchall())
-        
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User))
+        for u in result.scalars():
+            print(f"ID: {u.id} | Email: {u.email} | Name: {u.full_name} | Role: {u.role}")
+
 asyncio.run(main())

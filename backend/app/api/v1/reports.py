@@ -3,7 +3,9 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.database import get_db
 from backend.app.models.conversation import Message, Conversation
-from datetime import datetime, timedelta
+from backend.app.models.evaluation import EvaluationRun
+from backend.app.models.document import Document, DocumentChunk
+from datetime import datetime, timedelta, date
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -93,4 +95,94 @@ async def get_report_stats(db: AsyncSession = Depends(get_db)):
         },
         "topic_stats": topic_stats,
         "fallback_logs": fallback_logs
+    }
+
+@router.get("/overview")
+async def get_overview(db: AsyncSession = Depends(get_db)):
+    # 1. Lấy thông tin từ EvaluationRun
+    eval_stmt = select(EvaluationRun).order_by(EvaluationRun.created_at.desc()).limit(6)
+    eval_res = await db.execute(eval_stmt)
+    eval_runs = eval_res.scalars().all()
+    eval_runs.reverse()  # Sắp xếp từ cũ nhất đến mới nhất (trong 6 tuần/lần gần nhất)
+
+    if eval_runs:
+        latest = eval_runs[-1]
+        metrics = {
+            "faithfulness": round((latest.faithfulness or 0) * 100, 1),
+            "answer_relevancy": round((latest.answer_relevancy or 0) * 100, 1),
+            "context_precision": round((latest.context_precision or 0) * 100, 1),
+            "fallback_rate": round(100 - (latest.answer_relevancy or 0) * 100, 1) # Just a fallback proxy for now
+        }
+        
+        # Calculate diffs (compare with previous run)
+        if len(eval_runs) > 1:
+            prev = eval_runs[-2]
+            metrics["faithfulness_diff"] = round(((latest.faithfulness or 0) - (prev.faithfulness or 0)) * 100, 1)
+            metrics["relevancy_diff"] = round(((latest.answer_relevancy or 0) - (prev.answer_relevancy or 0)) * 100, 1)
+            metrics["precision_diff"] = round(((latest.context_precision or 0) - (prev.context_precision or 0)) * 100, 1)
+        else:
+            metrics["faithfulness_diff"] = 0
+            metrics["relevancy_diff"] = 0
+            metrics["precision_diff"] = 0
+    else:
+        metrics = {
+            "faithfulness": 0, "answer_relevancy": 0, "context_precision": 0, "fallback_rate": 0,
+            "faithfulness_diff": 0, "relevancy_diff": 0, "precision_diff": 0
+        }
+
+    chart_data = []
+    for run in eval_runs:
+        chart_data.append({
+            "label": run.created_at.strftime("Tuần %W") if run.created_at else "Run",
+            "faithfulness": round((run.faithfulness or 0) * 100),
+            "relevancy": round((run.answer_relevancy or 0) * 100)
+        })
+
+    # 2. Lấy thông tin Data Stats
+    total_indexed_docs = await db.scalar(select(func.count(Document.id)).where(Document.status == "indexed"))
+    total_chunks = await db.scalar(select(func.count(DocumentChunk.id)))
+    
+    today_start = datetime.combine(date.today(), datetime.min.time())
+    questions_today = await db.scalar(select(func.count(Message.id)).where(Message.role == "user", Message.created_at >= today_start))
+    
+    up = await db.scalar(select(func.count(Message.id)).where(Message.feedback == 1, Message.created_at >= today_start))
+    down = await db.scalar(select(func.count(Message.id)).where(Message.feedback == -1, Message.created_at >= today_start))
+    total_feedback_today = (up or 0) + (down or 0)
+    positive_feedback_pct = int(round((up / total_feedback_today) * 100)) if total_feedback_today > 0 else 0
+    
+    data_stats = {
+        "indexed_docs": total_indexed_docs or 0,
+        "total_chunks": total_chunks or 0,
+        "questions_today": questions_today or 0,
+        "positive_feedback_pct": positive_feedback_pct
+    }
+
+    # 3. Needs attention (Low confidence or fallback questions)
+    attention_stmt = (
+        select(Message.content, Message.confidence, Message.created_at, Message.conversation_id, Message.intent)
+        .where((Message.is_fallback == True) | (Message.confidence < 0.6))
+        .where(Message.role == 'assistant')
+        .order_by(Message.created_at.desc())
+        .limit(3)
+    )
+    attention_res = await db.execute(attention_stmt)
+    
+    needs_attention = []
+    for msg in attention_res.fetchall():
+        user_msg = await db.scalar(
+            select(Message.content)
+            .where(Message.conversation_id == msg.conversation_id, Message.role == 'user', Message.created_at <= msg.created_at)
+            .order_by(Message.created_at.desc()).limit(1)
+        )
+        needs_attention.append({
+            "question": user_msg or 'Không rõ',
+            "confidence": round(msg.confidence or 0, 2),
+            "intent": msg.intent or 'Khác'
+        })
+
+    return {
+        "metrics": metrics,
+        "chart_data": chart_data,
+        "data_stats": data_stats,
+        "needs_attention": needs_attention
     }

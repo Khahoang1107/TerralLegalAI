@@ -1,0 +1,97 @@
+{
+  "id": "48988146-f23f-4c83-b8b5-13d5e90f8e95",
+  "name": "Đơn đăng ký biến động, mẫu số 18",
+  "fields": [
+    {
+      "key": "field_9000",
+      "name": "Nơi nhận",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Nơi nhận"
+    },
+    {
+      "key": "field_9001",
+      "name": "Họ và tên",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Họ và tên"
+    },
+    {
+      "key": "field_9002",
+      "name": "Giấy tờ thân nhân/ pháp nhân",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Giấy tờ thân nhân/ pháp nhân"
+    },
+    {
+      "key": "field_9003",
+      "name": "Địa chỉ",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Địa chỉ"
+    },
+    {
+      "key": "field_9004",
+      "name": "Số điện thoại",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Số điện thoại"
+    },
+    {
+      "key": "field_9005",
+      "name": "Hộp điện tử",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Hộp điện tử"
+    },
+    {
+      "key": "field_9006",
+      "name": "Nội dung biến động",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Nội dung biến động"
+    },
+    {
+      "key": "field_9007",
+      "name": "Giấy tờ 2",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Giấy tờ 2"
+    },
+    {
+      "key": "field_9008",
+      "name": "Giấy tờ 3",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Giấy tờ 3"
+    },
+    {
+      "key": "field_9009",
+      "name": "Tỉnh (Nơi viết)",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Tỉnh (Nơi viết)"
+    },
+    {
+      "key": "field_9010",
+      "name": "Ngày",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Ngày"
+    },
+    {
+      "key": "field_9011",
+      "name": "Tháng",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Tháng"
+    },
+    {
+      "key": "field_9012",
+      "name": "Năm",
+      "type": "string",
+      "required": true,
+      "description": "Nhập thông tin cho Năm"
+    }
+  ]
+}

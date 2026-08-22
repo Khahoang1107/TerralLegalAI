@@ -10,7 +10,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
 from backend.app.core.security import get_current_user
-from backend.app.api.v1 import auth, chat, documents, health, conversations, evaluation, settings as app_settings, forms, reports
+from backend.app.api.v1 import (
+    settings as app_settings,
+    auth,
+    chat,
+    conversations,
+    documents,
+    evaluation,
+    forms,
+    health,
+    reports,
+    users,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,6 +104,7 @@ app.include_router(evaluation.router, prefix="/api/v1", tags=["Evaluation"], dep
 app.include_router(app_settings.router, prefix="/api/v1", tags=["Settings"], dependencies=[Depends(get_current_user)])
 app.include_router(forms.router, prefix="/api/v1", tags=["Forms"], dependencies=[Depends(get_current_user)])
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"], dependencies=[Depends(get_current_user)])
+app.include_router(users.router, prefix="/api/v1/users", tags=["Users"], dependencies=[Depends(get_current_user)])
 
 
 @app.get("/")

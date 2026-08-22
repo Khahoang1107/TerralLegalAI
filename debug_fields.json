@@ -1,0 +1,16 @@
+[
+  {
+    "key": "field_9136",
+    "name": "ma_so_thue",
+    "type": "digit_group",
+    "required": false,
+    "description": "Nếu không có ma_so_thue thì bắt buộc phải điền số cmt cccd hộ chiếu"
+  },
+  {
+    "key": "field_9137",
+    "name": "ma_so_thue_dai_ly_thue",
+    "type": "digit_group",
+    "required": false,
+    "description": "Cung cấp mã số thuế của đại lý thuế (nếu có)"
+  }
+]

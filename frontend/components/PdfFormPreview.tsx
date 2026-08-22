@@ -40,6 +40,7 @@ interface PdfFormPreviewProps {
   readOnly?: boolean;
   aiPredictions?: Record<string, AiPred>;
   fieldDetails?: Record<string, { num: number; label: string }>;
+  pageDimensions?: { page: number; width: number; height: number }[];
 }
 
 export default function PdfFormPreview({
@@ -56,6 +57,7 @@ export default function PdfFormPreview({
   aiPredictions = {},
   fieldDetails = {},
   textBlocks = [],
+  pageDimensions,
 }: PdfFormPreviewProps) {
   const [pageWidth, setPageWidth] = useState<number>(800);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -93,7 +95,6 @@ export default function PdfFormPreview({
     };
   }, []);
 
-  const scale = pageWidth / 595.28;
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem("terralegal_access_token") ?? sessionStorage.getItem("terralegal_access_token"))
     : null;
@@ -112,6 +113,11 @@ export default function PdfFormPreview({
       {pageImages && pageImages.map((imgUrl, index) => {
         const pageNumber = index + 1;
         const pageZones = zones.filter(z => z.page === pageNumber);
+        
+        const pageDim = pageDimensions?.find(p => p.page === pageNumber);
+        const pdfWidth = pageDim ? pageDim.width : 595.28;
+        const scale = pageWidth / pdfWidth;
+
         return (
           <PageCanvas
             key={`page_${pageNumber}`}
@@ -347,26 +353,32 @@ function PageCanvas({
           let displayLabel = "";
           let hoverTitle = "";
           
+          // Ưu tiên dùng detail.num (rank toàn form) thay vì index local của trang
+          const fieldId = isLabeled ? labeledZones[idxStr] : null;
+          const detail = fieldId ? fieldDetails[fieldId] : null;
+          // Số thứ tự nhất quán: dùng detail.num nếu đã labeled, fallback về index trong allZones
+          const globalSeqNum = detail?.num ?? (allZones.findIndex(z => String(z.idx) === idxStr) + 1);
+          
           if (mode === 'remove') {
-            hoverTitle = `Xóa vùng [${zone.idx}]`;
+            hoverTitle = `Xóa vùng #${globalSeqNum}`;
           } else if (mode === 'merge') {
-            hoverTitle = `${isMergeSelected ? "Bỏ chọn" : "Chọn"} vùng [${zone.idx}]`;
+            hoverTitle = `${isMergeSelected ? "Bỏ chọn" : "Chọn"} vùng #${globalSeqNum}`;
           } else if (isLabeled) {
-            const fieldId = labeledZones[idxStr];
-            const detail = fieldDetails[fieldId];
             if (detail) {
-              displayLabel = `[${detail.num} • zone #${zone.idx}] ${detail.label}`;
+              displayLabel = `[${detail.num}] ${detail.label}`;
               hoverTitle = `✅ Đã dán: [${detail.num}] ${detail.label}`;
             } else {
-              displayLabel = fieldId;
+              displayLabel = fieldId!;
               hoverTitle = `✅ Đã dán: ${fieldId}`;
             }
           } else if (pred) {
             displayLabel = pred.label;
             hoverTitle = `🤖 AI đề xuất: ${pred.label} (${Math.round(conf*100)}%)`;
           } else {
-            displayLabel = zone.suggested_label || `[${zone.idx}]`;
-            hoverTitle = `Chưa dán nhãn [${zone.idx}]`;
+            displayLabel = zone.suggested_label || `+`;
+            hoverTitle = zone.suggested_label
+              ? `Chưa dán nhãn: ${zone.suggested_label}`
+              : `Vùng mới - nhấp để dán nhãn`;
           }
 
           return (

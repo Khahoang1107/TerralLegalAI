@@ -143,7 +143,7 @@ const baseURL = baseUrlEnv
 
 const client = axios.create({
   baseURL,
-  timeout: 120_000,
+  timeout: 300_000,
 });
 
 const TOKEN_KEY = "terralegal_access_token";
@@ -191,6 +191,10 @@ export const authApi = {
     localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Chat API ─────────────────────────────────────────────────────
@@ -216,6 +220,10 @@ export const chatApi = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Conversation API ─────────────────────────────────────────────
@@ -236,6 +244,10 @@ export const conversationApi = {
   async deleteConversation(id: string): Promise<void> {
     await client.delete(`/conversations/${id}`);
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Documents API ────────────────────────────────────────────────
@@ -276,6 +288,10 @@ export const documentsApi = {
     const { data } = await client.put(`/documents/${id}/reindex`);
     return data;
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Evaluation API ───────────────────────────────────────────────
@@ -304,6 +320,10 @@ export const evaluationApi = {
     const { data } = await client.get<EvaluationRun>(`/evaluation/results/${id}`);
     return data;
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Forms API ────────────────────────────────────────────────────
@@ -313,12 +333,39 @@ export const formsApi = {
     const { data } = await client.get("/forms");
     return data;
   },
+  async getForm(id: string): Promise<any> {
+    const { data } = await client.get(`/forms/${id}`);
+    return data;
+  },
   async deleteForm(id: string): Promise<void> {
     await client.delete(`/forms/${id}`);
   },
   async updateForm(id: string, payload: { name: string; procedure_type: string; description?: string; fields?: any[] }): Promise<any> {
     const { data } = await client.put(`/forms/${id}`, payload);
     return data;
+  },
+  async updateTemplate(id: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await client.put(`/forms/${id}/template`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+
+  async previewPdf(formId: string, data: Record<string, any>, mode?: string): Promise<Blob> {
+    const url = mode ? `/forms/preview-pdf/${formId}?mode=${mode}` : `/forms/preview-pdf/${formId}`;
+    const response = await client.post(url, data, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+  async generateFormDocument(id: string, data: any, format: "docx" | "pdf" = "docx"): Promise<Blob> {
+    if (format === "pdf") {
+      return this.previewPdf(id, data);
+    }
+    const response = await client.post(`/forms/${id}/generate`, { data }, { responseType: 'blob' });
+    return response.data;
   },
   async analyzeDocx(file: File): Promise<any> {
     const form = new FormData();
@@ -328,18 +375,40 @@ export const formsApi = {
     });
     return data;
   },
+  async uploadForm(jsonFile: File, docxFile: File): Promise<any> {
+    const form = new FormData();
+    form.append("json_file", jsonFile);
+    form.append("docx_file", docxFile);
+    const { data } = await client.post("/forms/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
   async createVisualForm(payload: any): Promise<any> {
     const { data } = await client.post("/forms/create-visual", payload);
     return data;
   },
-  async aiPredict(tempId: string, zones: any[]): Promise<{
+  async createFormFromDocxJson(docxFile: File, jsonFile: File): Promise<any> {
+    const form = new FormData();
+    form.append("docx_file", docxFile);
+    form.append("json_file", jsonFile);
+    const { data } = await client.post("/forms/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+  async aiPredict(tempId: string, zones: any[], userLabels?: Record<string, string>): Promise<{
     predictions: Record<string, { label: string; description: string; confidence: number; section: string }>;
     zones: any[];
     total: number;
   }> {
-    const { data } = await client.post("/forms/ai-predict", { temp_id: tempId, zones });
+    const { data } = await client.post("/forms/ai-predict", { temp_id: tempId, zones, user_labels: userLabels });
     return data;
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
 };
 
 // ─── Reports API ──────────────────────────────────────────────────
@@ -353,4 +422,24 @@ export const reportsApi = {
     const { data } = await client.get("/reports/stats");
     return data;
   },
+  async getOverview(): Promise<any> {
+    const { data } = await client.get("/reports/overview");
+    return data;
+  }
+};
+
+
+export const usersApi = {
+  async getUsers(): Promise<any[]> {
+    const { data } = await client.get('/users');
+    return data;
+  },
+  async updateUser(id: string, payload: { role?: string; is_active?: boolean }): Promise<any> {
+    const { data } = await client.put('/users/' + id, payload);
+    return data;
+  },
+  async deleteUser(id: string): Promise<any> {
+    const { data } = await client.delete('/users/' + id);
+    return data;
+  }
 };

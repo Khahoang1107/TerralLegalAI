@@ -1,0 +1,1261 @@
+Created At: 2026-07-30T05:30:09Z
+Completed At: 2026-07-30T05:30:09Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23826
+Showing lines 190 to 300
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+190:   {{"idx": 2, "label": "cmnd", "description": "Số CMND/CCCD"}}
+191: ]
+192: Lưu ý:
+193: - "label" phải viết bằng tiếng Việt không dấu, nối nhau bằng dấu gạch dưới (snake_case).
+194: - "description" là mô tả ngắn gọn, dễ hiểu để hướng dẫn người dùng nhập liệu.
+195: - Phải trả về ĐÚNG định dạng JSON mảng, không thêm bất kỳ text nào khác.
+196: 
+197: --- NỘI DUNG BIỂU MẪU ---
+198: {full_text}
+199: """
+200:         response = client.models.generate_content(
+201:             model='gemini-2.5-flash',
+202:             contents=prompt,
+203:             config=types.GenerateContentConfig(
+204:                 response_mime_type="application/json",
+205:             ),
+206:         )
+207:         data = json.loads(response.text)
+208:         result = {}
+209:         for item in data:
+210:             result[str(item["idx"])] = {
+211:                 "label": item.get("label", ""),
+212:                 "description": item.get("description", "")
+213:             }
+214:         return result
+215:     except Exception as e:
+216:         import logging
+217:         logging.getLogger(__name__).error(f"Lỗi khi dự đoán nhãn bằng Gemini: {e}")
+218:         return {}
+219: 
+220: 
+221: def _cleanup_export_file(path: str) -> None:
+222:     """Xóa file export tạm sau khi đã trả về cho người dùng."""
+223:     try:
+224:         if os.path.exists(path):
+225:             os.remove(path)
+226:     except Exception:
+227:         pass  # Không làm gián đoạn request nếu xóa thất bại
+228: 
+229: 
+230: # ─── Endpoints ────────────────────────────────────────────────────
+231: 
+232: @router.delete("/{form_id}")
+233: async def delete_form(
+234:     form_id: str,
+235:     db: AsyncSession = Depends(get_db),
+236:     current_user: User = Depends(get_current_user),
+237: ):
+238:     """Soft-delete: Đặt is_active=False thay vì xóa hẳn khỏi DB."""
+239:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+240:     form = result.scalars().first()
+241:     if not form:
+242:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+243: 
+244:     form.is_active = False
+245:     await db.commit()
+246:     return {"message": "Đã ẩn biểu mẫu (soft delete)", "form_id": form_id}
+247: 
+248: 
+249: @router.post("/{form_id}/save-mapping")
+250: async def save_mapping(
+251:     form_id: str,
+252:     body: SaveMappingRequest,
+253:     db: AsyncSession = Depends(get_db),
+254:     current_user: User = Depends(get_current_user),
+255: ):
+256:     """
+257:     Lưu ánh xạ (blank_idx → field_key) sau khi admin gán nhãn trên UI.
+258:     Backend tự động bơm tag Jinja2 vào file DOCX tương ứng.
+259:     """
+260:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+261:     form = result.scalars().first()
+262:     if not form:
+263:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+264: 
+265:     template_path = f"backend/data/templates/{form_id}.docx"
+266:     if not os.path.exists(template_path):
+267:         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+268: 
+269:     try:
+270:         _inject_jinja_tags(template_path, body.mapping)
+271:         form.mapping = body.mapping
+272:         await db.commit()
+273:         return {
+274:             "message": "Lưu mapping thành công và đã bơm tag vào DOCX",
+275:             "form_id": form_id,
+276:             "total_mapped": len(body.mapping),
+277:         }
+278:     except Exception as e:
+279:         raise HTTPException(status_code=500, detail=f"Lỗi khi bơm tag vào DOCX: {str(e)}")
+280: 
+281: 
+282: @router.post("/export/{form_id}")
+283: async def export_form(
+284:     form_id: str,
+285:     payload: dict,
+286:     background_tasks: BackgroundTasks,
+287:     db: AsyncSession = Depends(get_db),
+288:     current_user: User = Depends(get_current_user),
+289:     format: str = Query(default="docx", pattern="^(docx|pdf)$"),
+290: ):
+291:     """
+292:     Sinh file từ biểu mẫu với dữ liệu người dùng cung cấp.
+293:     - Validation: Kiểm tra các field required phải được điền đủ.
+294:     - Format: Hỗ trợ ?format=docx (mặc định) hoặc ?format=pdf.
+295:     - Lưu lịch sử xuất đơn vào bảng form_submissions.
+296:     - Tự động dọn dẹp file tạm sau khi trả về.
+297:     """
+298:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+299:     form = result.scalars().first()
+300:     if not form:
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:34:27Z
+Completed At: 2026-07-30T05:34:27Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23826
+Showing lines 50 to 150
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+50:     html_template: str = ""
+51:     temp_id: str = ""
+52:     mapping: Dict[str, str] = {}
+53:     fields: List[FormVisualField]
+54: 
+55: class SaveMappingRequest(BaseModel):
+56:     """Ánh xạ số thứ tự vùng trống trên UI → field key."""
+57:     mapping: Dict[str, str]  # VD: { "1": "ho_ten", "2": "cmnd" }
+58: 
+59: 
+60: @router.get("/")
+61: async def get_all_forms(
+62:     procedure_type: Optional[str] = None,
+63:     db: AsyncSession = Depends(get_db)
+64: ):
+65:     """Lấy danh sách biểu mẫu đang hoạt động. Có thể lọc theo procedure_type."""
+66:     stmt = select(FormSchema).where(FormSchema.is_active == True)
+67:     if procedure_type:
+68:         stmt = stmt.where(FormSchema.procedure_type == procedure_type)
+69:     result = await db.execute(stmt)
+70:     forms = result.scalars().all()
+71:     return forms
+72: 
+73: @router.post("/upload")
+74: async def upload_form(
+75:     json_file: UploadFile = File(...),
+76:     docx_file: UploadFile = File(...),
+77:     db: AsyncSession = Depends(get_db),
+78:     current_user: User = Depends(get_current_user),
+79: ):
+80:     """
+81:     Upload biểu mẫu mới: JSON schema + file DOCX mẫu.
+82:     Nếu JSON có trường 'mapping', backend sẽ tự động bơm tag Jinja2 vào DOCX.
+83:     """
+84:     try:
+85:         content = await json_file.read()
+86:         data = json.loads(content)
+87: 
+88:         # Kiểm tra validation cơ bản
+89:         required_keys = {"name", "procedure_type", "fields"}
+90:         if not required_keys.issubset(data.keys()):
+91:             raise HTTPException(
+92:                 status_code=400,
+93:                 detail=f"Thiếu các trường bắt buộc: {required_keys - data.keys()}"
+94:             )
+95: 
+96:         form = FormSchema(
+97:             name=data["name"],
+98:             procedure_type=data["procedure_type"],
+99:             fields=data["fields"],
+100:             html_template=data.get("html_template"),
+101:             description=data.get("description"),
+102:             legal_basis=data.get("legal_basis"),
+103:             mapping=data.get("mapping"),
+104:             created_by=str(current_user.id),
+105:         )
+106:         db.add(form)
+107:         await db.commit()
+108:         await db.refresh(form)
+109: 
+110:         # Lưu file DOCX gốc vào thư mục templates
+111:         template_dir = "backend/data/templates"
+112:         os.makedirs(template_dir, exist_ok=True)
+113:         template_path = os.path.join(template_dir, f"{form.id}.docx")
+114:         docx_bytes = await docx_file.read()
+115:         with open(template_path, "wb") as f:
+116:             f.write(docx_bytes)
+117: 
+118:         # Nếu JSON đã kèm sẵn mapping → tự động bơm tag Jinja2 vào DOCX ngay
+119:         if data.get("mapping"):
+120:             _inject_jinja_tags(template_path, data["mapping"])
+121: 
+122:         return {
+123:             "message": "Tải lên biểu mẫu thành công",
+124:             "form_id": str(form.id),
+125:             "has_mapping": bool(data.get("mapping")),
+126:         }
+127:     except json.JSONDecodeError:
+128:         raise HTTPException(status_code=400, detail="File JSON không hợp lệ")
+129:     except HTTPException:
+130:         raise
+131:     except Exception as e:
+132:         raise HTTPException(status_code=500, detail=str(e))
+133: 
+134: 
+135: # ─── Helper: Bơm tag Jinja2 vào DOCX ─────────────────────────────
+136: 
+137: def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
+138:     """
+139:     Mở file DOCX tại template_path, dùng regex thay thế các dải dấu chấm/gạch
+140:     theo thứ tự xuất hiện bằng tag Jinja2 tương ứng trong mapping.
+141: 
+142:     mapping = { "1": "ho_ten", "2": "cmnd" }
+143:     Dải dấu chấm lần 1 → {{ ho_ten }}, lần 2 → {{ cmnd }}, ...
+144:     """
+145:     blank_pattern = re.compile(r'(\.{3,})')
+146:     doc = docx.Document(template_path)
+147:     blank_idx = [1]  # Dùng list để nonlocal hoạt động trong nested func
+148: 
+149:     def process_runs(runs):
+150:         for run in runs:
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:34:38Z
+Completed At: 2026-07-30T05:34:38Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23826
+Showing lines 380 to 450
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+380:     dùng PyMuPDF bóc tách tọa độ X,Y,W,H và xóa tag ẩn trên PDF.
+381:     """
+382:     try:
+383:         temp_id = f"temp_{uuid.uuid4().hex}"
+384:         temp_dir = os.path.join("data", "uploaded")
+385:         os.makedirs(temp_dir, exist_ok=True)
+386:         raw_path = os.path.join(temp_dir, f"{temp_id}_raw.docx")
+387:         
+388:         with open(raw_path, "wb") as f:
+389:             f.write(await file.read())
+390:             
+391:         doc = docx.Document(raw_path)
+392:         # Bắt dấu chấm, gạch dưới liên tiếp HOẶC tab leader
+393:         blank_pattern = re.compile(r'(?:[\._](?:&nbsp;|\s)*){3,}|\t+')
+394:         
+395:         blank_idx = [1]
+396:         tag_map = {}
+397:         def process_runs(runs):
+398:             for run in runs:
+399:                 if not run.text:
+400:                     continue
+401:                 new_text = ""
+402:                 last_end = 0
+403:                 for match in blank_pattern.finditer(run.text):
+404:                     start, end = match.span()
+405:                     original_len = end - start
+406:                     
+407:                     new_text += run.text[last_end:start]
+408:                     # Chèn tag ẩn: VD [[B1]]
+409:                     tag = f"[[B{blank_idx[0]}]]"
+410:                     
+411:                     # Nếu là tab (tab leader), pad đủ dài (vd 25 ký tự) để UI tạo zone to dễ bấm
+412:                     if '\t' in match.group(0):
+413:                         tag = tag.ljust(25, '_')
+414:                     elif original_len > len(tag):
+415:                         tag = tag + "_" * (original_len - len(tag))
+416:                     
+417:                     tag_map[blank_idx[0]] = tag
+418:                     new_text += tag
+419:                     blank_idx[0] += 1
+420:                     last_end = end
+421:                 new_text += run.text[last_end:]
+422:                 run.text = new_text
+423: 
+424:         for p in doc.paragraphs:
+425:             process_runs(p.runs)
+426:         for table in doc.tables:
+427:             for row in table.rows:
+428:                 for cell in row.cells:
+429:                     for p in cell.paragraphs:
+430:                         process_runs(p.runs)
+431:                         
+432:         marked_docx_path = os.path.join(temp_dir, f"{temp_id}_marked.docx")
+433:         doc.save(marked_docx_path)
+434:         
+435:         # Gọi LibreOffice convert sang PDF
+436:         pdf_dir = temp_dir
+437:         subprocess.run(
+438:             ["libreoffice", "--headless", "--convert-to", "pdf", 
+439:              "--outdir", pdf_dir, marked_docx_path],
+440:             check=True, timeout=60,
+441:             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+442:         )
+443:         
+444:         pdf_path = os.path.join(pdf_dir, f"{temp_id}_marked.pdf")
+445:         
+446:         # Mở PDF bằng PyMuPDF
+447:         import fitz
+448:         pdf_doc = fitz.open(pdf_path)
+449:         zones = []
+450:         total_blanks = blank_idx[0] - 1
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:34:43Z
+Completed At: 2026-07-30T05:34:43Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23826
+Showing lines 500 to 580
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+500:         
+501:         # Clean up file rác
+502:         for p in [marked_docx_path, pdf_path]:
+503:             if os.path.exists(p):
+504:                 os.remove(p)
+505:                 
+506:         return {
+507:             "preview_url": page_images[0] if page_images else "",
+508:             "page_images": page_images,
+509:             "zones": zones,
+510:             "total_blanks": total_blanks,
+511:             "temp_id": temp_id,
+512:         }
+513:     except Exception as e:
+514:         raise HTTPException(status_code=500, detail=f"Lỗi phân tích DOCX bằng PDF: {str(e)}")
+515: 
+516: 
+517: @router.get("/preview/{filename}")
+518: async def get_preview_pdf(filename: str):
+519:     file_path = os.path.join("data", "uploaded", filename)
+520:     if not os.path.exists(file_path):
+521:         raise HTTPException(status_code=404, detail="File không tồn tại")
+522:     media_type = "image/png" if filename.endswith(".png") else "application/pdf"
+523:     return FileResponse(file_path, media_type=media_type)
+524: 
+525: 
+526: @router.post("/create-visual")
+527: async def create_visual_form(
+528:     data: FormVisualCreate,
+529:     db: AsyncSession = Depends(get_db),
+530:     current_user: User = Depends(get_current_user),
+531: ):
+532:     form_fields = []
+533:     for f in data.fields:
+534:         field_key = f.key or f.name
+535:         form_fields.append({
+536:             "key": field_key,
+537:             "name": f.name,
+538:             "description": f.description,
+539:             "type": f.type,
+540:             "required": f.required,
+541:         })
+542: 
+543:     form = FormSchema(
+544:         name=data.name,
+545:         procedure_type=data.procedure_type,
+546:         fields=form_fields,
+547:         html_template="",
+548:         description=data.description,
+549:         legal_basis=data.legal_basis,
+550:         mapping=data.mapping,
+551:         created_by=str(current_user.id),
+552:     )
+553: 
+554:     db.add(form)
+555:     await db.commit()
+556:     await db.refresh(form)
+557: 
+558:     # Lấy raw_path từ temp_id, bơm mapping vào DOCX và lưu thành {form_id}.docx
+559:     if data.temp_id:
+560:         temp_dir = os.path.join("data", "uploaded")
+561:         raw_path = os.path.join(temp_dir, f"{data.temp_id}_raw.docx")
+562:         
+563:         if os.path.exists(raw_path):
+564:             template_dir = "backend/data/templates"
+565:             os.makedirs(template_dir, exist_ok=True)
+566:             template_path = os.path.join(template_dir, f"{form.id}.docx")
+567:             
+568:             import shutil
+569:             shutil.copy2(raw_path, template_path)
+570:             
+571:             if data.mapping:
+572:                 _inject_jinja_tags(template_path, data.mapping)
+573:                 
+574:             os.remove(raw_path)
+575:             final_pdf = os.path.join(temp_dir, f"{data.temp_id}_final.pdf")
+576:             if os.path.exists(final_pdf):
+577:                 os.remove(final_pdf)
+578: 
+579:     return {"message": "Tạo biểu mẫu thành công", "form_id": str(form.id), "id": str(form.id), "name": data.name}
+580: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:36:01Z
+Completed At: 2026-07-30T05:36:01Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23826
+Showing lines 130 to 180
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+130:         raise
+131:     except Exception as e:
+132:         raise HTTPException(status_code=500, detail=str(e))
+133: 
+134: 
+135: # ─── Helper: Bơm tag Jinja2 vào DOCX ─────────────────────────────
+136: 
+137: def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
+138:     """
+139:     Mở file DOCX tại template_path, dùng regex thay thế các dải dấu chấm/gạch
+140:     theo thứ tự xuất hiện bằng tag Jinja2 tương ứng trong mapping.
+141: 
+142:     mapping = { "1": "ho_ten", "2": "cmnd" }
+143:     Dải dấu chấm lần 1 → {{ ho_ten }}, lần 2 → {{ cmnd }}, ...
+144:     """
+145:     blank_pattern = re.compile(r'(\.{3,})')
+146:     doc = docx.Document(template_path)
+147:     blank_idx = [1]  # Dùng list để nonlocal hoạt động trong nested func
+148: 
+149:     def process_runs(runs):
+150:         for run in runs:
+151:             if not blank_pattern.search(run.text):
+152:                 continue
+153:             new_text = ""
+154:             last_end = 0
+155:             for match in blank_pattern.finditer(run.text):
+156:                 start, end = match.span()
+157:                 new_text += run.text[last_end:start]
+158:                 key = mapping.get(str(blank_idx[0]))
+159:                 if key:
+160:                     new_text += f"{{{{ {key} }}}}"
+161:                 else:
+162:                     new_text += run.text[start:end]  # Giữ nguyên nếu chưa map
+163:                 blank_idx[0] += 1
+164:                 last_end = end
+165:             new_text += run.text[last_end:]
+166:             run.text = new_text  # Kế thừa nguyên vẹn formatting (bold/italic/font)
+167: 
+168:     for p in doc.paragraphs:
+169:         process_runs(p.runs)
+170:     for table in doc.tables:
+171:         for row in table.rows:
+172:             for cell in row.cells:
+173:                 for p in cell.paragraphs:
+174:                     process_runs(p.runs)
+175: 
+176:     doc.save(template_path)
+177: 
+178: 
+179: def _predict_labels(full_text: str) -> Dict[str, Dict[str, str]]:
+180:     """Gọi Gemini API để suy luận nhãn cho các trường [[B1]], [[B2]] dựa trên ngữ cảnh."""
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:42:48Z
+Completed At: 2026-07-30T05:42:48Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23947
+Showing lines 245 to 270
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+245:     await db.commit()
+246:     return {"message": "Đã ẩn biểu mẫu (soft delete)", "form_id": form_id}
+247: 
+248: 
+249: @router.post("/{form_id}/save-mapping")
+250: async def save_mapping(
+251:     form_id: str,
+252:     body: SaveMappingRequest,
+253:     db: AsyncSession = Depends(get_db),
+254:     current_user: User = Depends(get_current_user),
+255: ):
+256:     """
+257:     Lưu ánh xạ (blank_idx → field_key) sau khi admin gán nhãn trên UI.
+258:     Backend tự động bơm tag Jinja2 vào file DOCX tương ứng.
+259:     """
+260:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+261:     form = result.scalars().first()
+262:     if not form:
+263:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+264: 
+265:     template_path = f"backend/data/templates/{form_id}.docx"
+266:     if not os.path.exists(template_path):
+267:         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+268: 
+269:     try:
+270:         _inject_jinja_tags(template_path, body.mapping)
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:42:56Z
+Completed At: 2026-07-30T05:42:56Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23947
+Showing lines 179 to 244
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+179: def _predict_labels(full_text: str) -> Dict[str, Dict[str, str]]:
+180:     """Gọi Gemini API để suy luận nhãn cho các trường [[B1]], [[B2]] dựa trên ngữ cảnh."""
+181:     try:
+182:         client = genai.Client(api_key=settings.gemini_api_key)
+183:         prompt = f"""
+184: Bạn là chuyên gia số hóa biểu mẫu hành chính. 
+185: Dưới đây là nội dung của một biểu mẫu có chứa các chỗ trống được đánh dấu bằng tag [[B1]], [[B2]], v.v.
+186: Nhiệm vụ của bạn là dựa vào ngữ cảnh xung quanh mỗi chỗ trống, hãy đoán xem người dùng cần điền thông tin gì vào chỗ trống đó.
+187: Trả về kết quả ở dạng mảng JSON gồm các object có cấu trúc:
+188: [
+189:   {{"idx": 1, "label": "ho_ten", "description": "Họ và tên người nộp"}},
+190:   {{"idx": 2, "label": "cmnd", "description": "Số CMND/CCCD"}}
+191: ]
+192: Lưu ý:
+193: - "label" phải viết bằng tiếng Việt không dấu, nối nhau bằng dấu gạch dưới (snake_case).
+194: - "description" là mô tả ngắn gọn, dễ hiểu để hướng dẫn người dùng nhập liệu.
+195: - Phải trả về ĐÚNG định dạng JSON mảng, không thêm bất kỳ text nào khác.
+196: 
+197: --- NỘI DUNG BIỂU MẪU ---
+198: {full_text}
+199: """
+200:         response = client.models.generate_content(
+201:             model='gemini-2.5-flash',
+202:             contents=prompt,
+203:             config=types.GenerateContentConfig(
+204:                 response_mime_type="application/json",
+205:             ),
+206:         )
+207:         data = json.loads(response.text)
+208:         result = {}
+209:         for item in data:
+210:             result[str(item["idx"])] = {
+211:                 "label": item.get("label", ""),
+212:                 "description": item.get("description", "")
+213:             }
+214:         return result
+215:     except Exception as e:
+216:         import logging
+217:         logging.getLogger(__name__).error(f"Lỗi khi dự đoán nhãn bằng Gemini: {e}")
+218:         return {}
+219: 
+220: 
+221: def _cleanup_export_file(path: str) -> None:
+222:     """Xóa file export tạm sau khi đã trả về cho người dùng."""
+223:     try:
+224:         if os.path.exists(path):
+225:             os.remove(path)
+226:     except Exception:
+227:         pass  # Không làm gián đoạn request nếu xóa thất bại
+228: 
+229: 
+230: # ─── Endpoints ────────────────────────────────────────────────────
+231: 
+232: @router.delete("/{form_id}")
+233: async def delete_form(
+234:     form_id: str,
+235:     db: AsyncSession = Depends(get_db),
+236:     current_user: User = Depends(get_current_user),
+237: ):
+238:     """Soft-delete: Đặt is_active=False thay vì xóa hẳn khỏi DB."""
+239:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+240:     form = result.scalars().first()
+241:     if not form:
+242:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+243: 
+244:     form.is_active = False
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:43:34Z
+Completed At: 2026-07-30T05:43:34Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23946
+Showing lines 590 to 613
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+590:         select(FormSubmission)
+591:         .where(
+592:             FormSubmission.form_id == form_id,
+593:             FormSubmission.user_id == str(current_user.id),
+594:         )
+595:         .order_by(FormSubmission.created_at.desc())
+596:     )
+597:     submissions = result.scalars().all()
+598:     return submissions
+599: 
+600: 
+601: @router.get("/{form_id}")
+602: async def get_form_detail(
+603:     form_id: str,
+604:     db: AsyncSession = Depends(get_db),
+605: ):
+606:     """Lấy chi tiết một biểu mẫu theo ID."""
+607:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+608:     form = result.scalars().first()
+609:     if not form:
+610:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+611:     return form
+612: 
+613: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:43:46Z
+Completed At: 2026-07-30T05:43:46Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23946
+Showing lines 190 to 250
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+190:   {{"idx": 2, "label": "cmnd", "description": "Số CMND/CCCD"}}
+191: ]
+192: Lưu ý:
+193: - "label" phải viết bằng tiếng Việt không dấu, nối nhau bằng dấu gạch dưới (snake_case).
+194: - "description" là mô tả ngắn gọn, dễ hiểu để hướng dẫn người dùng nhập liệu.
+195: - Phải trả về ĐÚNG định dạng JSON mảng, không thêm bất kỳ text nào khác.
+196: 
+197: --- NỘI DUNG BIỂU MẪU ---
+198: {full_text}
+199: """
+200:         response = client.models.generate_content(
+201:             model='gemini-2.5-flash',
+202:             contents=prompt,
+203:             config=types.GenerateContentConfig(
+204:                 response_mime_type="application/json",
+205:             ),
+206:         )
+207:         data = json.loads(response.text)
+208:         result = {}
+209:         for item in data:
+210:             result[str(item["idx"])] = {
+211:                 "label": item.get("label", ""),
+212:                 "description": item.get("description", "")
+213:             }
+214:         return result
+215:     except Exception as e:
+216:         import logging
+217:         logging.getLogger(__name__).error(f"Lỗi khi dự đoán nhãn bằng Gemini: {e}")
+218:         return {}
+219: 
+220: 
+221: def _cleanup_export_file(path: str) -> None:
+222:     """Xóa file export tạm sau khi đã trả về cho người dùng."""
+223:     try:
+224:         if os.path.exists(path):
+225:             os.remove(path)
+226:     except Exception:
+227:         pass  # Không làm gián đoạn request nếu xóa thất bại
+228: 
+229: 
+230: # ─── Endpoints ────────────────────────────────────────────────────
+231: 
+232: @router.delete("/{form_id}")
+233: async def delete_form(
+234:     form_id: str,
+235:     db: AsyncSession = Depends(get_db),
+236:     current_user: User = Depends(get_current_user),
+237: ):
+238:     """Soft-delete: Đặt is_active=False thay vì xóa hẳn khỏi DB."""
+239:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+240:     form = result.scalars().first()
+241:     if not form:
+242:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+243: 
+244:     form.is_active = False
+245:     await db.commit()
+246:     return {"message": "Đã ẩn biểu mẫu (soft delete)", "form_id": form_id}
+247: 
+248: 
+249: @router.post("/{form_id}/save-mapping")
+250: async def save_mapping(
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:43:53Z
+Completed At: 2026-07-30T05:43:53Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 613
+Total Bytes: 23946
+Showing lines 1 to 20
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Query
+2: from sqlalchemy.ext.asyncio import AsyncSession
+3: from sqlalchemy.future import select
+4: from typing import List, Dict, Any, Optional
+5: import json
+6: import os
+7: import uuid
+8: import re
+9: import subprocess
+10: from datetime import datetime
+11: from fastapi.responses import FileResponse
+12: from backend.app.core.database import get_db
+13: from backend.app.models.form_schema import FormSchema
+14: from backend.app.models.form_submission import FormSubmission
+15: from backend.app.core.security import get_current_user
+16: from backend.app.models.user import User
+17: from pydantic import BaseModel
+18: import mammoth
+19: import docx
+20: from docx.oxml.ns import qn
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:46:40Z
+Completed At: 2026-07-30T05:46:40Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 614
+Total Bytes: 23971
+Showing lines 280 to 320
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+280:         raise HTTPException(status_code=500, detail=f"Lỗi khi bơm tag vào DOCX: {str(e)}")
+281: 
+282: 
+283: @router.post("/export/{form_id}")
+284: async def export_form(
+285:     form_id: str,
+286:     payload: dict,
+287:     background_tasks: BackgroundTasks,
+288:     db: AsyncSession = Depends(get_db),
+289:     current_user: User = Depends(get_current_user),
+290:     format: str = Query(default="docx", pattern="^(docx|pdf)$"),
+291: ):
+292:     """
+293:     Sinh file từ biểu mẫu với dữ liệu người dùng cung cấp.
+294:     - Validation: Kiểm tra các field required phải được điền đủ.
+295:     - Format: Hỗ trợ ?format=docx (mặc định) hoặc ?format=pdf.
+296:     - Lưu lịch sử xuất đơn vào bảng form_submissions.
+297:     - Tự động dọn dẹp file tạm sau khi trả về.
+298:     """
+299:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+300:     form = result.scalars().first()
+301:     if not form:
+302:         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+303: 
+304:     # ── 1. Validation: kiểm tra các trường required ──────────────
+305:     if isinstance(form.fields, list):
+306:         missing = [
+307:             f.get("name", f.get("key", "?"))
+308:             for f in form.fields
+309:             if f.get("required", False) and not payload.get(f.get("key", ""))
+310:         ]
+311:         if missing:
+312:             raise HTTPException(
+313:                 status_code=422,
+314:                 detail=f"Thiếu các trường bắt buộc: {', '.join(missing)}"
+315:             )
+316: 
+317:     template_path = f"backend/data/templates/{form_id}.docx"
+318:     if not os.path.exists(template_path):
+319:         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+320: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:46:46Z
+Completed At: 2026-07-30T05:46:47Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 614
+Total Bytes: 23971
+Showing lines 450 to 520
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+450:         zones = []
+451:         total_blanks = blank_idx[0] - 1
+452:         
+453:         for page_num, page in enumerate(pdf_doc):
+454:             for i in range(1, total_blanks + 1):
+455:                 search_tag = tag_map.get(i, f"[[B{i}]]")
+456:                 rects = page.search_for(search_tag)
+457:                 for rect in rects:
+458:                     zones.append({
+459:                         "idx": i,
+460:                         "page": page_num + 1,
+461:                         "x": rect.x0,
+462:                         "y": rect.y0,
+463:                         "width": rect.width,
+464:                         "height": rect.height
+465:                     })
+466:                     # Xoá chữ này (vẽ hình chữ nhật trắng đè lên)
+467:                     page.draw_rect(rect, color=(1,1,1), fill=(1,1,1))
+468:         
+469:         # Đọc text từ docx đã đánh dấu để gọi AI
+470:         full_text_parts = []
+471:         for p in doc.paragraphs:
+472:             if p.text:
+473:                 full_text_parts.append(p.text)
+474:         for table in doc.tables:
+475:             for row in table.rows:
+476:                 for cell in row.cells:
+477:                     for p in cell.paragraphs:
+478:                         if p.text:
+479:                             full_text_parts.append(p.text)
+480:         
+481:         full_text = "\\n".join(full_text_parts)
+482:         predictions = _predict_labels(full_text)
+483:         
+484:         # Merge AI predictions vào zones
+485:         for z in zones:
+486:             pred = predictions.get(str(z["idx"]))
+487:             if pred:
+488:                 z["suggested_label"] = pred["label"]
+489:                 z["suggested_description"] = pred["description"]
+490: 
+491:         # Render mỗi trang thành ảnh (PNG) thay vì trả về PDF để tránh lỗi react-pdf
+492:         page_images = []
+493:         for page_num, page in enumerate(pdf_doc):
+494:             pix = page.get_pixmap(dpi=150)
+495:             img_filename = f"{temp_id}_page_{page_num+1}.png"
+496:             img_path = os.path.join("data", "uploaded", img_filename)
+497:             pix.save(img_path)
+498:             page_images.append(f"/api/v1/forms/preview/{img_filename}")
+499:             
+500:         pdf_doc.close()
+501:         
+502:         # Clean up file rác
+503:         for p in [marked_docx_path, pdf_path]:
+504:             if os.path.exists(p):
+505:                 os.remove(p)
+506:                 
+507:         return {
+508:             "preview_url": page_images[0] if page_images else "",
+509:             "page_images": page_images,
+510:             "zones": zones,
+511:             "total_blanks": total_blanks,
+512:             "temp_id": temp_id,
+513:         }
+514:     except Exception as e:
+515:         raise HTTPException(status_code=500, detail=f"Lỗi phân tích DOCX bằng PDF: {str(e)}")
+516: 
+517: 
+518: @router.get("/preview/{filename}")
+519: async def get_preview_pdf(filename: str):
+520:     file_path = os.path.join("data", "uploaded", filename)
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:52:26Z
+Completed At: 2026-07-30T05:52:26Z
+File Path: `file:///d:/TerraLegalAI/patch_forms_2.py`
+Total Lines: 154
+Total Bytes: 4659
+Showing lines 1 to 100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import os
+2: 
+3: filepath = r"d:\TerraLegalAI\backend\app\api\v1\forms.py"
+4: with open(filepath, "r", encoding="utf-8") as f:
+5:     content = f.read()
+6: 
+7: # Modify analyze-docx
+8: old_cleanup = """
+9:         # Clean up file rác
+10:         for p in [raw_path, marked_docx_path, pdf_path]:
+11:             if os.path.exists(p):
+12:                 os.remove(p)
+13:                 
+14:         preview_url = f"/api/v1/forms/preview/{temp_id}_final.pdf"
+15:         
+16:         return {
+17:             "preview_url": preview_url,
+18:             "zones": zones,
+19:             "total_blanks": total_blanks,
+20:         }
+21: """
+22: new_cleanup = """
+23:         # Clean up file rác (KHÔNG xóa raw_path để create-visual dùng lại)
+24:         for p in [marked_docx_path, pdf_path]:
+25:             if os.path.exists(p):
+26:                 os.remove(p)
+27:                 
+28:         preview_url = f"/api/v1/forms/preview/{temp_id}_final.pdf"
+29:         
+30:         return {
+31:             "preview_url": preview_url,
+32:             "zones": zones,
+33:             "total_blanks": total_blanks,
+34:             "temp_id": temp_id,
+35:         }
+36: """
+37: content = content.replace(old_cleanup, new_cleanup)
+38: 
+39: # Update FormVisualCreate to accept temp_id and mapping
+40: old_visual_create = """class FormVisualCreate(BaseModel):
+41:     name: str
+42:     procedure_type: str
+43:     description: str = ""
+44:     legal_basis: str | None = None
+45:     html_template: str
+46:     fields: list[FormField]"""
+47: 
+48: new_visual_create = """class FormVisualCreate(BaseModel):
+49:     name: str
+50:     procedure_type: str
+51:     description: str = ""
+52:     legal_basis: str | None = None
+53:     temp_id: str
+54:     mapping: dict[str, str]
+55:     fields: list[FormField]"""
+56: content = content.replace(old_visual_create, new_visual_create)
+57: 
+58: # Modify create_visual_form
+59: old_create = """@router.post("/create-visual")
+60: async def create_visual_form(
+61:     data: FormVisualCreate,
+62:     db: AsyncSession = Depends(get_db),
+63:     current_user: User = Depends(get_current_user),
+64: ):
+65:     form_fields = []
+66:     for f in data.fields:
+67:         form_fields.append({
+68:             "key": f.key,
+69:             "name": f.name,
+70:             "description": f.description,
+71:             "type": f.type,
+72:             "required": f.required,
+73:         })
+74: 
+75:     form = FormSchema(
+76:         name=data.name,
+77:         procedure_type=data.procedure_type,
+78:         fields=form_fields,
+79:         html_template=data.html_template,
+80:         description=data.description,
+81:         legal_basis=data.legal_basis,
+82:         created_by=str(current_user.id),
+83:     )
+84: 
+85:     db.add(form)
+86:     await db.commit()
+87:     await db.refresh(form)
+88: 
+89:     return {"message": "Tạo biểu mẫu thành công", "form_id": str(form.id)}"""
+90: 
+91: new_create = """@router.post("/create-visual")
+92: async def create_visual_form(
+93:     data: FormVisualCreate,
+94:     db: AsyncSession = Depends(get_db),
+95:     current_user: User = Depends(get_current_user),
+96: ):
+97:     form_fields = []
+98:     for f in data.fields:
+99:         form_fields.append({
+100:             "key": f.key,
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T05:55:48Z
+Completed At: 2026-07-30T05:55:49Z
+File Path: `file:///d:/TerraLegalAI/patch_forms.py`
+Total Lines: 135
+Total Bytes: 4638
+Showing lines 1 to 100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import re
+2: import os
+3: 
+4: filepath = r"d:\TerraLegalAI\backend\app\api\v1\forms.py"
+5: 
+6: with open(filepath, "r", encoding="utf-8") as f:
+7:     content = f.read()
+8: 
+9: # Pattern to find analyze_docx function
+10: start_str = '@router.post("/analyze-docx")'
+11: end_str = '@router.post("/create-visual")'
+12: 
+13: start_idx = content.find(start_str)
+14: end_idx = content.find(end_str)
+15: 
+16: if start_idx == -1 or end_idx == -1:
+17:     print("Could not find bounds")
+18:     exit(1)
+19: 
+20: new_analyze = '''@router.post("/analyze-docx")
+21: async def analyze_docx(file: UploadFile = File(...)):
+22:     """
+23:     Phân tích DOCX, tạo tag ẩn, convert sang PDF bằng LibreOffice,
+24:     dùng PyMuPDF bóc tách tọa độ X,Y,W,H và xóa tag ẩn trên PDF.
+25:     """
+26:     try:
+27:         temp_id = f"temp_{uuid.uuid4().hex}"
+28:         temp_dir = os.path.join("data", "uploaded")
+29:         os.makedirs(temp_dir, exist_ok=True)
+30:         raw_path = os.path.join(temp_dir, f"{temp_id}_raw.docx")
+31:         
+32:         with open(raw_path, "wb") as f:
+33:             f.write(await file.read())
+34:             
+35:         doc = docx.Document(raw_path)
+36:         blank_pattern = re.compile(r'(?:\\.(?:&nbsp;| )*){3,}|(?:_(?:&nbsp;| )*){3,}|(?:-(?:&nbsp;| )*){5,}')
+37:         
+38:         blank_idx = [1]
+39:         def process_runs(runs):
+40:             for run in runs:
+41:                 if not run.text:
+42:                     continue
+43:                 new_text = ""
+44:                 last_end = 0
+45:                 for match in blank_pattern.finditer(run.text):
+46:                     start, end = match.span()
+47:                     new_text += run.text[last_end:start]
+48:                     # Chèn tag ẩn: VD [[B1]]
+49:                     new_text += f"[[B{blank_idx[0]}]]"
+50:                     blank_idx[0] += 1
+51:                     last_end = end
+52:                 new_text += run.text[last_end:]
+53:                 run.text = new_text
+54: 
+55:         for p in doc.paragraphs:
+56:             process_runs(p.runs)
+57:         for table in doc.tables:
+58:             for row in table.rows:
+59:                 for cell in row.cells:
+60:                     for p in cell.paragraphs:
+61:                         process_runs(p.runs)
+62:                         
+63:         marked_docx_path = os.path.join(temp_dir, f"{temp_id}_marked.docx")
+64:         doc.save(marked_docx_path)
+65:         
+66:         # Gọi LibreOffice convert sang PDF
+67:         pdf_dir = temp_dir
+68:         subprocess.run(
+69:             ["libreoffice", "--headless", "--convert-to", "pdf", 
+70:              "--outdir", pdf_dir, marked_docx_path],
+71:             check=True, timeout=60,
+72:             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+73:         )
+74:         
+75:         pdf_path = os.path.join(pdf_dir, f"{temp_id}_marked.pdf")
+76:         
+77:         # Mở PDF bằng PyMuPDF
+78:         import fitz
+79:         pdf_doc = fitz.open(pdf_path)
+80:         zones = []
+81:         total_blanks = blank_idx[0] - 1
+82:         
+83:         for page_num, page in enumerate(pdf_doc):
+84:             for i in range(1, total_blanks + 1):
+85:                 rects = page.search_for(f"[[B{i}]]")
+86:                 for rect in rects:
+87:                     zones.append({
+88:                         "idx": i,
+89:                         "page": page_num + 1,
+90:                         "x": rect.x0,
+91:                         "y": rect.y0,
+92:                         "width": rect.width,
+93:                         "height": rect.height
+94:                     })
+95:                     # Xoá chữ này (vẽ hình chữ nhật trắng đè lên)
+96:                     page.draw_rect(rect, color=(1,1,1), fill=(1,1,1))
+97:         
+98:         # Lưu file PDF hoàn thiện
+99:         final_pdf_path = os.path.join(temp_dir, f"{temp_id}_final.pdf")
+100:         pdf_doc.save(final_pdf_path)
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+================================================================================
+Created At: 2026-07-30T06:02:11Z
+Completed At: 2026-07-30T06:02:12Z
+File Path: `file:///d:/TerraLegalAI/backend/app/api/v1/forms.py`
+Total Lines: 187
+Total Bytes: 6914
+Showing lines 1 to 187
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: # -*- coding: utf-8 -*-
+2: from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Query
+3: from sqlalchemy.ext.asyncio import AsyncSession
+4: from sqlalchemy.future import select
+5: from typing import List, Dict, Any, Optional
+6: import json
+7: import os
+8: import uuid
+9: import re
+10: import subprocess
+11: from datetime import datetime
+12: from fastapi.responses import FileResponse
+13: from backend.app.core.database import get_db
+14: from backend.app.models.form_schema import FormSchema
+15: from backend.app.models.form_submission import FormSubmission
+16: from backend.app.core.security import get_current_user
+17: from backend.app.models.user import User
+18: from pydantic import BaseModel
+19: import mammoth
+20: import docx
+21: from docx.oxml.ns import qn
+22: from docx.enum.text import WD_ALIGN_PARAGRAPH
+23: from lxml import etree
+24: from docxtpl import DocxTemplate
+25: from google import genai
+26: from google.genai import types
+27: from backend.app.core.config import settings
+28: 
+29: router = APIRouter(prefix="/forms", tags=["Forms"])
+30: 
+31: class FormSchemaCreate(BaseModel):
+32:     name: str
+33:     procedure_type: str
+34:     fields: List[Dict[str, Any]]
+35:     html_template: str | None = None
+36:     description: str | None = None
+37:     legal_basis: str | None = None
+38: 
+39: class FormVisualField(BaseModel):
+40:     name: str
+41:     description: str = ""
+42:     required: bool = True
+43:     type: str = "string"
+44:     key: str | None = None  # alias for name
+45: 
+46: class FormVisualCreate(BaseModel):
+47:     name: str
+48:     procedure_type: str
+49:     description: str = ""
+50:     legal_basis: str | None = None
+51:     html_template: str = ""
+52:     temp_id: str = ""
+53:     mapping: Dict[str, str] = {}
+54:     fields: List[FormVisualField]
+55: 
+56: class SaveMappingRequest(BaseModel):
+57:     
+58:     mapping: Dict[str, str]  # VD: { "1": "ho_ten", "2": "cmnd" }
+59: 
+60: 
+61: @router.get("/")
+62: async def get_all_forms(
+63:     procedure_type: Optional[str] = None,
+64:     db: AsyncSession = Depends(get_db)
+65: ):
+66:     
+67:     stmt = select(FormSchema).where(FormSchema.is_active == True)
+68:     if procedure_type:
+69:         stmt = stmt.where(FormSchema.procedure_type == procedure_type)
+70:     result = await db.execute(stmt)
+71:     forms = result.scalars().all()
+72:     return forms
+73: 
+74: @router.post("/upload")
+75: async def upload_form(
+76:     json_file: UploadFile = File(...),
+77:     docx_file: UploadFile = File(...),
+78:     db: AsyncSession = Depends(get_db),
+79:     current_user: User = Depends(get_current_user),
+80: ):
+81:     
+82:     try:
+83:         content = await json_file.read()
+84:         data = json.loads(content)
+85: 
+86:         # Kim tra validation c bn
+87:         required_keys = {"name", "procedure_type", "fields"}
+88:         if not required_keys.issubset(data.keys()):
+89:             raise HTTPException(
+90:                 status_code=400,
+91:                 detail=f"Thiu cc trng bt buc: {required_keys - data.keys()}"
+92:             )
+93: 
+94:         form = FormSchema(
+95:             name=data["name"],
+96:             procedure_type=data["procedure_type"],
+97:             fields=data["fields"],
+98:             html_template=data.get("html_template"),
+99:             description=data.get("description"),
+100:             legal_basis=data.get("legal_basis"),
+101:             mapping=data.get("mapping"),
+102:             created_by=str(current_user.id),
+103:         )
+104:         db.add(form)
+105:         await db.commit()
+106:         await db.refresh(form)
+107: 
+108:         # Lu file DOCX gc vo th mc templates
+109:         template_dir = "backend/data/templates"
+110:         os.makedirs(template_dir, exist_ok=True)
+111:         template_path = os.path.join(template_dir, f"{form.id}.docx")
+112:         docx_bytes = await docx_file.read()
+113:         with open(template_path, "wb") as f:
+114:             f.write(docx_bytes)
+115: 
+116:         # Nu JSON  km sn mapping  t ng bm tag Jinja2 vo DOCX ngay
+117:         if data.get("mapping"):
+118:             _inject_jinja_tags(template_path, data["mapping"])
+119: 
+120:         return {
+121:             "message": "Ti ln biu mu thnh cng",
+122:             "form_id": str(form.id),
+123:             "has_mapping": bool(data.get("mapping")),
+124:         }
+125:     except json.JSONDecodeError:
+126:         raise HTTPException(status_code=400, detail="File JSON khng hp l")
+127:     except HTTPException:
+128:         raise
+129:     except Exception as e:
+130:         raise HTTPException(status_code=500, detail=str(e))
+131: 
+132: 
+133: #  Helper: Bm tag Jinja2 vo DOCX 
+134: 
+135: def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
+136:     Gi Gemini API  suy lun nhn cho cc trng [[B1]], [[B2]] da trn ng cnh.
+137: Bn l chuyn gia s ha biu mu hnh chnh. 
+138: Di y l ni dung ca mt biu mu c cha cc ch trng c nh du bng tag [[B1]], [[B2]], v.v.
+139: Nhim v ca bn l da vo ng cnh xung quanh mi ch trng, hy on xem ngi dng cn in thng tin g vo ch trng .
+140: Tr v kt qu  dng mng JSON gm cc object c cu trc:
+141: [
+142:   {{"idx": 1, "label": "ho_ten", "description": "H v tn ngi np"}},
+143:   {{"idx": 2, "label": "cmnd", "description": "S CMND/CCCD"}}
+144: ]
+145: Lu :
+146: - "label" phi vit bng ting Vit khng du, ni nhau bng du gch di (snake_case).
+147: - "description" l m t ngn gn, d hiu  hng dn ngi dng nhp liu.
+148: - Phi tr v NG nh dng JSON mng, khng thm bt k text no khc.
+149: 
+150: --- NI DUNG BIU MU ---
+151: {full_text}
+152: Xa file export tm sau khi  tr v cho ngi dng.Soft-delete: t is_active=False thay v xa hn khi DB.
+153:     Lu nh x (blank_idx -> field_key) sau khi admin gn nhn trn UI.
+154:     Backend t ng bm tag Jinja2 vo file DOCX tng ng.
+155:     
+156:     Sinh file t biu mu vi d liu ngi dng cung cp.
+157:     - Validation: Kim tra cc field required phi c in .
+158:     - Format: H tr ?format=docx (mc nh) hoc ?format=pdf.
+159:     - Lu lch s xut n vo bng form_submissions.
+160:     - T ng dn dp file tm sau khi tr v.
+161:     
+162:     Phn tch DOCX, to tag n, convert sang PDF bng LibreOffice,
+163:     dng PyMuPDF bc tch ta  X,Y,W,H v xa tag n trn PDF.
+164:     result = await db.execute(
+165:         select(FormSubmission)
+166:         .where(
+167:             FormSubmission.form_id == form_id,
+168:             FormSubmission.user_id == str(current_user.id),
+169:         )
+170:         .order_by(FormSubmission.created_at.desc())
+171:     )
+172:     submissions = result.scalars().all()
+173:     return submissions
+174: 
+175: 
+176: @router.get("/{form_id}")
+177: async def get_form_detail(
+178:     form_id: str,
+179:     db: AsyncSession = Depends(get_db),
+180: ):
+181:     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
+182:     form = result.scalars().first()
+183:     if not form:
+184:         raise HTTPException(status_code=404, detail="Khng tm thy biu mu")
+185:     return form
+186: 
+187: 
+The above content shows the entire, complete file contents of the requested file.
+
+================================================================================

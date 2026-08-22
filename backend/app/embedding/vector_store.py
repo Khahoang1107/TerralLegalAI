@@ -15,7 +15,7 @@ from qdrant_client.models import (
     MatchAny,
     PointStruct,
     VectorParams,
-    SearchRequest,
+
 )
 
 from backend.app.document_processing.chunker import DocumentChunk

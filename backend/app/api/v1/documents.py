@@ -156,8 +156,12 @@ def _index_document_sync(
 
             except Exception as e:
                 logger.error(f"❌ Indexing failed for {document_id}: {e}", exc_info=True)
-                doc.status = "error"
-                await session.commit()
+                await session.rollback()
+                # Re-fetch doc after rollback since session state was cleared
+                doc = await session.scalar(select(Document).where(Document.id == uuid.UUID(document_id)))
+                if doc:
+                    doc.status = "error"
+                    await session.commit()
 
         await engine.dispose()
 

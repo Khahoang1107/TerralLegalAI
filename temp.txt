@@ -1,0 +1,30 @@
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc
+
+TỜ KHAI THUẾ SỬ DỤNG ĐẤT PHI NÔNG NGHIỆP
+(Áp dụng đối với hộ gia đình, cá nhân trong trường hợp chuyển nhượng, thừa kế, tặng cho quyền sử dụng đất)
+[01] Kỳ tính thuế: Năm{{ truong_1 }}
+[02] Lần đầu:   {{ truong_2 }}[03] Bổ sung lần thứ:{{ truong_3 }}
+I. PHẦN NGƯỜI NỘP THUẾ TỰ KHAI
+1. Người nộp thuế:{{ truong_4 }}{{ truong_5 }}{{ truong_6 }}{{ truong_7 }}
+[04] Họ và tên: {{ truong_8 }}
+[05] Ngày/tháng/năm sinh: {{ truong_9 }}
+[06] Mã số thuế: {{ truong_10 }}{{ truong_11 }}{{ truong_12 }}
+[07] Số CMND/Hộ chiếu/CCCD (trường hợp cá nhân chưa có MST): {{ truong_13 }}
+[08] Ngày cấp: {{ truong_14 }}{{ truong_15 }}[09] Nơi cấp: {{ truong_16 }}.
+[10] Địa chỉ cư trú: 
+[10.1] Số nhà:{{ truong_17 }}[10.2] Đường/phố: {{ truong_18 }}..
+[10.3] Tổ/thôn:{{ truong_19 }} [10.4] Phường/xã/thị trấn: {{ truong_20 }}..
+[10.5] Quận/huyện: {{ truong_21 }} {{ truong_22 }}[10.6] Tỉnh/Thành phố: 
+[11] Địa chỉ nhận thông báo thuế: {{ truong_23 }}
+ [12] Điện thoại: {{ truong_24 }}
+2. Đại lý thuế (nếu có):{{ truong_25 }}{{ truong_26 }}{{ truong_27 }}
+[13] Tên đại lý thuế:{{ truong_28 }}{{ truong_29 }}
+[14] Mã số thuế: {{ truong_30 }}{{ truong_31 }}{{ truong_32 }}{{ truong_33 }}{{ truong_34 }}
+[15] Hợp đồng đại lý thuế: Số:{{ truong_35 }}Ngày:{{ truong_36 }}
+3. Thửa đất chịu thuế: 
+[16] Thông tin người sử dụng đất:
+[17] Địa chỉ thửa đất: 
+[17.1] Số nhà:{{ truong_37 }}[17.2] Đường/ phố:{{ truong_38 }}
+[17.3] Tổ/thôn: {{ truong_39 }}. [17.4] Phường/xã/thị trấn: {{ truong_40 }}

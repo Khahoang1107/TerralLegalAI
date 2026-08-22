@@ -2,7 +2,8 @@
 
 import axios from "axios";
 import { useEffect, useState, useRef, useCallback } from "react";
-import dynamic from "next/dynamic";
+import PdfFormPreview from "@/components/PdfFormPreview";
+import FormReviewModal from "@/components/chat/FormReviewModal";
 import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import {
   AlertCircle, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
@@ -12,7 +13,7 @@ import {
   Trash2, UploadCloud, User, Users, X,
 } from "lucide-react";
 
-const PdfFormPreview = dynamic(() => import("@/components/PdfFormPreview"), { ssr: false });
+
 
 type Role = "citizen" | "admin";
 type AdminView = "overview" | "documents" | "tests" | "reports" | "forms";
@@ -294,7 +295,8 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const [renamingConversation, setRenamingConversation] = useState<Conversation | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [conversationActionLoading, setConversationActionLoading] = useState(false);
-  const [messages, setMessages] = useState<Array<{role: "user" | "ai", text: string, time: string, citations?: Citation[]}>>([]);
+  const [messages, setMessages] = useState<Array<{role: "user" | "ai", text: string, time: string, citations?: Citation[], form_completed?: boolean, form_id?: string, collected_data?: Record<string, string>}>>([]);
+  const [reviewingForm, setReviewingForm] = useState<{form_id: string, collected_data: Record<string, string>} | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const procedureFilter = "all";
@@ -404,8 +406,15 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
         role: "ai", 
         text: response.answer, 
         time: timeString,
-        citations: response.citations
+        citations: response.citations,
+        form_completed: response.form_completed,
+        form_id: response.form_id,
+        collected_data: response.collected_data
       }]);
+      
+      if (response.form_completed && response.form_id) {
+        setReviewingForm({ form_id: response.form_id, collected_data: response.collected_data || {} });
+      }
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { 
@@ -524,6 +533,17 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
                         <span className="answer-time">{msg.time}</span>
                       </div>
                     )}
+                    {msg.form_completed && msg.form_id && (
+                      <div style={{ marginTop: "16px" }}>
+                        <button 
+                          className="primary-button" 
+                          onClick={() => setReviewingForm({ form_id: msg.form_id!, collected_data: msg.collected_data || {} })}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8 }}
+                        >
+                          <FileCheck2 size={18} /> Xem & Chỉnh sửa biểu mẫu
+                        </button>
+                      </div>
+                    )}
                     {msg.role === "user" && <time>{msg.time}</time>}
                   </div>
                 </article>
@@ -567,6 +587,15 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
           </div>
         </main>
       </div>
+
+      {reviewingForm && (
+        <FormReviewModal 
+          formId={reviewingForm.form_id} 
+          initialData={reviewingForm.collected_data} 
+          onClose={() => setReviewingForm(null)} 
+        />
+      )}
+
       {renamingConversation && (
         <div className="dialog-backdrop" onClick={() => setRenamingConversation(null)}>
           <form className="rename-dialog" onSubmit={handleRenameConversation} onClick={(e) => e.stopPropagation()}>
@@ -647,12 +676,20 @@ function FormsView() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
+  const [showManualUploadModal, setShowManualUploadModal] = useState(false);
+  const [manualJsonFile, setManualJsonFile] = useState<File | null>(null);
+  const [manualDocxFile, setManualDocxFile] = useState<File | null>(null);
+  const [manualUploading, setManualUploading] = useState(false);
+
   const [editingForm, setEditingForm] = useState<any | null>(null);
   const [editName, setEditName] = useState("");
   const [editProcedure, setEditProcedure] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editFields, setEditFields] = useState<any[]>([]);
+  const [editPdfUrl, setEditPdfUrl] = useState<string | null>(null);
+  const [editPdfLoading, setEditPdfLoading] = useState(false);
 
   // Visual Builder State
   const [step, setStep] = useState(1);
@@ -664,6 +701,57 @@ function FormsView() {
   const [mergeCount, setMergeCount] = useState(0);
   const [labeledCount, setLabeledCount] = useState(0);
   const [activeZoneIdx, setActiveZoneIdx] = useState<string | null>(null);
+  const [isPredictingAI, setIsPredictingAI] = useState(false);
+
+  const handleAIPredict = async () => {
+    if (!previewData?.temp_id) return;
+    setIsPredictingAI(true);
+    try {
+      const userLabels: Record<string, string> = {};
+      Object.entries(labeledSnapshot).forEach(([idxStr, fieldId]) => {
+        if (fieldData[fieldId] && fieldData[fieldId].trim() !== "") {
+          userLabels[idxStr] = fieldData[fieldId];
+        }
+      });
+
+      const res = await formsApi.aiPredict(previewData.temp_id, editableZones, userLabels);
+      setEditableZones(res.zones);
+      
+      const newLabeledSnapshot = { ...labeledSnapshot };
+      const newFieldOrder = [...fieldOrderSnapshot];
+      const newFieldData = { ...fieldData };
+      let addedCount = 0;
+      let fieldCounter = manualCounterRef.current;
+      
+      res.zones.forEach((z: any) => {
+        if (z.suggested_label) {
+          const idxStr = String(z.idx);
+          if (!newLabeledSnapshot[idxStr] && !labeledZonesRef.current[idxStr]) {
+            const fieldId = `field_${fieldCounter++}`;
+            newLabeledSnapshot[idxStr] = fieldId;
+            labeledZonesRef.current[idxStr] = fieldId;
+            newFieldOrder.push(fieldId);
+            fieldOrderRef.current.push(fieldId);
+            newFieldData[fieldId] = z.suggested_label;
+            addedCount++;
+          } else if (newLabeledSnapshot[idxStr] && !newFieldData[newLabeledSnapshot[idxStr]]) {
+            newFieldData[newLabeledSnapshot[idxStr]] = z.suggested_label;
+          }
+        }
+      });
+      manualCounterRef.current = fieldCounter;
+      setLabeledSnapshot(newLabeledSnapshot);
+      setFieldOrderSnapshot(newFieldOrder);
+      setLabeledCount(Object.keys(newLabeledSnapshot).length);
+      setFieldData(newFieldData);
+      
+      showToast(`AI đã gợi ý và tự động chọn ${addedCount} vùng!`, "success");
+    } catch (err) {
+      showToast("Lỗi khi gọi AI phân tích", "error");
+    } finally {
+      setIsPredictingAI(false);
+    }
+  };
 
   useEffect(() => {
     modeRef.current = mode;
@@ -726,8 +814,9 @@ function FormsView() {
         break;
       }
     }
-    if (!targetField && fieldOrderRef.current.length > 0) {
-      targetField = fieldOrderRef.current[0];
+    if (!targetField) {
+      targetField = `field_${manualCounterRef.current++}`;
+      fieldOrderRef.current.push(targetField);
     }
     if (targetField) {
       items.forEach(item => {
@@ -742,9 +831,20 @@ function FormsView() {
     setFieldOrderSnapshot([...fieldOrderRef.current]);
   };
 
-  const uniqueFieldsSnapshot = Array.from(new Set(
+  let uniqueFieldsSnapshot = Array.from(new Set(
     fieldOrderSnapshot.filter(fid => Object.values(labeledSnapshot).includes(fid))
   ));
+  uniqueFieldsSnapshot.sort((a, b) => {
+    const idxA = Object.entries(labeledSnapshot).find(([, v]) => v === a)?.[0] || "";
+    const idxB = Object.entries(labeledSnapshot).find(([, v]) => v === b)?.[0] || "";
+    const zoneA = editableZones?.find((z: any) => String(z.idx) === idxA);
+    const zoneB = editableZones?.find((z: any) => String(z.idx) === idxB);
+    if (!zoneA || !zoneB) return 0;
+    if (zoneA.page !== zoneB.page) return zoneA.page - zoneB.page;
+    const yDiff = zoneA.y - zoneB.y;
+    if (Math.abs(yDiff) > 10) return yDiff;
+    return zoneA.x - zoneB.x;
+  });
   const labeledList = uniqueFieldsSnapshot.map((fid, i) => ({
     id: fid,
     num: i + 1,
@@ -757,6 +857,10 @@ function FormsView() {
   const [fieldData, setFieldData] = useState<Record<string, string>>({});
   const [fieldRequired, setFieldRequired] = useState<Record<string, boolean>>({});
   const [fieldDesc, setFieldDesc] = useState<Record<string, string>>({});
+    const [fieldType, setFieldType] = useState<Record<string, string>>({});
+  const [fieldGroupKey, setFieldGroupKey] = useState<Record<string, string>>({});
+  const [fieldDependsOn, setFieldDependsOn] = useState<Record<string, string>>({});
+  const [fieldRequireOneOfGroup, setFieldRequireOneOfGroup] = useState<Record<string, string>>({});
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   const fetchForms = useCallback(async () => {
@@ -772,6 +876,27 @@ function FormsView() {
 
   useEffect(() => { fetchForms(); }, [fetchForms]);
 
+
+  const handleManualUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualJsonFile || !manualDocxFile) {
+      showToast("Vui lòng chọn cả file JSON và DOCX", "error");
+      return;
+    }
+    setManualUploading(true);
+    try {
+      await formsApi.uploadForm(manualJsonFile, manualDocxFile);
+      showToast("Tạo biểu mẫu bằng cấu hình thành công!", "success");
+      resetModal();
+      fetchForms();
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || "Lỗi khi tạo biểu mẫu";
+      showToast(typeof msg === "string" ? msg : JSON.stringify(msg), "error");
+    } finally {
+      setManualUploading(false);
+    }
+  };
+
   const handleAnalyzeDocx = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docxFile) return showToast("Vui lòng chọn file Word (.docx)", "error");
@@ -784,22 +909,27 @@ function FormsView() {
       
       const initialLabeledZones: Record<string, string> = {};
       const initialFieldOrder: string[] = [];
+      const initialFieldData: Record<string, string> = {};
       let fieldCounter = 1;
 
       // Auto-assign labels for zones with suggestions
       zones.forEach((zone: any) => {
-        const suggestion = zone.suggested_label || zone.ai_label;
+        const suggestion = zone.suggested_label || zone.ai_label || zone.fallback_name;
         if (suggestion) {
           const fieldId = `field_${9000 + fieldCounter++}`;
           initialLabeledZones[String(zone.idx)] = fieldId;
           initialFieldOrder.push(fieldId);
+          initialFieldData[fieldId] = suggestion;
         }
       });
+      manualCounterRef.current = 9000 + fieldCounter;
 
       labeledZonesRef.current = initialLabeledZones;
       fieldOrderRef.current = initialFieldOrder;
-      setFieldData({});
+      setFieldData(initialFieldData);
       setLabeledCount(Object.keys(initialLabeledZones).length);
+      setLabeledSnapshot({ ...initialLabeledZones });
+      setFieldOrderSnapshot([...initialFieldOrder]);
       setStep(2);
       
       const autoCount = Object.keys(initialLabeledZones).length;
@@ -821,7 +951,7 @@ function FormsView() {
       return;
     }
     const allFilled = labeledList.every(f => {
-      const zone = previewData?.zones?.find((z: any) => String(z.idx) === f.blankIdx);
+      const zone = editableZones?.find((z: any) => String(z.idx) === f.blankIdx);
       const suggested = zone?.suggested_label || zone?.ai_label || "";
       const val = fieldData[f.id] !== undefined ? fieldData[f.id] : suggested;
       return val && val.trim() !== "";
@@ -832,22 +962,36 @@ function FormsView() {
     }
     setUploading(true);
     const fields = labeledList.map(f => {
-      const zone = previewData?.zones?.find((z: any) => String(z.idx) === f.blankIdx);
+      const zone = editableZones?.find((z: any) => String(z.idx) === f.blankIdx);
       const isCheckbox = zone?.field_type === 'checkbox';
       const suggested = zone?.suggested_label || zone?.ai_label || "";
       const finalName = fieldData[f.id] !== undefined ? fieldData[f.id] : (suggested || f.id);
       
-      const isRequired = fieldRequired[f.id] !== undefined ? fieldRequired[f.id] : true;
       const customDesc = fieldDesc[f.id];
-      const defaultDesc = isCheckbox ? `Có hay không: ${finalName}?` : `Nhập thông tin cho ${finalName}`;
+      const resolvedType = fieldType[f.id] || (isCheckbox ? 'checkbox' : 'text');
+      const defaultDesc = resolvedType === 'checkbox' ? `Có hay không: ${finalName}?` : `Nhập thông tin cho ${finalName}`;
       
-      return {
+      const base: any = {
         key: f.id,
         name: finalName,
         description: customDesc || defaultDesc,
-        required: isRequired,
-        type: isCheckbox ? "boolean" : "string"
+        required: fieldRequired[f.id] !== false,
+        type: resolvedType === 'checkbox' ? 'boolean' : resolvedType === 'digit_group' ? 'digit_group' : 'string'
       };
+      
+      if (fieldDependsOn[f.id]) {
+        base.depends_on = { field: fieldDependsOn[f.id], value: true };
+      }
+      if (fieldRequireOneOfGroup[f.id]?.trim()) {
+        base.require_one_of_group = fieldRequireOneOfGroup[f.id].trim();
+      }
+      
+      if (resolvedType === 'digit_group') {
+        const gk = (fieldGroupKey[f.id] || finalName || f.id).trim();
+        base.group_key = gk;
+        base.digit_index = parseInt(String(zone?.idx)) || 0;
+      }
+      return base;
     });
     const payload = {
       name: formName,
@@ -871,6 +1015,8 @@ function FormsView() {
 
   const resetModal = () => {
     setShowModal(false);
+    setShowModeSelector(false);
+    setShowManualUploadModal(false);
     setStep(1);
     setDocxFile(null);
     setPreviewData(null);
@@ -894,12 +1040,30 @@ function FormsView() {
     }
   };
 
-  const openEdit = (form: any) => {
+  const openEdit = async (form: any) => {
     setEditingForm(form);
     setEditName(form.name);
     setEditProcedure(form.procedure_type);
     setEditDesc(form.description || "");
     setEditFields(form.fields || []);
+    
+    if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
+    setEditPdfUrl(null);
+    setEditPdfLoading(true);
+    try {
+      const blob = await formsApi.previewPdf(form.id, {}, "admin");
+      setEditPdfUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      console.error("Lỗi tải bản xem trước", e);
+    } finally {
+      setEditPdfLoading(false);
+    }
+  };
+
+  const closeEdit = () => {
+    setEditingForm(null);
+    if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
+    setEditPdfUrl(null);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -910,9 +1074,14 @@ function FormsView() {
     }
     setEditSaving(true);
     try {
-      await formsApi.updateForm(editingForm.id, { name: editName, procedure_type: editProcedure, description: editDesc });
+      await formsApi.updateForm(editingForm.id, { 
+        name: editName, 
+        procedure_type: editProcedure, 
+        description: editDesc, 
+        fields: editFields 
+      });
       showToast("Cập nhật biểu mẫu thành công!", "success");
-      setEditingForm(null);
+      closeEdit();
       fetchForms();
     } catch {
       showToast("Lỗi cập nhật biểu mẫu", "error");
@@ -953,7 +1122,7 @@ function FormsView() {
           <p>Tải lên file Word và AI sẽ tự động nhận diện khoảng trống.</p>
         </div>
         <div>
-          <button className="primary-button fit" onClick={() => setShowModal(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <button type="button" className="primary-button fit" onClick={() => setShowModeSelector(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <UploadCloud size={17} /> Thêm Biểu mẫu thông minh
           </button>
         </div>
@@ -988,12 +1157,13 @@ function FormsView() {
 
       {/* Edit Form Dialog */}
       {editingForm && (
-        <div className="dialog-backdrop" onClick={() => setEditingForm(null)}>
-          <form className="rename-dialog" style={{ maxWidth: 480, width: "95%" }} onSubmit={handleUpdate} onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-head">
-              <h2>Chỉnh sửa Biểu mẫu</h2>
-              <button type="button" className="icon-button" onClick={() => setEditingForm(null)}><X size={18} /></button>
-            </div>
+        <div className="dialog-backdrop" onClick={closeEdit}>
+          <form className="rename-dialog" style={{ width: 1200, maxWidth: "100%", display: "flex", flexDirection: "row", gap: 20 }} onSubmit={handleUpdate} onClick={(e) => e.stopPropagation()}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <div className="dialog-head">
+                <h2>Chỉnh sửa Biểu mẫu</h2>
+                <button type="button" className="icon-button mobile-only" onClick={closeEdit}><X size={18} /></button>
+              </div>
             <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
               Tên Biểu mẫu *
               <input value={editName} onChange={(e) => setEditName(e.target.value)} style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
@@ -1009,25 +1179,16 @@ function FormsView() {
             
             <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>Nhãn biểu mẫu (Fields)</span>
-              <div style={{ maxHeight: "250px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6, padding: "10px", display: "flex", flexDirection: "column", gap: 12, background: "#f8fafc" }}>
+              <div style={{ maxHeight: "350px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6, padding: "10px", display: "flex", flexDirection: "column", gap: 12, background: "#f8fafc" }}>
                 {editFields.length === 0 && <span style={{ fontSize: 12, color: "#64748b" }}>Không có nhãn nào.</span>}
                 {editFields.map((field, idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px", background: "white", border: "1px solid #cbd5e1", borderRadius: 6 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input 
-                        value={field.name} 
-                        onChange={(e) => {
-                          const newFields = [...editFields];
-                          newFields[idx].name = e.target.value;
-                          setEditFields(newFields);
-                        }}
-                        placeholder="Tên hiển thị"
-                        style={{ flex: 1, border: "1px solid #cbd5e1", padding: "6px", borderRadius: 4, fontSize: 12 }} 
-                      />
-                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer" }}>
+                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px", background: "white", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>ID: {field.id || `field_${idx}`}</span>
+                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
                         <input 
                           type="checkbox" 
-                          checked={field.required}
+                          checked={field.required !== false}
                           onChange={(e) => {
                             const newFields = [...editFields];
                             newFields[idx].required = e.target.checked;
@@ -1036,24 +1197,202 @@ function FormsView() {
                         /> Bắt buộc
                       </label>
                     </div>
-                    <input 
-                      value={field.description} 
-                      onChange={(e) => {
-                        const newFields = [...editFields];
-                        newFields[idx].description = e.target.value;
-                        setEditFields(newFields);
-                      }}
-                      placeholder="Mô tả / Hướng dẫn (thêm [TU_DONG_DIEN] nếu muốn AI tự động tra cứu KTT)"
-                      style={{ border: "1px solid #cbd5e1", padding: "6px", borderRadius: 4, fontSize: 12 }} 
-                    />
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Tên hiển thị</span>
+                      <input 
+                        value={field.name || ""} 
+                        onChange={(e) => {
+                          const newFields = [...editFields];
+                          newFields[idx].name = e.target.value;
+                          setEditFields(newFields);
+                        }}
+                        placeholder="VD: Họ và tên"
+                        style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 13 }} 
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Loại dữ liệu</span>
+                        <select 
+                          value={field.type || "text"}
+                          onChange={(e) => {
+                            const newFields = [...editFields];
+                            newFields[idx].type = e.target.value;
+                            setEditFields(newFields);
+                          }}
+                          style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 12, background: "#fff", cursor: "pointer" }}
+                        >
+                          <option value="text">📝 Văn bản (Text)</option>
+                          <option value="checkbox">☑ Hộp kiểm (Checkbox)</option>
+                          <option value="digit_group">🔢 Dãy số (Digit Group)</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Tự động điền (AI)</span>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", padding: "6px 8px", background: field.is_auto_fill ? "#ecfdf5" : "#f1f5f9", borderRadius: 4, border: field.is_auto_fill ? "1px solid #10b981" : "1px solid #e2e8f0" }}>
+                          <input 
+                            type="checkbox" 
+                            checked={field.is_auto_fill || false}
+                            onChange={(e) => {
+                              const newFields = [...editFields];
+                              newFields[idx].is_auto_fill = e.target.checked;
+                              setEditFields(newFields);
+                            }}
+                          /> Bật tính năng
+                        </label>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Logic phân nhánh (Chỉ hỏi khi...)</span>
+                        <select
+                          value={typeof field.depends_on === 'object' && field.depends_on !== null ? field.depends_on.field : (field.depends_on || "")}
+                          onChange={(e) => {
+                            const newFields = [...editFields];
+                            if (e.target.value) {
+                              newFields[idx].depends_on = { field: e.target.value, value: true };
+                            } else {
+                              newFields[idx].depends_on = null;
+                            }
+                            setEditFields(newFields);
+                          }}
+                          style={{ border: "1px solid #d8b4fe", background: "#faf5ff", color: "#6b21a8", padding: "6px 8px", borderRadius: 4, fontSize: 12, cursor: "pointer" }}
+                        >
+                          <option value="">Không có (Luôn hỏi)</option>
+                          {editFields.filter((_, i) => i !== idx).map((otherField, i2) => {
+                            const tgtName = otherField.name || otherField.id;
+                            return (
+                              <option key={i2} value={tgtName}>
+                                Chỉ hỏi khi điền: {tgtName}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Nhóm bắt buộc 1 trong 2</span>
+                        <input 
+                          value={field.require_one_of_group || ""}
+                          onChange={(e) => {
+                            const newFields = [...editFields];
+                            newFields[idx].require_one_of_group = e.target.value;
+                            setEditFields(newFields);
+                          }}
+                          placeholder="VD: giayto1"
+                          style={{ border: "1px solid #fca5a5", background: "#fef2f2", padding: "6px 8px", borderRadius: 4, fontSize: 12 }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Mô tả / Điều kiện bổ sung</span>
+                      <input 
+                        value={field.description || ""} 
+                        onChange={(e) => {
+                          const newFields = [...editFields];
+                          newFields[idx].description = e.target.value;
+                          setEditFields(newFields);
+                        }}
+                        placeholder="VD: Chỉ cần điền nếu không có MST (hoặc thêm [TU_DONG_DIEN])"
+                        style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 12 }} 
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="dialog-actions">
-              <button type="button" className="secondary-button" onClick={() => setEditingForm(null)}>Hủy</button>
+            <div className="dialog-actions" style={{ marginTop: "auto" }}>
+              <button type="button" className="secondary-button" onClick={closeEdit}>Hủy</button>
               <button type="submit" className="primary-button" disabled={editSaving}>{editSaving ? "Đang lưu..." : "Lưu thay đổi"}</button>
+            </div>
+            </div>
+
+            {/* Form Preview Section */}
+            <div className="doc-preview-shell" style={{ flex: 1, minHeight: 400, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}>
+                <button type="button" className="icon-button" onClick={closeEdit} title="Đóng"><X size={18} /></button>
+              </div>
+              {editPdfLoading ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>Đang tải bản xem trước...</div>
+              ) : editPdfUrl ? (
+                <iframe src={editPdfUrl} style={{ width: "100%", height: "100%", border: "none" }} />
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, color: "#94a3b8" }}>Không thể tải bản xem trước.</div>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+      
+      {/* Mode Selector Dialog */}
+      {showModeSelector && (
+        <div className="dialog-backdrop" onClick={resetModal}>
+          <div className="rename-dialog" style={{ maxWidth: 480, width: "95%" }} onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-head">
+              <h2>Chọn chế độ Tạo Biểu mẫu</h2>
+              <button type="button" className="icon-button" onClick={resetModal}><X size={18} /></button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 10 }}>
+              <button 
+                onClick={() => { setShowModeSelector(false); setShowModal(true); }}
+                style={{ padding: 16, border: "1px solid #cfd7d1", borderRadius: 8, background: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = "#4f46e5"}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = "#cfd7d1"}
+              >
+                <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 15, marginBottom: 4 }}>✨ Tạo bằng AI (Trực quan)</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>Tải file Word trống lên, AI sẽ tự động quét khoảng trống và gợi ý tên trường. (Khuyên dùng)</div>
+              </button>
+
+              <button 
+                onClick={() => { setShowModeSelector(false); setShowManualUploadModal(true); }}
+                style={{ padding: 16, border: "1px solid #cfd7d1", borderRadius: 8, background: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = "#4f46e5"}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = "#cfd7d1"}
+              >
+                <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 15, marginBottom: 4 }}>⚙ Tải lên cấu hình (Nâng cao)</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>Tải lên trực tiếp file JSON Schema và file Word mẫu đã cắm sẵn thẻ Jinja2. Dành cho Admin pro.</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Upload Modal */}
+      {showManualUploadModal && (
+        <div className="dialog-backdrop" onClick={resetModal}>
+          <form className="rename-dialog" style={{ maxWidth: 500, width: "95%" }} onSubmit={handleManualUpload} onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-head">
+              <h2>Tạo biểu mẫu từ File cấu hình</h2>
+              <button type="button" className="icon-button" onClick={resetModal}><X size={18} /></button>
+            </div>
+            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+              Vui lòng tải lên cả File JSON chứa cấu trúc field và File DOCX mẫu tương ứng. 
+              <br/>
+              <a href="/sample_form.json" download style={{ color: "#4f46e5", textDecoration: "underline", fontWeight: 600 }}>Tải file JSON mẫu tại đây</a>
+            </p>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
+              1. File cấu hình Schema (.json) *
+              <input type="file" accept=".json" onChange={(e) => setManualJsonFile(e.target.files?.[0] || null)} style={{ border: "1px solid #cfd7d1", padding: "10px", borderRadius: 6, fontSize: 14 }} required />
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
+              2. File Word mẫu (.docx) *
+              <input type="file" accept=".docx" onChange={(e) => setManualDocxFile(e.target.files?.[0] || null)} style={{ border: "1px solid #cfd7d1", padding: "10px", borderRadius: 6, fontSize: 14 }} required />
+            </label>
+
+            <div className="dialog-actions">
+              <button type="button" className="secondary-button" onClick={resetModal} disabled={manualUploading}>Hủy</button>
+              <button type="submit" className="primary-button" disabled={manualUploading}>
+                {manualUploading ? "Đang xử lý..." : "Tạo biểu mẫu"}
+              </button>
             </div>
           </form>
         </div>
@@ -1172,7 +1511,7 @@ function FormsView() {
                           Nhập Tên trường dữ liệu cho {labeledList.length} nhãn đã chọn:
                         </h4>
                         {labeledList.map(field => {
-                          const zone = previewData?.zones?.find((z: any) => String(z.idx) === field.blankIdx);
+                          const zone = editableZones?.find((z: any) => String(z.idx) === field.blankIdx);
                           const isCheckbox = zone?.field_type === 'checkbox';
                           // BUG 1 FIX: Get the AI suggested label for this zone
                           const suggestedLabel = zone?.suggested_label || zone?.ai_label || "";
@@ -1218,25 +1557,75 @@ function FormsView() {
                                     style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px" }}
                                   />
                                   
-                                  {/* Advanced Field Options */}
-                                  <div style={{ display: "flex", gap: "12px", marginTop: "10px", alignItems: "center" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
-                                      <input 
-                                        type="checkbox" 
-                                        checked={fieldRequired[field.id] !== false}
-                                        onChange={(e) => setFieldRequired({ ...fieldRequired, [field.id]: e.target.checked })}
+                                                                    {/* Advanced Field Options */}
+                                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+                                    <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0 }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={fieldRequired[field.id] !== false}
+                                          onChange={(e) => setFieldRequired({ ...fieldRequired, [field.id]: e.target.checked })}
+                                        />
+                                        Bắt buộc điền
+                                      </label>
+                                      
+                                      <select
+                                        value={fieldType[field.id] || (editableZones?.find((z: any) => String(z.idx) === field.blankIdx)?.field_type === 'checkbox' ? 'checkbox' : 'text')}
+                                        onChange={(e) => setFieldType({ ...fieldType, [field.id]: e.target.value })}
+                                        style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px", cursor: "pointer", flexShrink: 0 }}
+                                      >
+                                        <option value="text">📝 Text</option>
+                                        <option value="checkbox">☑ Checkbox</option>
+                                        <option value="digit_group">🔢 Digit Group</option>
+                                      </select>
+                                      
+                                      {(fieldType[field.id] === 'digit_group') && (
+                                          <input
+                                            type="text"
+                                            placeholder="Group Key (vd: ma_so_thue)"
+                                            value={fieldGroupKey[field.id] || ""}
+                                            onChange={(e) => setFieldGroupKey({ ...fieldGroupKey, [field.id]: e.target.value })}
+                                            style={{ width: 150, padding: "3px 8px", fontSize: "0.75rem", border: "1px solid #f59e0b", borderRadius: "4px", background: "#fffbeb" }}
+                                          />
+                                      )}
+                                    </div>
+                                    <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                                      <input
+                                        type="text"
+                                        placeholder="Mô tả / Điều kiện (vd: Chỉ điền khi không có MST)"
+                                        value={fieldDesc[field.id] || ""}
+                                        onChange={(e) => setFieldDesc({ ...fieldDesc, [field.id]: e.target.value })}
+                                        style={{ flex: 1, minWidth: 100, padding: "4px 8px", fontSize: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px" }}
                                       />
-                                      Bắt buộc điền
-                                    </label>
-                                    <input 
-                                      type="text" 
-                                      placeholder="Mô tả / Điều kiện (vd: Chỉ điền khi không có MST)"
-                                      value={fieldDesc[field.id] || ""}
-                                      onChange={(e) => setFieldDesc({ ...fieldDesc, [field.id]: e.target.value })}
-                                      style={{ flex: 1, padding: "4px 8px", fontSize: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px" }}
-                                    />
+                                      
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                        <Sparkles size={14} color="#a855f7" />
+                                        <select
+                                          value={fieldDependsOn[field.id] || ""}
+                                          onChange={(e) => setFieldDependsOn({ ...fieldDependsOn, [field.id]: e.target.value })}
+                                          style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d8b4fe", borderRadius: "4px", background: "#faf5ff", color: "#6b21a8", cursor: "pointer", maxWidth: 200 }}
+                                        >
+                                          <option value="">Không có logic nhánh (Luôn hỏi)</option>
+                                          {labeledList.filter(l => l.id !== field.id).map(l => {
+                                            const tgtName = fieldData[l.id] !== undefined ? fieldData[l.id] : (editableZones?.find((z: any) => String(z.idx) === l.blankIdx)?.suggested_label || l.id);
+                                            return <option key={l.id} value={tgtName}>Chỉ hỏi khi điền: {tgtName}</option>;
+                                          })}
+                                        </select>
+                                      </div>
+                                      
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingLeft: 6, borderLeft: "1px dashed #cbd5e1" }}>
+                                        <span style={{ fontSize: "0.75rem", color: "#b91c1c", fontWeight: 600 }}>Hoặc:</span>
+                                        <input
+                                          type="text"
+                                          placeholder="Nhóm 1 trong 2 (vd: giayto1)"
+                                          value={fieldRequireOneOfGroup[field.id] || ""}
+                                          onChange={(e) => setFieldRequireOneOfGroup({ ...fieldRequireOneOfGroup, [field.id]: e.target.value })}
+                                          style={{ width: 140, padding: "3px 8px", fontSize: "0.75rem", border: "1px solid #fca5a5", borderRadius: "4px", background: "#fef2f2" }}
+                                          title="Nhập chung tên nhóm cho MST và CCCD để bắt buộc khách phải điền ít nhất 1 loại"
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-
                                   {/* BUG 1 FIX: Show zone number in a more visible way to correlate with PDF */}
                                   {field.blankIdx && (
                                     <div style={{ fontSize: "0.7rem", color: "#9ca3af", marginTop: 6 }}>
@@ -1265,6 +1654,41 @@ function FormsView() {
                         <p style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: 16 }}>
                           Nhấp vào vùng trống trên PDF bên phải để dán nhãn. Sau khi xong, nhấn "Tiếp theo".
                         </p>
+
+                        <button
+                          type="button"
+                          onClick={handleAIPredict}
+                          disabled={isPredictingAI || editableZones.length === 0}
+                          style={{
+                            width: "100%",
+                            padding: "10px 16px",
+                            marginBottom: 20,
+                            borderRadius: "8px",
+                            border: "none",
+                            background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                            color: "#fff",
+                            fontWeight: 600,
+                            fontSize: "0.9rem",
+                            cursor: (isPredictingAI || editableZones.length === 0) ? "not-allowed" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            opacity: (isPredictingAI || editableZones.length === 0) ? 0.7 : 1,
+                            boxShadow: "0 4px 6px -1px rgba(99, 102, 241, 0.2)"
+                          }}
+                        >
+                          {isPredictingAI ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Đang nhờ AI phân tích...
+                            </>
+                          ) : (
+                            <>
+                              🪄 Phân tích tự động bằng AI
+                            </>
+                          )}
+                        </button>
                         {labeledCount > 0 && (
                           <>
                             <div style={{ fontSize: "0.8rem", color: "#059669", background: "#ecfdf5", padding: "8px 12px", borderRadius: 6, marginBottom: 12 }}>
@@ -1322,16 +1746,28 @@ function FormsView() {
                     {(() => {
                       const currentFieldOrder = step === 3 ? fieldOrderSnapshot : fieldOrderRef.current;
                       const currentLabeledZones = step === 3 ? labeledSnapshot : labeledZonesRef.current;
-                      const uniqueFields = Array.from(new Set(currentFieldOrder.filter(fid => Object.values(currentLabeledZones).includes(fid))));
+                      let uniqueFields = Array.from(new Set(currentFieldOrder.filter(fid => Object.values(currentLabeledZones).includes(fid))));
+                      
+                      uniqueFields.sort((a, b) => {
+                        const idxA = Object.entries(currentLabeledZones).find(([, v]) => v === a)?.[0] || "";
+                        const idxB = Object.entries(currentLabeledZones).find(([, v]) => v === b)?.[0] || "";
+                        const zoneA = editableZones?.find((z: any) => String(z.idx) === idxA);
+                        const zoneB = editableZones?.find((z: any) => String(z.idx) === idxB);
+                        if (!zoneA || !zoneB) return 0;
+                        if (zoneA.page !== zoneB.page) return zoneA.page - zoneB.page;
+                        const yDiff = zoneA.y - zoneB.y;
+                        if (Math.abs(yDiff) > 10) return yDiff;
+                        return zoneA.x - zoneB.x;
+                      });
                       
                       const fieldDetailsMap = uniqueFields.reduce((acc, fid, i) => {
                         const zoneIdx = Object.entries(currentLabeledZones).find(([, v]) => v === fid)?.[0] || "";
-                        const zone = previewData?.zones?.find((z: any) => String(z.idx) === zoneIdx);
+                        const zone = editableZones?.find((z: any) => String(z.idx) === zoneIdx);
                         const suggestedLabel = zone?.suggested_label || zone?.ai_label || "";
                         
                         acc[fid] = { 
                           num: i + 1, 
-                          label: fieldData[fid] !== undefined ? fieldData[fid] : suggestedLabel 
+                          label: fieldData[fid as string] !== undefined ? fieldData[fid as string] : suggestedLabel 
                         };
                         return acc;
                       }, {} as Record<string, { num: number; label: string }>);
