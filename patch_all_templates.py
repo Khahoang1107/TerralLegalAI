@@ -36,25 +36,30 @@ def patch_docx(path, out_path):
         """Handle <mc:AlternateContent> blocks containing wps:wsp shapes."""
         alt = m.group(0)
 
-        # Only care about the MST squares (check Fallback for size reference)
-        if '17.35pt' not in alt and 'cx="220345"' not in alt and 'cx="220' not in alt:
-            # Quick-check: wps squares have cx≈220345 (≈17.35pt×12700 EMU/pt = 220345 EMU)
+        # MST digit squares: 17.35pt (cx=220345 EMU)
+        is_mst_square = '17.35pt' in alt or 'cx="220345"' in alt or 'cx="220' in alt
+        # Checkbox squares: ~11.3pt (cx=144145 EMU) — just need noFill, no text injection
+        is_checkbox = 'cx="144145"' in alt
+
+        if not is_mst_square and not is_checkbox:
             return alt
 
-        group, idx = next_slot()
-        text_para = make_text_para(group, idx)
+        if is_mst_square:
+            group, idx = next_slot()
+            text_para = make_text_para(group, idx)
 
-        # 1. In mc:Choice: make shape transparent + inject text
+        # 1. In mc:Choice: make shape transparent (+ inject text for MST only)
         def patch_choice(cm):
             c = cm.group(0)
-            # Remove white fill → noFill
+            # Remove white fill → noFill (for all shape types)
             c = re.sub(r'<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>', '<a:noFill/>', c)
-            # Inject into txbxContent
-            c = re.sub(
-                r'<w:txbxContent>.*?</w:txbxContent>',
-                f'<w:txbxContent>{text_para}</w:txbxContent>',
-                c, flags=re.DOTALL
-            )
+            if is_mst_square:
+                # Inject digit jinja tag into txbxContent
+                c = re.sub(
+                    r'<w:txbxContent>.*?</w:txbxContent>',
+                    f'<w:txbxContent>{text_para}</w:txbxContent>',
+                    c, flags=re.DOTALL
+                )
             return c
 
         alt = re.sub(r'<mc:Choice.*?</mc:Choice>', patch_choice, alt, flags=re.DOTALL)
@@ -65,15 +70,17 @@ def patch_docx(path, out_path):
             rect = re.sub(r'\bfillcolor="[^"]*"', '', rect)
             rect = re.sub(r'\bfilled="[^"]*"', '', rect)
             rect = rect.replace('<v:rect ', '<v:rect filled="f" ')
-            rect = re.sub(
-                r'<w:txbxContent>.*?</w:txbxContent>',
-                f'<w:txbxContent>{text_para}</w:txbxContent>',
-                rect, flags=re.DOTALL
-            )
+            if is_mst_square:
+                rect = re.sub(
+                    r'<w:txbxContent>.*?</w:txbxContent>',
+                    f'<w:txbxContent>{text_para}</w:txbxContent>',
+                    rect, flags=re.DOTALL
+                )
             return rect
 
         alt = re.sub(r'<v:rect\b.*?</v:rect>', patch_fallback_rect, alt, flags=re.DOTALL)
         return alt
+
 
     def patch_naked_rect(m):
         """Handle naked <v:rect> elements (not inside mc:AlternateContent)."""

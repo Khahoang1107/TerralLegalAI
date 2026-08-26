@@ -336,22 +336,37 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                     if field.get("name") == "ma_so_thue" or field.get("name") == "ma_so_thue_dai_ly_thue":
                         normalized[field.get("name")] = val
 
-    # Hardcode for TerraLegal AI templates with 13 tax squares
-    if "ma_so_thue" in normalized and isinstance(normalized["ma_so_thue"], str):
-        mst = normalized["ma_so_thue"].ljust(13)
-        for i in range(13):
-            normalized[f"mst_1_{i}"] = mst[i].strip()
-            normalized[f"mst_3_{i}"] = mst[i].strip()
-        normalized["ma_so_thue"] = "" # Hide the original string from the template marker
-            
-    if "ma_so_thue_dai_ly_thue" in normalized and isinstance(normalized["ma_so_thue_dai_ly_thue"], str):
-        mst = normalized["ma_so_thue_dai_ly_thue"].ljust(13)
-        for i in range(13):
-            normalized[f"mst_2_{i}"] = mst[i].strip()
-        normalized["ma_so_thue_dai_ly_thue"] = "" # Hide the original string from the template marker
+    # ── Fill mst_N_I variables for templates with digit-box MST fields ──────────
+    # Group 1,3 = ma_so_thue (người nộp thuế)
+    # Group 2,4 = mst_dai_ly / ma_so_thue_dai_ly_thue (đại lý thuế)
+    # Some templates use all 6 groups for both, so we fill all permutations.
+
+    def _fill_mst_groups(mst_str: str, *group_nums):
+        digits = (mst_str or "").strip().ljust(13)
+        for g in group_nums:
+            for i in range(13):
+                ch = digits[i] if i < len(digits) else " "
+                normalized[f"mst_{g}_{i}"] = ch.strip()
+
+    # Source 1: ma_so_thue (NNT) → groups 1, 3, 5
+    mst_nnt = normalized.get("ma_so_thue") or normalized.get("mst_nnt") or ""
+    if mst_nnt and isinstance(mst_nnt, str):
+        _fill_mst_groups(mst_nnt, 1, 3, 5)
+        normalized["ma_so_thue"] = ""  # hide raw string from template
+
+    # Source 2: mst_dai_ly / ma_so_thue_dai_ly_thue → groups 2, 4, 6
+    mst_dl = (normalized.get("mst_dai_ly") or
+              normalized.get("ma_so_thue_dai_ly_thue") or
+              normalized.get("mst_dl") or "")
+    if mst_dl and isinstance(mst_dl, str):
+        _fill_mst_groups(mst_dl, 2, 4, 6)
+        for k in ("mst_dai_ly", "ma_so_thue_dai_ly_thue", "mst_dl"):
+            if k in normalized:
+                normalized[k] = ""
 
     print("DEBUG NORMALIZED:", normalized)
     return normalized
+
 
 
 #     Endpoints                                                     
