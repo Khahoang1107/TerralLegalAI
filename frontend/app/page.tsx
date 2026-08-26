@@ -4,6 +4,7 @@ import axios from "axios";
 import { useEffect, useState, useRef, useCallback } from "react";
 import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
+import UsersView from "@/components/admin/UsersView";
 import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import {
   AlertCircle, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
@@ -16,7 +17,7 @@ import {
 
 
 type Role = "citizen" | "admin";
-type AdminView = "overview" | "documents" | "tests" | "reports" | "forms";
+type AdminView = "overview" | "documents" | "tests" | "reports" | "forms" | "users";
 
 function uniqueCitations(citations: Citation[]) {
   return Array.from(
@@ -317,17 +318,39 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
     try {
       const detail = await conversationApi.getConversation(id);
       setCurrentConversationId(detail.id);
-      setMessages(detail.messages.map(m => ({
-        role: m.role as "user" | "ai",
-        text: m.content,
-        time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        citations: m.citations
-      })));
+      
+      // Check if this conversation has a completed form
+      const formState = (detail as any).form_state;
+      const isFormComplete = formState?.is_complete === true;
+      const formId = formState?.active_form_id;
+      const collectedData = formState?.collected_data || {};
+      
+      const mappedMessages = detail.messages.map((m, idx, arr) => {
+        // Find index of last assistant message
+        let lastAssistantIdx = -1;
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (arr[i].role === 'assistant') { lastAssistantIdx = i; break; }
+        }
+        const isLastAssistantMsg = m.role === 'assistant' && idx === lastAssistantIdx;
+        return {
+          role: m.role as "user" | "ai",
+          text: m.content,
+          time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          citations: m.citations,
+          // Inject form info into last assistant message if form is complete
+          form_completed: (isLastAssistantMsg && isFormComplete) ? true : (m as any).form_completed,
+          form_id: (isLastAssistantMsg && isFormComplete) ? formId : (m as any).form_id,
+          collected_data: (isLastAssistantMsg && isFormComplete) ? collectedData : (m as any).collected_data,
+        };
+      });
+      
+      setMessages(mappedMessages);
       setSidebar(false);
     } catch (err) {
       console.error(err);
     }
   };
+
 
   const handleNewChat = () => {
     setCurrentConversationId(null);
@@ -857,10 +880,12 @@ function FormsView() {
   const [fieldData, setFieldData] = useState<Record<string, string>>({});
   const [fieldRequired, setFieldRequired] = useState<Record<string, boolean>>({});
   const [fieldDesc, setFieldDesc] = useState<Record<string, string>>({});
-    const [fieldType, setFieldType] = useState<Record<string, string>>({});
+  const [fieldType, setFieldType] = useState<Record<string, string>>({});
   const [fieldGroupKey, setFieldGroupKey] = useState<Record<string, string>>({});
   const [fieldDependsOn, setFieldDependsOn] = useState<Record<string, string>>({});
   const [fieldRequireOneOfGroup, setFieldRequireOneOfGroup] = useState<Record<string, string>>({});
+  const [fieldAutoFill, setFieldAutoFill] = useState<Record<string, boolean>>({});
+  const [fieldAskBeforeFill, setFieldAskBeforeFill] = useState<Record<string, boolean>>({});
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   const fetchForms = useCallback(async () => {
@@ -976,7 +1001,9 @@ function FormsView() {
         name: finalName,
         description: customDesc || defaultDesc,
         required: fieldRequired[f.id] !== false,
-        type: resolvedType === 'checkbox' ? 'boolean' : resolvedType === 'digit_group' ? 'digit_group' : 'string'
+        type: resolvedType === 'checkbox' ? 'boolean' : resolvedType === 'digit_group' ? 'digit_group' : 'string',
+        is_auto_fill: fieldAutoFill[f.id] || false,
+        ai_ask_first: fieldAskBeforeFill[f.id] || false
       };
       
       if (fieldDependsOn[f.id]) {
@@ -1242,6 +1269,21 @@ function FormsView() {
                               setEditFields(newFields);
                             }}
                           /> Bật tính năng
+                        </label>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Hỏi xác nhận (Có/Không)</span>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", padding: "6px 8px", background: field.ai_ask_first ? "#fff7ed" : "#f1f5f9", borderRadius: 4, border: field.ai_ask_first ? "1px solid #f97316" : "1px solid #e2e8f0" }}>
+                          <input 
+                            type="checkbox" 
+                            checked={field.ai_ask_first || false}
+                            onChange={(e) => {
+                              const newFields = [...editFields];
+                              newFields[idx].ai_ask_first = e.target.checked;
+                              setEditFields(newFields);
+                            }}
+                          /> Hỏi trước khi điền
                         </label>
                       </div>
                     </div>
@@ -1579,6 +1621,24 @@ function FormsView() {
                                         <option value="digit_group">🔢 Digit Group</option>
                                       </select>
                                       
+                                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0, padding: "2px 6px", background: fieldAutoFill[field.id] ? "#ecfdf5" : "#f1f5f9", borderRadius: "4px", border: fieldAutoFill[field.id] ? "1px solid #10b981" : "1px solid #e2e8f0" }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={fieldAutoFill[field.id] || false}
+                                          onChange={(e) => setFieldAutoFill({ ...fieldAutoFill, [field.id]: e.target.checked })}
+                                        />
+                                        Tự động điền (AI)
+                                      </label>
+                                      
+                                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0, padding: "2px 6px", background: fieldAskBeforeFill[field.id] ? "#fff7ed" : "#f1f5f9", borderRadius: "4px", border: fieldAskBeforeFill[field.id] ? "1px solid #f97316" : "1px solid #e2e8f0" }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={fieldAskBeforeFill[field.id] || false}
+                                          onChange={(e) => setFieldAskBeforeFill({ ...fieldAskBeforeFill, [field.id]: e.target.checked })}
+                                        />
+                                        Hỏi xác nhận trước (Có/Không)
+                                      </label>
+                                      
                                       {(fieldType[field.id] === 'digit_group') && (
                                           <input
                                             type="text"
@@ -1880,7 +1940,9 @@ function AdminPortal({ userName, onLogout }: { userName: string; onLogout: () =>
           </nav>
           <p className="section-label">Hệ thống</p>
           <nav>
-            <button><Users size={18} />Người dùng</button>
+            <button className={view === "users" ? "active" : ""} onClick={() => { setView("users"); setSidebar(false); }}>
+              <Users size={18} />Người dùng
+            </button>
             <button><Settings size={18} />Cấu hình</button>
           </nav>
           <div className="admin-version"><ShieldCheck size={17} /><span><strong>TerraLegalAI</strong><small>Phiên bản 0.1.0</small></span></div>
@@ -1892,6 +1954,7 @@ function AdminPortal({ userName, onLogout }: { userName: string; onLogout: () =>
           {view === "forms" && <FormsView />}
           {view === "tests" && <TestsView />}
           {view === "reports" && <ReportsView />}
+          {view === "users" && <UsersView />}
         </main>
       </div>
     </div>

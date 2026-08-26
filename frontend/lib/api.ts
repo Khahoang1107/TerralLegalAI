@@ -46,6 +46,11 @@ export interface Message {
 
 export interface ConversationDetail extends Conversation {
   messages: Message[];
+  form_state?: {
+    is_complete: boolean;
+    active_form_id?: string;
+    collected_data?: Record<string, string>;
+  };
 }
 
 // ─── Document types ────────────────────────────────────────────────

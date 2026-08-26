@@ -5,8 +5,42 @@ __pycache__/
 node_modules/
 .idea/
 .vscode/
+
+# Logs
 *.log
+backend/dev.*.log
+
+# PDF / temp export files
 data/**/*.pdf
 data/*.pdf
+data/exports/
+backend/data/exports/
+
+# Test & debug scripts (root level)
+test*.py
+debug_*.py
+check_*.py
+capture_*.py
+scratch_*.py
+print_*.py
+force_*.py
+list_*.py
+update_*.py
+fix_legal_fields.py
+patch_docx_squares_inline.py
+
+# Test output files (root level)
+test*.docx
+test*.pdf
+*.bak
+xml_out.txt
+page.html
+field_output*.json
+forms_output.json
+
+# Schema dev files (root)
+schema_to_khai_thue_phi_nong_nghiep.json
+
+# Misc
 implementation_plan.md
 RAG_Land_QA_System.md

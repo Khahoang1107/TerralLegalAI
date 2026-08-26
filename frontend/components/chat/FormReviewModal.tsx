@@ -123,24 +123,56 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
                     {field.type === 'boolean' ? (
                       <input
                         type="checkbox"
-                        checked={
-                          formData[field.uiKey] === 'true' || formData[field.uiKey] === 'có' || formData[field.uiKey] === 'x' || formData[field.uiKey] === '☑' ||
-                          (formData[field.uiKey] === undefined && (formData[field.name] === 'true' || formData[field.name] === 'có' || formData[field.name] === 'x'))
-                        }
-                        onChange={(e) => setFormData({ ...formData, [field.uiKey]: e.target.checked ? 'true' : 'false' })}
-                        style={{ width: 20, height: 20, marginTop: 4 }}
+                        checked={(() => {
+                          const v = formData[field.uiKey] ?? formData[field.key] ?? formData[field.name];
+                          return v === 'true' || v === 'có' || v === 'x' || v === '☑';
+                        })()}
+                        onChange={(e) => {
+                          const next = { ...formData, [field.uiKey]: e.target.checked ? 'true' : 'false' };
+                          if (field.key && field.key !== field.uiKey) next[field.key] = e.target.checked ? 'true' : 'false';
+                          setFormData(next);
+                        }}
+                        style={{ width: 20, height: 20, marginTop: 4, cursor: 'pointer' }}
                       />
                     ) : (
                       <>
-                        <input
-                          value={
-                            formData[field.uiKey] === "__SKIPPED__" ? "" : 
-                            (formData[field.uiKey] !== undefined ? formData[field.uiKey] : (formData[field.name] || ""))
-                          }
-                          onChange={(e) => setFormData({ ...formData, [field.uiKey]: e.target.value })}
-                          style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem" }}
-                          placeholder={field.isGroup ? "Nhập liền không dấu cách (vd: 110122008111)" : ""}
-                        />
+                        {(() => {
+                          const isLongText = field.type === 'textarea' || field.type === 'long_text' || 
+                            ['ly_do', 'dia_chi', 'noi_dung', 'ghi_chu', 'thuong_tru', 'tam_tru', 'chuyen_mon'].some(k => (field.name || '').toLowerCase().includes(k) || (field.key || '').toLowerCase().includes(k)) || 
+                            (formData[field.uiKey] && formData[field.uiKey].length > 40);
+
+                          const val = (() => {
+                            const v = formData[field.uiKey] ?? formData[field.key] ?? formData[field.name] ?? '';
+                            return v === '__SKIPPED__' ? '' : v;
+                          })();
+
+                          const onChange = (e: any) => {
+                            const next = { ...formData, [field.uiKey]: e.target.value };
+                            if (field.key && field.key !== field.uiKey) next[field.key] = e.target.value;
+                            if (field.name && field.name !== field.uiKey) next[field.name] = e.target.value;
+                            setFormData(next);
+                          };
+
+                          const commonStyle = { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem", cursor: 'text', fontFamily: "inherit", width: "100%", boxSizing: "border-box" as const };
+                          const placeholder = field.isGroup ? "Nhập liền không dấu cách (vd: 110122008111)" : "";
+
+                          return isLongText && !field.isGroup ? (
+                            <textarea
+                              value={val}
+                              onChange={onChange}
+                              style={{ ...commonStyle, resize: 'vertical', minHeight: "80px" }}
+                              placeholder={placeholder}
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={val}
+                              onChange={onChange}
+                              style={commonStyle}
+                              placeholder={placeholder}
+                            />
+                          );
+                        })()}
                         {field.isGroup && (
                           <span style={{ fontSize: "0.7rem", color: "#64748b" }}>
                             Nhập chuỗi số liền nhau — hệ thống sẽ tự điền từng ô

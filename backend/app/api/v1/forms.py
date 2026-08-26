@@ -1286,21 +1286,57 @@ async def create_visual_form(
                             if item.filename == 'word/document.xml':
                                 xml = content.decode('utf-8')
                                 xml = xml.replace('{{ field_9007 }}', '')
-                                state = {'count': 0}
-                                def replace_rect(m):
-                                    rect = m.group(0)
-                                    if '17.35pt' in rect:
-                                        count = state['count']
-                                        group = (count // 13) + 1
-                                        idx = count % 13
-                                        state['count'] += 1
-                                        new_content = f'<v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>{{{{ mst_{group}_{idx} }}}}</w:t></w:r></w:p></w:txbxContent></v:textbox>'
-                                        if '<v:textbox' in rect:
-                                            rect = re.sub(r'<v:textbox.*?</v:textbox>', new_content, rect)
-                                        else:
-                                            rect = rect.replace('</v:rect>', f'{new_content}</v:rect>')
-                                    return rect
-                                xml = re.sub(r'<v:rect.*?</v:rect>', replace_rect, xml)
+                                state_patch = {'count': 0}
+                                def make_text_para(group, idx):
+                                    return (
+                                        f'<w:p><w:pPr><w:jc w:val="center"/>'
+                                        f'<w:spacing w:before="0" w:after="0"/></w:pPr>'
+                                        f'<w:r><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>'
+                                        f'<w:t>{{{{ mst_{group}_{idx} }}}}</w:t></w:r></w:p>'
+                                    )
+                                def next_slot():
+                                    c = state_patch['count']
+                                    g = (c // 13) + 1
+                                    i = c % 13
+                                    state_patch['count'] += 1
+                                    return g, i
+                                def patch_wps_alt(m):
+                                    alt = m.group(0)
+                                    if '17.35pt' not in alt and 'cx="220345"' not in alt:
+                                        return alt
+                                    g, i = next_slot()
+                                    tp = make_text_para(g, i)
+                                    def patch_choice(cm):
+                                        c = cm.group(0)
+                                        c = re.sub(r'<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>', '<a:noFill/>', c)
+                                        c = re.sub(r'<w:txbxContent>.*?</w:txbxContent>', f'<w:txbxContent>{tp}</w:txbxContent>', c, flags=re.DOTALL)
+                                        return c
+                                    alt = re.sub(r'<mc:Choice.*?</mc:Choice>', patch_choice, alt, flags=re.DOTALL)
+                                    def patch_fallback_rect(rm):
+                                        r = rm.group(0)
+                                        r = re.sub(r'\bfillcolor="[^"]*"', '', r)
+                                        r = re.sub(r'\bfilled="[^"]*"', '', r)
+                                        r = r.replace('<v:rect ', '<v:rect filled="f" ')
+                                        r = re.sub(r'<w:txbxContent>.*?</w:txbxContent>', f'<w:txbxContent>{tp}</w:txbxContent>', r, flags=re.DOTALL)
+                                        return r
+                                    alt = re.sub(r'<v:rect\b.*?</v:rect>', patch_fallback_rect, alt, flags=re.DOTALL)
+                                    return alt
+                                def patch_naked_rect(m):
+                                    r = m.group(0)
+                                    if '17.35pt' not in r:
+                                        return r
+                                    g, i = next_slot()
+                                    tp = make_text_para(g, i)
+                                    r = re.sub(r'\bfillcolor="[^"]*"', '', r)
+                                    r = re.sub(r'\bfilled="[^"]*"', '', r)
+                                    r = r.replace('<v:rect ', '<v:rect filled="f" ')
+                                    if '<v:textbox' in r:
+                                        r = re.sub(r'<w:txbxContent>.*?</w:txbxContent>', f'<w:txbxContent>{tp}</w:txbxContent>', r, flags=re.DOTALL)
+                                    else:
+                                        r = r.replace('</v:rect>', f'<v:textbox inset="0,0,0,0"><w:txbxContent>{tp}</w:txbxContent></v:textbox></v:rect>')
+                                    return r
+                                xml = re.sub(r'<mc:AlternateContent>.*?</mc:AlternateContent>', patch_wps_alt, xml, flags=re.DOTALL)
+                                xml = re.sub(r'<v:rect\b.*?</v:rect>', patch_naked_rect, xml, flags=re.DOTALL)
                                 content = xml.encode('utf-8')
                             zout.writestr(item, content)
                 os.replace(out_path, template_path)

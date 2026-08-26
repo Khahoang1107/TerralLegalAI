@@ -51,9 +51,12 @@ def is_auto_fill_field(field: Dict[str, Any]) -> bool:
     """
     Trả về True nếu trường này nên được tự động điền (không hỏi người dùng).
     Kiểm tra theo 2 cách:
-      1. Mô tả chứa tag [TU_DONG_DIEN]
-      2. Tên trường (sau khi normalize bỏ dấu) khớp với danh sách pattern
+      1. Có cờ is_auto_fill=True
+      2. Mô tả chứa tag [TU_DONG_DIEN]
+      3. Tên trường (sau khi normalize bỏ dấu) khớp với danh sách pattern
     """
+    if field.get("is_auto_fill"):
+        return True
     description = field.get("description", "")
     if "[TU_DONG_DIEN]" in description:
         return True
@@ -339,10 +342,13 @@ Nếu có "TRƯỜNG BẠN VỪA HỎI TRONG LƯỢT TRƯỚC", trước khi gá
 
 **BƯỚC 1 — GÁN CÂU TRẢ LỜI VỪA NHẬN (nếu qua được Bước 0):**
 Nếu có "TRƯỜNG BẠN VỪA HỎI TRONG LƯỢT TRƯỚC" và câu trả lời hợp lệ:
-- Lấy nội dung tin nhắn cuối của người dùng (user: {user_message})
-- Gán nguyên vẹn vào key đó trong extracted_fields. (Giữ nguyên giá trị người dùng cung cấp, không rút gọn, không cắt bỏ chữ).
+- Từ nội dung tin nhắn của người dùng (user: {user_message}), HÃY TRÍCH XUẤT THÔNG TIN CỐT LÕI VÀ CHÍNH XÁC NHẤT để gán vào key đó trong `extracted_fields`.
+- Tuyệt đối KHÔNG bê nguyên toàn bộ câu nói của người dùng. CHỈ LẤY GIÁ TRỊ CỐT LÕI.
+  + Ví dụ: Người dùng nói "diện tích : 1000m2" -> CHỈ LẤY "1000m2".
+  + Ví dụ: Người dùng nói "Lần chứng nhận đầu tiên: không phải" -> CHỈ LẤY "không".
+  + Ví dụ: Người dùng nói "tôi sinh ngày 01/01/1990" -> CHỈ LẤY "01/01/1990".
+- Riêng với trường "Địa chỉ", phải giữ nguyên tên đường, phường, xã đầy đủ, không được viết tắt (VD: "Phường A, Quận B" chứ không phải "A, B").
 - ĐẶC BIỆT: Nếu trường đang hỏi liên quan đến "Năm" (ví dụ: Năm, Kỳ tính thuế...) và người dùng trả lời là "năm nay", "hiện tại", hãy tự động chuyển đổi giá trị đó thành năm hiện tại là "{year_str}".
-- KHÔNG quan tâm dữ liệu đó có giống trường khác hay không
 
 **BƯỚC 2 — TỰ ĐỘNG ĐIỀN TRƯỜNG PHÁP LÝ (không hỏi người dùng):**
 Chỉ đối với các trường trong danh sách "CÁC TRƯỜNG TỰ ĐỘNG ĐIỀN", hãy tự động trích xuất thông tin từ KHO TRI THỨC để điền.
@@ -364,7 +370,12 @@ Sau khi tổng hợp tất cả dữ liệu (bao gồm collected_data cũ + các
 **BƯỚC 5 — SINH CÂU TRẢ LỜI (assistant_reply):**
 - Nếu Bước 0 phát hiện câu trả lời không hợp lệ: hỏi lại trường đó với hướng dẫn cụ thể.
 - Nếu người dùng đặt câu hỏi (ví dụ: "gửi đi đâu?", "tại sao cần thông tin này?"), PHẢI TRẢ LỜI câu hỏi đó ngắn gọn dựa vào KHO TRI THỨC. Sau khi trả lời, mới tiếp tục hỏi thông tin.
-- Nếu is_complete = false: Hỏi đúng 1 câu về trường CÁ NHÂN bạn chọn ở Bước 4 (ghép sau câu trả lời nếu có), lịch sự và tự nhiên.
+- Nếu is_complete = false: Hỏi đúng 1 câu về trường CÁ NHÂN bạn chọn ở Bước 4 (ghép sau câu trả lời nếu có). Đặt câu hỏi một cách TỰ NHIÊN, NGẮN GỌN và TRỰC TIẾP như người thật, DỰA VÀO NGỮ CẢNH VÀ KIỂU DỮ LIỆU CỦA TRƯỜNG ĐÓ. 
+  + Ví dụ nếu hỏi về số, tiền, hoặc diện tích ("Số", "Diện tích", "Hạn mức"), hãy dùng "số mấy", "bao nhiêu", "là bao nhiêu". (VD: "Diện tích đất sử dụng đúng mục đích là bao nhiêu mét vuông ạ?")
+  + Nếu hỏi về năm ("Năm cấp", "Kỳ tính thuế"), hãy dùng "năm nào", "năm bao nhiêu". (VD: "Kỳ tính thuế là năm bao nhiêu ạ?")
+  + Nếu hỏi về ngày tháng ("Ngày sinh", "Ngày cấp"), hãy dùng "ngày mấy", "ngày bao nhiêu". (VD: "Ngày cấp CMND là ngày mấy ạ?")
+  + TUYỆT ĐỐI TRÁNH cách hỏi máy móc như "Bạn vui lòng cung cấp thông tin [Tên trường]". Hãy linh hoạt biến tấu câu hỏi cho giống ngữ điệu của một tư vấn viên thực thụ.
+- Nếu trường bạn chuẩn bị hỏi là "Tùy chọn" (không bắt buộc), HÃY THÔNG BÁO RÕ CHO NGƯỜI DÙNG RẰNG TRƯỜNG NÀY LÀ KHÔNG BẮT BUỘC, họ có thể trả lời "không có" hoặc "bỏ qua". Tuyệt đối không được nói là bắt buộc.
   → TUYỆT ĐỐI KHÔNG HỎI các trường đã có trong collected_data (trừ trường bị đánh dấu ⚠️).
   → TUYỆT ĐỐI KHÔNG HỎI các trường pháp lý / tự động điền. Bạn tự điền chúng, cấm hỏi người dùng.
   → TUYỆT ĐỐI CHỈ HỎI DUY NHẤT 1 TRƯỜNG MỖI LƯỢT. Không hỏi 2 trường cùng lúc dù bất kỳ lý do gì.
@@ -374,11 +385,12 @@ Sau khi tổng hợp tất cả dữ liệu (bao gồm collected_data cũ + các
 
 **QUY TẮC TRƯỜNG ĐẶC BIỆT:**
 - Trường kiểu "boolean": hỏi dạng "Bạn có [tên trường] không?". Nhận "có/yes/đúng/rồi" → lưu "có"; "không/no/chưa" → lưu "không".
-- Trường "Tùy chọn" mà người dùng nói "không có" / "bỏ qua" → lưu "__SKIPPED__" và hỏi trường tiếp theo.
+- Trường "Tùy chọn": Nếu bạn đã hỏi và người dùng nói "không có" / "bỏ qua" → lưu "__SKIPPED__" và hỏi trường tiếp theo. TUYỆT ĐỐI KHÔNG TỰ Ý gán "__SKIPPED__" cho trường "Tùy chọn" nếu bạn CHƯA HỎI người dùng về trường đó!
 - Trường "Bắt buộc" mà người dùng nói "không có" → lưu "" (rỗng), giải thích đây là bắt buộc, và BẮT BUỘC YÊU CẦU họ cung cấp lại. TUY NHIÊN, CÓ 2 NGOẠI LỆ ĐƯỢC PHÉP LƯU "__SKIPPED__": (1) Nếu trường có ghi chú "Bắt buộc chọn 1 trong nhóm...", bạn PHẢI lưu "__SKIPPED__" để hệ thống chuyển sang hỏi trường thay thế cùng nhóm. (2) Nếu trường là các thành phần phụ của địa chỉ (như "Số nhà", "Đường/phố", "Tổ/thôn", "Ngõ/hẻm", "Tòa nhà") và người dùng khẳng định "không có", BẠN PHẢI lưu "__SKIPPED__" và đi tiếp.
 - GỘP HỎI ĐỊA CHỈ: Nếu các trường tiếp theo cần hỏi là một chuỗi các thành phần địa chỉ (Số nhà, Đường, Tổ, Phường, Quận, Tỉnh), BẠN KHÔNG ĐƯỢC HỎI LẮT NHẮT TỪNG TRƯỜNG. Hãy hỏi gộp: "Bạn vui lòng cung cấp địa chỉ đầy đủ (số nhà, đường, tổ/thôn, phường/xã, quận/huyện, tỉnh/thành) của [Tên người/Nơi chốn] nhé." Khi người dùng trả lời 1 địa chỉ dài, hãy TỰ ĐỘNG BÓC TÁCH và gán TẤT CẢ các thành phần đó vào các key tương ứng trong `extracted_fields` cùng 1 lượt.
 - Khi hỏi thông tin về CON NGƯỜI (ví dụ: tên người sử dụng đất, người chuyển nhượng, v.v.), TUYỆT ĐỐI KHÔNG DÙNG "là gì". Hãy dùng "là ai" hoặc "vui lòng cho biết họ và tên của...".
 - ĐỊNH DẠNG NGÀY THÁNG: Nếu trường đang hỏi liên quan đến ngày, tháng, năm (ví dụ: Ngày sinh, Ngày cấp, Ngày hợp đồng, ...), hãy LUÔN LUÔN tự động chuyển đổi câu trả lời của người dùng về đúng định dạng chuẩn `DD/MM/YYYY` (Ví dụ: "ngày 22 tháng 12 năm 1999" -> "22/12/1999") trước khi gán vào `extracted_fields`.
+- HỎI XÁC NHẬN TRƯỚC (ai_ask_first): NẾU trường có cờ `ai_ask_first=true`, BẠN BẮT BUỘC PHẢI đặt một câu hỏi xác nhận (Có/Không) trước. Ví dụ: "Bạn có [Tên trường] không?". Nếu người dùng trả lời "Không", hãy tự động gán giá trị "__SKIPPED__" (bỏ qua) cho trường đó.
 - SUY LUẬN BỎ QUA (SKIP LOGIC): Nếu câu trả lời của người dùng HOẶC dữ liệu đã có cho thấy một/nhiều trường khác không còn ý nghĩa (Ví dụ: chọn "Lần đầu" = Có thì "Bổ sung lần thứ" bị vô hiệu; "Không có đại lý thuế" thì các trường mã số/tên/địa chỉ đại lý thuế cũng vô hiệu), hãy TỰ ĐỘNG GÁN giá trị "__SKIPPED__" cho các trường không cần thiết đó và đưa vào `extracted_fields` để không bao giờ hỏi chúng.
 
 Phản hồi phải tuân thủ JSON schema được yêu cầu.

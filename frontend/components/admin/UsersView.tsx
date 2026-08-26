@@ -25,7 +25,11 @@ export default function UsersView() {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, email: string) => {
+    if (email === "hoangkha123tv@gmail.com") {
+      setError("Không thể xóa tài khoản quản trị viên gốc.");
+      return;
+    }
     if (!confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
     try {
       await usersApi.deleteUser(id);
@@ -137,7 +141,9 @@ export default function UsersView() {
                       ) : (
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
                           <button onClick={() => setEditingUser(user.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#3b82f6", padding: 4 }} title="Chỉnh sửa"><Edit size={16} /></button>
-                          <button onClick={() => handleDelete(user.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: 4 }} title="Xóa"><Trash2 size={16} /></button>
+                          {user.email !== "hoangkha123tv@gmail.com" && (
+                            <button onClick={() => handleDelete(user.id, user.email)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: 4 }} title="Xóa"><Trash2 size={16} /></button>
+                          )}
                         </div>
                       )}
                     </td>

@@ -358,7 +358,7 @@ Yêu cầu:
                         if m:
                             skipped_parents.append(m.group(1)) # Lưu "20"
             
-            # Auto-skip các child
+            # Auto-skip các child (theo quy tắc đánh số [20.1])
             if skipped_parents:
                 for f in active_form.fields:
                     name = f.get("name", "")
@@ -367,6 +367,42 @@ Yêu cầu:
                         child_key = f.get("key")
                         if child_key and child_key not in collected_data:
                             collected_data[child_key] = "__SKIPPED__"
+                            
+            # Tự động đánh dấu SKIPPED cho các trường thuộc nhóm require_one_of_group đã được thỏa mãn bởi trường khác
+            fulfilled_groups = set()
+            for f in active_form.fields:
+                grp = f.get("require_one_of_group")
+                val = collected_data.get(f.get("key"))
+                if grp and val and val != "__SKIPPED__":
+                    fulfilled_groups.add(grp)
+            
+            for f in active_form.fields:
+                grp = f.get("require_one_of_group")
+                k = f.get("key")
+                if grp and grp in fulfilled_groups:
+                    val = collected_data.get(k)
+                    if not val or val == "__SKIPPED__":
+                        collected_data[k] = "__SKIPPED__"
+
+            # Auto-skip theo cấu hình depends_on từ UI (có hỗ trợ đệ quy/cascading)
+            changed = True
+            while changed:
+                changed = False
+                for f in active_form.fields:
+                    depends_on = f.get("depends_on")
+                    if depends_on:
+                        target_name = depends_on.get("field")
+                        if target_name:
+                            target_key = next((tf.get("key") for tf in active_form.fields if tf.get("name") == target_name), None)
+                            if target_key:
+                                target_val = collected_data.get(target_key)
+                                if target_val == "__SKIPPED__" or (isinstance(target_val, str) and target_val.lower() in {"không", "khong", "no", "false", "0", "☐", "bỏ qua", "bo qua", "không có", "khong co", "ko", "ko có", "ko co"}):
+                                    child_key = f.get("key")
+                                    if child_key:
+                                        child_val = collected_data.get(child_key)
+                                        if child_val != "__SKIPPED__":
+                                            collected_data[child_key] = "__SKIPPED__"
+                                            changed = True
 
             # Kết hợp invalid_fields cũ (chưa được hỏi lại) với mới phát hiện
             # Loại bỏ khỏi invalid_fields những key vừa được điền thành công
@@ -381,13 +417,40 @@ Yêu cầu:
                 f for f in (active_form.fields or [])
                 if not is_auto_fill_field(f)
             ]
-            all_personal_filled = all(
-                bool(collected_data.get(f.get("key", ""))) or collected_data.get(f.get("key", "")) == "__SKIPPED__"
-                for f in personal_fields
-            ) and not invalid_fields  # invalid fields chưa fix → chưa thể complete
-
-            # Nếu thực tế đã đủ → force is_complete=True dù LLM nói gì
-            if all_personal_filled and not result.is_complete:
+            
+            # 1. Tính toán missing_fields thực sự (sau khi đã chạy cascade logic)
+            missing_fields = []
+            for f in personal_fields:
+                k = f.get("key", "")
+                val = collected_data.get(k)
+                
+                if val and val != "__SKIPPED__":
+                    continue
+                if val == "__SKIPPED__":
+                    continue
+                
+                # Chỉ hiển thị field con nếu field cha ĐÃ ĐƯỢC ĐIỀN (ẩn field con nếu field cha bị missing)
+                depends_on = f.get("depends_on")
+                parent_missing = False
+                if depends_on:
+                    target_name = depends_on.get("field")
+                    if target_name:
+                        target_key = next((tf.get("key") for tf in active_form.fields if tf.get("name") == target_name), None)
+                        if target_key:
+                            target_val = collected_data.get(target_key)
+                            if not target_val:  # Nếu cha chưa có dữ liệu gì cả -> Ẩn con
+                                parent_missing = True
+                
+                if not parent_missing:
+                    missing_fields.append(f)
+            
+            invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
+            
+            # 2. Đánh giá lại is_complete
+            # Form hoàn thành khi không còn field nào trong missing_fields VÀ không có invalid_fields
+            all_personal_filled = len(missing_fields) == 0 and not invalid_fields
+            
+            if all_personal_filled:
                 logger.info("Ground-truth check: all personal fields filled → forcing is_complete=True")
                 from backend.app.rag.agent import FormExtractionResult
                 result = FormExtractionResult(
@@ -397,33 +460,33 @@ Yêu cầu:
                     next_field_key=None,
                     next_field_name=None,
                 )
-            # Nếu LLM nói xong nhưng thực tế chưa đủ → force is_complete=False + sinh câu hỏi tiếp
-            elif result.is_complete and not all_personal_filled:
-                missing_fields = [
-                    f for f in personal_fields
-                    if not collected_data.get(f.get("key", "")) and collected_data.get(f.get("key", "")) != "__SKIPPED__"
-                ]
-                # Ưu tiên hỏi lại invalid fields trước
-                invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
+            else:
+                # LLM nói xong nhưng thực tế chưa đủ, HOẶC LLM chưa xong nhưng hỏi sai trường
                 next_field = (invalid_missing or missing_fields)[0] if missing_fields else None
-                missing_names = [
-                    get_friendly_name(f)
-                    for f in missing_fields
-                ]
-                logger.warning(f"LLM claimed complete but missing: {missing_names} → forcing is_complete=False")
-                from backend.app.rag.agent import FormExtractionResult, get_friendly_name
-                # Sinh câu hỏi tiếp theo thay vì dùng reply sai của LLM
-                next_reply = result.assistant_reply
-                if next_field:
-                    field_name = get_friendly_name(next_field)
-                    next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
-                result = FormExtractionResult(
-                    extracted_fields=result.extracted_fields,
-                    is_complete=False,
-                    assistant_reply=next_reply,
-                    next_field_key=next_field.get("key") if next_field else result.next_field_key,
-                    next_field_name=next_field.get("name") if next_field else result.next_field_name,
-                )
+                missing_names = [get_friendly_name(f) for f in missing_fields]
+                
+                # Kiểm tra xem LLM có đang hỏi đúng trường không (tránh trường hợp LLM hỏi vào trường đã bị SKIP bởi logic ở trên)
+                llm_asked_valid_field = result.next_field_key in [f.get("key") for f in missing_fields]
+                
+                if result.is_complete or not llm_asked_valid_field:
+                    if result.is_complete:
+                        logger.warning(f"LLM claimed complete but missing: {missing_names} → forcing is_complete=False")
+                    else:
+                        logger.warning(f"LLM asked for invalid/skipped field {result.next_field_key}, overriding...")
+                        
+                    from backend.app.rag.agent import FormExtractionResult, get_friendly_name
+                    next_reply = result.assistant_reply
+                    if next_field:
+                        field_name = get_friendly_name(next_field)
+                        next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
+                    
+                    result = FormExtractionResult(
+                        extracted_fields=result.extracted_fields,
+                        is_complete=False,
+                        assistant_reply=next_reply,
+                        next_field_key=next_field.get("key") if next_field else None,
+                        next_field_name=next_field.get("name") if next_field else None,
+                    )
             # ─────────────────────────────────────────────────────────────────────
 
             # Lưu last_asked_field để lượt sau biết trường nào vừa được hỏi
