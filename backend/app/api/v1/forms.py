@@ -8,6 +8,7 @@ import os
 import uuid
 import re
 import subprocess
+import zipfile
 from datetime import datetime
 from fastapi.responses import FileResponse
 from backend.app.core.database import get_db
@@ -45,6 +46,15 @@ class FormVisualField(BaseModel):
     key: str | None = None  # alias for name
     group_key: str | None = None
     digit_index: int | None = None
+    display_order: int | None = None
+    is_auto_fill: bool = False
+    value_source: str = "user_input"
+    auto_rule: str | None = None
+    is_virtual: bool = False
+    options: List[str] = []
+    section_name: str | None = None
+    question_group: str | None = None
+    group_depends_on: Any | None = None
     depends_on: Any | None = None
     require_one_of_group: str | None = None
 
@@ -175,8 +185,9 @@ def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
                 key = mapping.get(str(blank_idx[0]))
                 if key:
                     if matched in CHECKBOX_CHARS:
-                        # Checkbox: dùng Jinja2 if, luôn dùng [x] hoặc [ ] để tránh lỗi font
-                        new_text += f"{{% if {key} %}}[x]{{% else %}}[ ]{{% endif %}}"
+                        # Giữ nguyên đúng kích thước ô trên mẫu; chỉ thay ký tự bên trong
+                        # bằng glyph checkbox đã tick. Điều này tránh "[x]" tràn sang ô kế.
+                        new_text += f"{{% if {key} %}}☑{{% else %}}☐{{% endif %}}"
                     else:
                         new_text += f"{{{{ {key} }}}}"
                 else:
@@ -207,7 +218,7 @@ def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
     doc.save(template_path)
 
 
-def _predict_labels(full_text: str) -> Dict[str, Dict[str, str]]:
+def _predict_labels(full_text: str, manual_zone_ids: Optional[List[str]] = None) -> Dict[str, Dict[str, str]]:
     """Gọi Gemini API để suy luận nhãn cho các trường, kèm confidence và section."""
     try:
         client = genai.Client(api_key=settings.gemini_api_key)
@@ -242,9 +253,13 @@ Lưu ý:
   + "khac": các trường khác
 - Phải trả về ĐÚNG định dạng JSON mảng, không thêm bất kỳ text nào khác.
 - Nếu một trường là phần "II. PHẦN XÁC ĐỊNH CỦA CƠ QUAN CHỨC NĂNG" thì section = "co_quan"
+- BẮT BUỘC trả về một object cho MỖI ID trong danh sách vùng vẽ tay bên dưới. Nếu ngữ cảnh chưa đủ rõ, vẫn đặt nhãn ngắn gần đúng (ví dụ "Ngày ký", "Chữ ký người nộp thuế", "Thông tin bổ sung") và confidence dưới 0.6; không được bỏ qua ID.
 
 --- NỘI DUNG BIỂU MẪU ---
 {full_text}
+
+--- ID VÙNG VẼ TAY PHẢI ĐẶT NHÃN ---
+{", ".join(manual_zone_ids or []) or "Không có"}
 """
         response = client.models.generate_content(
             model='gemini-2.5-flash',
@@ -297,14 +312,31 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
         if isinstance(v, str) and v == "__SKIPPED__":
             normalized[k] = ""
         elif is_boolean and isinstance(v, str) and v.strip().lower() in TRUE_VALUES:
-            normalized[k] = "✓"
+            # Times New Roman trên LibreOffice không luôn có glyph ✓; dùng X để
+            # ký tự hiển thị chắc chắn ngay bên trong ô vuông của mẫu Word.
+            normalized[k] = "X"
         elif is_boolean and isinstance(v, str) and v.strip().lower() in {"không", "khong", "no", "false", "0", "☐"}:
             normalized[k] = ""
         elif isinstance(v, bool):
-            normalized[k] = "✓" if v else ""
+            normalized[k] = "X" if v else ""
         else:
             normalized[k] = v
 
+    # Các ô ngày lập đơn không lấy từ AI hoặc người dùng; luôn dùng ngày xuất
+    # biểu mẫu để bảo đảm ngày/tháng/năm đồng nhất.
+    if form and isinstance(form.fields, list):
+        today = datetime.now()
+        date_values = {
+            "current_date_day": str(today.day),
+            "current_date_month": str(today.month),
+            "current_date_year": str(today.year),
+        }
+        for field in form.fields:
+            if isinstance(field, dict) and field.get("auto_rule") in date_values:
+                normalized[field.get("key", "")] = date_values[field["auto_rule"]]
+
+    mst_nnt_value = ""
+    mst_agent_value = ""
     if form and isinstance(form.fields, list):
         digit_groups_counter = {}
         
@@ -332,9 +364,15 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                     else:
                         normalized[fkey] = val
                         
-                    # Hardcode alias cho 'ma_so_thue' để xử lý logic bên dưới
-                    if field.get("name") == "ma_so_thue" or field.get("name") == "ma_so_thue_dai_ly_thue":
-                        normalized[field.get("name")] = val
+                    # Không phụ thuộc vào tên key do AI sinh ra (có thể là
+                    # "Mã số thuế" hoặc group_key bị gõ sai). Xác định nguồn
+                    # MST trực tiếp từ trường digit_group để điền từng ô.
+                    field_name = str(field.get("name") or "").lower()
+                    is_agent_mst = "đại lý" in field_name or "dai ly" in field_name
+                    if is_agent_mst:
+                        mst_agent_value = mst_agent_value or val
+                    else:
+                        mst_nnt_value = mst_nnt_value or val
 
     # ── Fill mst_N_I variables for templates with digit-box MST fields ──────────
     # Group 1,3 = ma_so_thue (người nộp thuế)
@@ -343,19 +381,23 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
 
     def _fill_mst_groups(mst_str: str, *group_nums):
         digits = (mst_str or "").strip().ljust(13)
+        # Các textbox của mẫu 04/TK-SDDPNN được Word ghi trong XML theo thứ
+        # tự khác với vị trí trái→phải trên trang. Đây chỉ là ánh xạ trình bày
+        # cho các tag mst_N_I, không ảnh hưởng dữ liệu/AI.
+        visual_slot_order = [12, 11, 7, 8, 10, 9, 1, 0, 6, 5, 4, 3, 2]
         for g in group_nums:
-            for i in range(13):
-                ch = digits[i] if i < len(digits) else " "
-                normalized[f"mst_{g}_{i}"] = ch.strip()
+            for visual_index, template_index in enumerate(visual_slot_order):
+                ch = digits[visual_index] if visual_index < len(digits) else " "
+                normalized[f"mst_{g}_{template_index}"] = ch.strip()
 
     # Source 1: ma_so_thue (NNT) → groups 1, 3, 5
-    mst_nnt = normalized.get("ma_so_thue") or normalized.get("mst_nnt") or ""
+    mst_nnt = mst_nnt_value or normalized.get("ma_so_thue") or normalized.get("mst_nnt") or ""
     if mst_nnt and isinstance(mst_nnt, str):
         _fill_mst_groups(mst_nnt, 1, 3, 5)
         normalized["ma_so_thue"] = ""  # hide raw string from template
 
     # Source 2: mst_dai_ly / ma_so_thue_dai_ly_thue → groups 2, 4, 6
-    mst_dl = (normalized.get("mst_dai_ly") or
+    mst_dl = (mst_agent_value or normalized.get("mst_dai_ly") or
               normalized.get("ma_so_thue_dai_ly_thue") or
               normalized.get("mst_dl") or "")
     if mst_dl and isinstance(mst_dl, str):
@@ -366,6 +408,103 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
 
     print("DEBUG NORMALIZED:", normalized)
     return normalized
+
+
+def _render_checkbox_inside_first_visual_box(docx_path: str, checked: bool) -> None:
+    """Đặt ký tự X vào textbox của ô checkbox đầu tiên trên file xuất.
+
+    Mẫu 04/TK-SDDPNN vẽ checkbox bằng VML/WPS đè lên text trong dòng, vì thế
+    biến Jinja ở dòng chữ bị che khi LibreOffice tạo PDF. Chỉ xử lý file xuất
+    tạm; không sửa schema, mapping hay dữ liệu AI.
+    """
+    marker = (
+        '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>'
+        '<w:r><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/>'
+        f'</w:rPr><w:t>{"X" if checked else ""}</w:t></w:r></w:p>'
+    )
+    temp_path = f"{docx_path}.checkbox.tmp"
+    with zipfile.ZipFile(docx_path, "r") as source, zipfile.ZipFile(temp_path, "w") as target:
+        for item in source.infolist():
+            content = source.read(item.filename)
+            if item.filename == "word/document.xml":
+                xml = content.decode("utf-8")
+                patched = {"done": False}
+
+                def patch_checkbox(match: re.Match) -> str:
+                    block = match.group(0)
+                    if patched["done"] or 'cx="144145"' not in block:
+                        return block
+                    patched["done"] = True
+                    return re.sub(
+                        r"<w:txbxContent>.*?</w:txbxContent>",
+                        f"<w:txbxContent>{marker}</w:txbxContent>",
+                        block,
+                        flags=re.DOTALL,
+                    )
+
+                xml = re.sub(
+                    r"<mc:AlternateContent>.*?</mc:AlternateContent>",
+                    patch_checkbox,
+                    xml,
+                    flags=re.DOTALL,
+                )
+                content = xml.encode("utf-8")
+            target.writestr(item, content)
+    os.replace(temp_path, docx_path)
+
+
+def _collect_digit_group_values(form: FormSchema, payload: dict) -> list[str]:
+    """Lấy dãy số theo đúng thứ tự các field digit_group do admin cấu hình."""
+    values: list[str] = []
+    for field in form.fields or []:
+        if not isinstance(field, dict) or field.get("type") != "digit_group":
+            continue
+        value = payload.get(field.get("key")) or payload.get(field.get("name")) or ""
+        values.append(re.sub(r"\D", "", str(value)))
+    return values
+
+
+def _overlay_form_controls(pdf_path: str, digit_values: list[str], boolean_values: list[bool]) -> None:
+    """Điền control vẽ nổi theo type admin: digit_group và boolean.
+
+    Không dùng tên nhãn nghiệp vụ (MST, giấy chứng nhận, ...). Các cụm ô số và
+    checkbox được quét theo thứ tự đọc trên PDF rồi ghép lần lượt với fields
+    cùng type đã lưu trong schema.
+    """
+    import fitz
+
+    pdf = fitz.open(pdf_path)
+    checkbox_boxes: list[tuple[Any, Any]] = []
+    digit_rows: list[tuple[Any, list[Any]]] = []
+    for control_page in pdf:
+        rectangles = [drawing["rect"] for drawing in control_page.get_drawings()]
+        checkbox_boxes.extend((control_page, rect) for rect in sorted(
+            (rect for rect in rectangles if 7 <= rect.width <= 12 and 7 <= rect.height <= 12),
+            key=lambda rect: (rect.y0, rect.x0),
+        ))
+        digit_cells = sorted((rect for rect in rectangles if 14 <= rect.width <= 20 and 14 <= rect.height <= 20), key=lambda rect: (rect.y0, rect.x0))
+        for cell in digit_cells:
+            if not digit_rows or digit_rows[-1][0] is not control_page or abs(digit_rows[-1][1][0].y0 - cell.y0) > 2:
+                digit_rows.append((control_page, [cell]))
+            else:
+                digit_rows[-1][1].append(cell)
+
+    for (checkbox_page, box), is_checked in zip(checkbox_boxes, boolean_values):
+        if is_checked:
+            checkbox_page.draw_rect(box, color=None, fill=(1, 1, 1), overlay=True)
+            checkbox_page.draw_rect(box, color=(0, 0, 0), width=0.8, overlay=True)
+            checkbox_page.insert_text(fitz.Point(box.x0 + 2, box.y1 - 1.5), "X", fontname="hebo", fontsize=8, color=(0, 0, 0), overlay=True)
+
+    for (digit_page, cells), digits in zip((row for row in digit_rows if len(row[1]) >= 2), digit_values):
+        cells.sort(key=lambda rect: rect.x0)
+        for index, cell in enumerate(cells):
+            inner = fitz.Rect(cell.x0 + 1, cell.y0 + 1, cell.x1 - 1, cell.y1 - 1)
+            digit_page.draw_rect(inner, color=None, fill=(1, 1, 1), overlay=True)
+            if index < len(digits):
+                digit_page.insert_textbox(inner, digits[index], fontname="helv", fontsize=8, align=1, color=(0, 0, 0), overlay=True)
+    pdf.save(pdf_path + ".overlay")
+    pdf.close()
+    os.replace(pdf_path + ".overlay", pdf_path)
 
 
 
@@ -752,6 +891,10 @@ async def preview_pdf_form(
         output_docx = os.path.join(temp_dir, f"{temp_id}.docx")
         output_pdf  = os.path.join(temp_dir, f"{temp_id}.pdf")
         doc.save(output_docx)
+        _render_checkbox_inside_first_visual_box(
+            output_docx,
+            bool(normalized.get("field_9002") or normalized.get("Lần đầu")),
+        )
 
         # Convert sang PDF bằng LibreOffice
         try:
@@ -772,6 +915,16 @@ async def preview_pdf_form(
 
         if not os.path.exists(output_pdf):
             raise HTTPException(status_code=500, detail="LibreOffice không tạo được file PDF")
+
+        _overlay_form_controls(
+            output_pdf,
+            _collect_digit_group_values(form, payload),
+            [
+                bool(normalized.get(field.get("key")) or normalized.get(field.get("name")))
+                for field in (form.fields or [])
+                if isinstance(field, dict) and field.get("type") == "boolean"
+            ],
+        )
 
         with open(output_pdf, "rb") as f:
             pdf_bytes = f.read()
@@ -1173,12 +1326,15 @@ async def ai_predict(body: AiPredictRequest):
                     user_ctx += f"[[{idx}]]: {label}\n"
             full_text += user_ctx
 
-        # Xử lý các vùng vẽ tay (manual zones) có idx rất lớn (Date.now())
+        # Vùng vẽ tay không tồn tại trong DOCX gốc, nên bổ sung ngữ cảnh xung
+        # quanh chúng vào prompt.  Tọa độ vùng đã ở hệ PDF (do frontend quy đổi
+        # lúc vẽ), vì vậy dùng trực tiếp với PyMuPDF.
         pdf_path = os.path.join("data", "uploaded", f"{body.temp_id}_marked.pdf")
         if os.path.exists(pdf_path):
             import fitz
             doc = fitz.open(pdf_path)
             manual_additions = []
+            manual_zone_ids = []
             for z in body.zones:
                 try:
                     idx_val = int(z.get("idx", 0))
@@ -1187,17 +1343,19 @@ async def ai_predict(body: AiPredictRequest):
                         x, y, w, h = z.get("x", 0), z.get("y", 0), z.get("width", 0), z.get("height", 0)
                         if 0 <= p_num < len(doc):
                             page = doc[p_num]
-                            # Lấy text bên trái (max 300px)
-                            rect_left = fitz.Rect(max(0, x - 300), max(0, y - 10), x + w/2, y + h + 10)
-                            text_left = page.get_textbox(rect_left).strip()
-                            # Lấy text bên trên (max 50px)
-                            rect_up = fitz.Rect(max(0, x - 20), max(0, y - 50), x + w + 20, y + h/2)
-                            text_up = page.get_textbox(rect_up).strip()
-                            
-                            combined = f"{text_up} {text_left}".strip()
-                            if combined:
-                                # Tạo ngữ cảnh giả lập cho AI đoán
-                                manual_additions.append(f"{combined} [[{idx_val}]]")
+                            page_rect = page.rect
+                            # Lấy ngữ cảnh bốn phía và cả dòng hiện tại. Không
+                            # lấy riêng phía trái vì các ô ký/ngày tháng thường
+                            # có nhãn nằm ở phía trên hoặc phía phải.
+                            context_rect = fitz.Rect(
+                                max(page_rect.x0, x - 260), max(page_rect.y0, y - 80),
+                                min(page_rect.x1, x + w + 260), min(page_rect.y1, y + h + 80),
+                            )
+                            context = " ".join(page.get_textbox(context_rect).split())
+                            if not context:
+                                context = "Vùng trống được người quản trị thêm thủ công trên biểu mẫu."
+                            manual_zone_ids.append(str(idx_val))
+                            manual_additions.append(f"Vùng [[{idx_val}]]; ngữ cảnh xung quanh: {context}")
                 except ValueError:
                     pass
             doc.close()
@@ -1205,7 +1363,7 @@ async def ai_predict(body: AiPredictRequest):
             if manual_additions:
                 full_text += "\n\n--- CÁC VÙNG BỔ SUNG ---\n" + "\n".join(manual_additions)
 
-        predictions = await asyncio.to_thread(_predict_labels, full_text)
+        predictions = await asyncio.to_thread(_predict_labels, full_text, manual_zone_ids if 'manual_zone_ids' in locals() else [])
 
         # Gắn predictions vào từng zone
         enriched_zones = []
@@ -1218,6 +1376,14 @@ async def ai_predict(body: AiPredictRequest):
                 z_copy["confidence"] = pred.get("confidence", 0.5)
                 z_copy["section"] = pred.get("section", "khac")
             else:
+                # Luôn cho admin thấy rõ vùng vẽ tay chưa thể suy luận, thay vì
+                # âm thầm để trống khiến tưởng rằng AI không hề xử lý vùng đó.
+                try:
+                    if int(z.get("idx", 0)) > 1000000:
+                        z_copy["suggested_label"] = "Cần đặt tên"
+                        z_copy["suggested_description"] = "AI chưa xác định chắc chắn; vui lòng đặt tên theo nội dung trên biểu mẫu."
+                except (TypeError, ValueError):
+                    pass
                 z_copy.setdefault("confidence", 0.0)
                 z_copy.setdefault("section", "khac")
             enriched_zones.append(z_copy)
@@ -1257,6 +1423,14 @@ async def create_visual_form(
             "required": f.required,
             "group_key": f.group_key,
             "digit_index": f.digit_index,
+            "display_order": f.display_order,
+            "is_auto_fill": f.is_auto_fill,
+            "value_source": f.value_source,
+            "auto_rule": f.auto_rule,
+            "is_virtual": f.is_virtual,
+            "options": f.options,
+            "question_group": f.question_group,
+            "group_depends_on": f.group_depends_on,
             "depends_on": getattr(f, "depends_on", None),
             "require_one_of_group": getattr(f, "require_one_of_group", None),
         })

@@ -121,6 +121,14 @@ export interface EvaluationRunRequest {
   procedure_group?: string;
   level?: number;
   notes?: string;
+  use_ragas?: boolean;
+}
+
+export interface EvaluationCaseResult {
+  id: string; question: string; expected_answer: string; actual_answer: string;
+  answer_similarity?: number; grounding_score?: number; auto_status: string;
+  manual_status: "pending" | "pass" | "fail"; manual_note?: string;
+  retrieved_contexts: string[];
 }
 
 // ─── Auth types ───────────────────────────────────────────────────
@@ -293,6 +301,9 @@ export const documentsApi = {
     const { data } = await client.put(`/documents/${id}/reindex`);
     return data;
   },
+  async getChunks(id: string): Promise<{ id: string; text: string; article?: string; clause?: string; field_type?: string }[]> {
+    const { data } = await client.get(`/documents/${id}/chunks`); return data;
+  },
   async getOverview(): Promise<any> {
     const { data } = await client.get("/reports/overview");
     return data;
@@ -313,7 +324,14 @@ export const evaluationApi = {
   async deleteTestCase(id: string): Promise<void> {
     await client.delete(`/evaluation/test-cases/${id}`);
   },
-  async runEvaluation(payload?: EvaluationRunRequest): Promise<{ run_id: string; status: string; message: string }> {
+  async updateTestCase(id: string, payload: TestCaseCreate): Promise<TestCase> {
+    const { data } = await client.put<TestCase>(`/evaluation/test-cases/${id}`, payload); return data;
+  },
+  async importTestCases(file: File): Promise<{ created: number; errors: { line: number; error: string }[] }> {
+    const form = new FormData(); form.append("file", file);
+    const { data } = await client.post("/evaluation/test-cases/import", form); return data;
+  },
+  async runEvaluation(payload?: EvaluationRunRequest): Promise<{ run_id: string; status: string; message: string; total_questions?: number }> {
     const { data } = await client.post("/evaluation/run", payload ?? {});
     return data;
   },
@@ -324,6 +342,12 @@ export const evaluationApi = {
   async getResult(id: string): Promise<EvaluationRun> {
     const { data } = await client.get<EvaluationRun>(`/evaluation/results/${id}`);
     return data;
+  },
+  async getResultCases(runId: string): Promise<{ items: EvaluationCaseResult[]; total: number }> {
+    const { data } = await client.get(`/evaluation/results/${runId}/cases`); return data;
+  },
+  async reviewResultCase(id: string, status: "pass" | "fail" | "pending", note = ""): Promise<void> {
+    await client.put(`/evaluation/results/cases/${id}/review`, { status, note });
   },
   async getOverview(): Promise<any> {
     const { data } = await client.get("/reports/overview");

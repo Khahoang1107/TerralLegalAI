@@ -63,6 +63,8 @@ async def lifespan(app: FastAPI):
         gemini_model=settings.gemini_model,
         top_k=settings.retrieval_top_k,
         reranker_top_k=settings.reranker_top_k,
+        reranker_model_name=settings.reranker_model_name,
+        reranker_enabled=settings.reranker_enabled,
         similarity_threshold=settings.similarity_threshold,
         temperature=settings.gemini_temperature,
         max_tokens=settings.gemini_max_tokens,

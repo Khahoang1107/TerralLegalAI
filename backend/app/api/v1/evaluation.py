@@ -12,16 +12,19 @@ Endpoints:
 """
 import logging
 import uuid
+import csv
+import io
+from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user
-from backend.app.models.evaluation import EvaluationRun, TestCase
+from backend.app.models.evaluation import EvaluationRun, TestCase, EvaluationCaseResult
 from backend.app.models.user import User
 
 router = APIRouter()
@@ -69,10 +72,20 @@ class EvaluationRunResponse(BaseModel):
 
 
 class EvaluationRunRequest(BaseModel):
-    max_questions: int = Field(20, ge=1, le=100, description="Số câu hỏi tối đa trong lần chạy này")
+    max_questions: int = Field(200, ge=1, le=200, description="Số câu hỏi tối đa trong lần chạy này")
     procedure_group: Optional[str] = Field(None, description="Chỉ đánh giá một nhóm thủ tục")
     level: Optional[int] = Field(None, ge=1, le=4, description="Chỉ đánh giá câu hỏi ở mức độ nhất định")
     notes: Optional[str] = Field(None, description="Ghi chú cho lần đánh giá này")
+    use_ragas: bool = True
+
+
+class TestCaseUpdate(TestCaseCreate):
+    pass
+
+
+class ManualReviewRequest(BaseModel):
+    status: str = Field(..., pattern="^(pass|fail|pending)$")
+    note: str = Field("", max_length=4000)
 
 
 # ─── Background: Run Evaluation ───────────────────────────────────
@@ -88,6 +101,7 @@ def _run_evaluation_sync(
     embedding_model_name: str,
     gemini_model: str,
     notes: str = "",
+    use_ragas: bool = True,
 ):
     """
     Chạy đánh giá RAG và lưu kết quả (chạy trong background thread).
@@ -129,6 +143,15 @@ def _run_evaluation_sync(
                 runner = TestRunner(pipeline=pipeline)
                 results = runner.run(test_cases)
 
+                if use_ragas:
+                    from backend.app.evaluation.ragas_evaluator import RAGASEvaluator
+                    samples = [{"question": d["question"], "answer": d["actual_answer"], "contexts": d.get("retrieved_contexts", []), "ground_truth": d["expected_answer"]} for d in results.get("details", [])]
+                    metrics = RAGASEvaluator(gemini_api_key=gemini_api_key).evaluate(samples)
+                    for key in ("faithfulness", "answer_relevancy", "context_precision", "context_recall"):
+                        if metrics.get(key) is not None:
+                            results[key] = metrics[key]
+                    notes = f"{notes}\nAutomatic evaluation: {metrics.get('evaluation_type', 'heuristic')}".strip()
+
                 # Cập nhật kết quả
                 run.faithfulness = results.get("faithfulness")
                 run.answer_relevancy = results.get("answer_relevancy")
@@ -137,6 +160,14 @@ def _run_evaluation_sync(
                 run.total_questions = results.get("total_questions", len(test_cases))
                 run.passed_questions = results.get("passed_questions", 0)
                 run.notes = notes
+                for detail in results.get("details", []):
+                    score = detail.get("answer_similarity") or 0.0
+                    session.add(EvaluationCaseResult(
+                        id=str(uuid.uuid4()), run_id=run_id, test_case_id=detail["test_case_id"],
+                        question=detail["question"], expected_answer=detail["expected_answer"], actual_answer=detail.get("actual_answer") or "",
+                        answer_similarity=score, grounding_score=detail.get("grounding_score") or 0.0,
+                        is_fallback=str(bool(detail.get("is_fallback"))).lower(), retrieved_contexts=detail.get("retrieved_contexts", []), auto_status="pass" if score >= TestRunner.PASS_THRESHOLD and not detail.get("is_fallback") else "review",
+                    ))
                 await session.commit()
 
                 logger.info(f"✅ Evaluation run {run_id} completed: {results}")
@@ -241,6 +272,37 @@ async def delete_test_case(
     await db.commit()
 
 
+@router.put("/evaluation/test-cases/{test_case_id}", response_model=TestCaseResponse)
+async def update_test_case(test_case_id: str, payload: TestCaseUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được sửa test case")
+    tc = await db.scalar(select(TestCase).where(TestCase.id == test_case_id))
+    if not tc:
+        raise HTTPException(status_code=404, detail="Không tìm thấy test case")
+    for field, value in payload.model_dump().items():
+        setattr(tc, field, value)
+    await db.commit(); await db.refresh(tc)
+    return TestCaseResponse(id=tc.id, question=tc.question, expected_answer=tc.expected_answer, procedure_group=tc.procedure_group, intent=tc.intent, source_doc=tc.source_doc, field_type=tc.field_type, level=tc.level, created_at=tc.created_at.isoformat())
+
+
+@router.post("/evaluation/test-cases/import")
+async def import_test_cases(file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được nhập test case")
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ CSV UTF-8")
+    rows = csv.DictReader(io.StringIO((await file.read()).decode("utf-8-sig")))
+    created, errors = 0, []
+    for line, row in enumerate(rows, 2):
+        question, expected = (row.get("question") or "").strip(), (row.get("expected_answer") or "").strip()
+        if len(question) < 5 or len(expected) < 5:
+            errors.append({"line": line, "error": "question và expected_answer là bắt buộc"}); continue
+        level = int(row["level"]) if (row.get("level") or "").isdigit() else None
+        db.add(TestCase(id=str(uuid.uuid4()), question=question, expected_answer=expected, procedure_group=row.get("procedure_group") or None, intent=row.get("intent") or None, source_doc=row.get("source_doc") or None, field_type=row.get("field_type") or None, level=level)); created += 1
+    await db.commit()
+    return {"created": created, "errors": errors}
+
+
 @router.post("/evaluation/run", status_code=202)
 async def run_evaluation(
     payload: EvaluationRunRequest,
@@ -304,6 +366,7 @@ async def run_evaluation(
         embedding_model_name=settings.embedding_model_name,
         gemini_model=settings.gemini_model,
         notes=payload.notes or "",
+        use_ragas=payload.use_ragas,
     )
 
     return {
@@ -340,25 +403,41 @@ async def list_evaluation_results(
     ]
 
 
+@router.get("/evaluation/results/{run_id}/cases")
+async def list_evaluation_case_results(run_id: str, status: Optional[str] = None, page: int = 1, page_size: int = 25, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    stmt = select(EvaluationCaseResult).where(EvaluationCaseResult.run_id == run_id)
+    if status:
+        stmt = stmt.where(EvaluationCaseResult.manual_status == status)
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = (await db.execute(stmt.order_by(EvaluationCaseResult.created_at.desc()).offset((max(page, 1)-1)*min(max(page_size, 10), 100)).limit(min(max(page_size, 10), 100)))).scalars().all()
+    return {"items": [{"id": row.id, "question": row.question, "expected_answer": row.expected_answer, "actual_answer": row.actual_answer, "answer_similarity": row.answer_similarity, "grounding_score": row.grounding_score, "retrieved_contexts": row.retrieved_contexts or [], "auto_status": row.auto_status, "manual_status": row.manual_status, "manual_note": row.manual_note} for row in rows], "total": total}
+
+
+@router.put("/evaluation/results/cases/{result_id}/review")
+async def review_evaluation_case(result_id: str, payload: ManualReviewRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được chấm thủ công")
+    row = await db.scalar(select(EvaluationCaseResult).where(EvaluationCaseResult.id == result_id))
+    if not row:
+        raise HTTPException(status_code=404, detail="Không tìm thấy kết quả")
+    row.manual_status, row.manual_note, row.reviewed_by, row.reviewed_at = payload.status, payload.note, str(current_user.id), datetime.utcnow()
+    await db.commit()
+    return {"id": row.id, "manual_status": row.manual_status, "manual_note": row.manual_note}
+
+
 @router.get("/evaluation/results/{run_id}", response_model=EvaluationRunResponse)
 async def get_evaluation_result(
     run_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Chi tiết kết quả một lần đánh giá."""
+    """Chi tiết một lần đánh giá. Đặt sau route /cases để tránh bắt nhầm path."""
     run = await db.scalar(select(EvaluationRun).where(EvaluationRun.id == run_id))
     if not run:
         raise HTTPException(status_code=404, detail="Không tìm thấy evaluation run")
-
     return EvaluationRunResponse(
-        id=run.id,
-        run_date=run.run_date.isoformat(),
-        faithfulness=run.faithfulness,
-        answer_relevancy=run.answer_relevancy,
-        context_precision=run.context_precision,
-        context_recall=run.context_recall,
-        total_questions=run.total_questions,
-        passed_questions=run.passed_questions,
-        notes=run.notes,
+        id=run.id, run_date=run.run_date.isoformat(), faithfulness=run.faithfulness,
+        answer_relevancy=run.answer_relevancy, context_precision=run.context_precision,
+        context_recall=run.context_recall, total_questions=run.total_questions,
+        passed_questions=run.passed_questions, notes=run.notes,
     )

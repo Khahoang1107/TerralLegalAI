@@ -195,6 +195,47 @@ class VectorStore:
             for r in results.points
         ]
 
+    def scroll_chunks(
+        self,
+        procedure_type: Optional[str | list[str]] = None,
+        limit: int = 10000,
+    ) -> list[dict]:
+        """Read indexed chunks for the local lexical (BM25) side of hybrid search.
+
+        This is read-only and paginated so it stays correct when the collection
+        grows beyond a single Qdrant scroll page.
+        """
+        conditions = []
+        if procedure_type:
+            match = MatchAny(any=procedure_type) if isinstance(procedure_type, list) else MatchValue(value=procedure_type)
+            conditions.append(FieldCondition(key="procedure_type", match=match))
+        query_filter = Filter(must=conditions) if conditions else None
+        records: list[dict] = []
+        offset = None
+        while len(records) < limit:
+            points, offset = self.client.scroll(
+                collection_name=self.collection_name,
+                scroll_filter=query_filter,
+                limit=min(256, limit - len(records)),
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            records.extend({
+                "text": point.payload.get("text", ""),
+                "score": 0.0,
+                "source_name": point.payload.get("source_name", ""),
+                "source_file": point.payload.get("source_file", ""),
+                "article": point.payload.get("article", ""),
+                "clause": point.payload.get("clause", ""),
+                "field_type": point.payload.get("field_type", ""),
+                "procedure_type": point.payload.get("procedure_type", ""),
+                "chunk_index": point.payload.get("chunk_index", 0),
+            } for point in points)
+            if offset is None or not points:
+                break
+        return records
+
     def get_collection_info(self) -> dict:
         """Thông tin collection (số points, trạng thái...)."""
         info = self.client.get_collection(self.collection_name)

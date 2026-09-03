@@ -4,7 +4,6 @@ POST /api/v1/chat           — Gửi câu hỏi, nhận câu trả lời RAG
 POST /api/v1/messages/{id}/feedback — Gửi feedback 👍/👎
 """
 import logging
-import re
 from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -19,6 +18,7 @@ from backend.app.core.security import get_current_user
 from backend.app.models.user import User
 from backend.app.models.conversation import Conversation, Message
 from backend.app.models.form_schema import FormSchema
+from backend.app.core.form_flow import apply_flow_rules, get_missing_fields, order_fields
 import uuid
 
 router = APIRouter()
@@ -161,6 +161,7 @@ async def chat(
         is_form_intent = False
         active_form = None
         collected_data = {}
+        flow_state: dict = {}
         last_asked_field = None  # {"key": ..., "name": ...} — field asked in previous turn
         invalid_fields: list = []  # field keys where collected value is invalid
         result = None  # FormExtractionResult — only set in form path
@@ -169,6 +170,7 @@ async def chat(
             is_form_intent = True
             form_id = conv_record.state["active_form_id"]
             collected_data = conv_record.state.get("collected_data", {})
+            flow_state = conv_record.state.get("flow_state", {})
             last_asked_field = conv_record.state.get("last_asked_field")  # may be None
             invalid_fields = conv_record.state.get("invalid_fields", [])  # persisted from prev turn
             active_form = await db.scalar(select(FormSchema).where(FormSchema.id == form_id))
@@ -248,7 +250,7 @@ Yêu cầu:
                         active_form = next((f for f in available_forms if str(f.id) == str(selected_id)), None)
                         if active_form:
                             is_form_intent = True
-                            conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}}
+                            conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}, "flow_state": {}}
                             flag_modified(conv_record, "state")
                             await db.flush()
                 except Exception as e:
@@ -319,7 +321,7 @@ Yêu cầu:
             )
             
             # ── UPDATE collected_data + DATA QUALITY VALIDATION ────────────────
-            from backend.app.rag.agent import is_auto_fill_field, quick_validate_value, get_friendly_name
+            from backend.app.rag.agent import is_auto_fill_field, quick_validate_value, get_friendly_name, normalize_field_value
             field_map: dict = {f.get("key", ""): f for f in (active_form.fields or [])}
             new_invalid_fields: list = []
 
@@ -331,78 +333,27 @@ Yêu cầu:
                     continue
 
                 field_def = field_map.get(extracted.key, {})
+                # Chuẩn hóa giá trị trước khi validate (boolean → có/không, digit → chỏ số)
+                normalized_value = normalize_field_value(field_def, extracted.value)
                 # Chỉ validate trường cá nhân (không validate trường tự điền)
                 if not is_auto_fill_field(field_def):
-                    if not quick_validate_value(field_def, extracted.value):
+                    if not quick_validate_value(field_def, normalized_value):
                         # Giá trị sai kiểu → KHÔNG lưu, đánh dấu invalid để hỏi lại
                         logger.warning(
                             f"Invalid value for '{extracted.key}' ({field_def.get('name', '?')}): "
-                            f"'{extracted.value}' — removing from collected_data"
+                            f"'{extracted.value}' (normalized: '{normalized_value}') — removing from collected_data"
                         )
                         # Xóa khỏi collected_data nếu đã tồn tại
                         collected_data.pop(extracted.key, None)
                         new_invalid_fields.append(extracted.key)
                         continue
 
-                collected_data[extracted.key] = extracted.value
+                collected_data[extracted.key] = normalized_value
 
-            # Xác định các parent bị bỏ qua hoặc trả lời "Không" để auto-skip các child
-            skipped_parents = []
-            for k, v in collected_data.items():
-                if v == "__SKIPPED__" or (isinstance(v, str) and v.lower() in {"không", "khong", "no", "false", "0", "☐"}):
-                    # Tìm label của field này (VD: "[20]")
-                    f = field_map.get(k)
-                    if f:
-                        name = f.get("name", "")
-                        m = re.search(r'\[(\d+)\]', name)
-                        if m:
-                            skipped_parents.append(m.group(1)) # Lưu "20"
-            
-            # Auto-skip các child (theo quy tắc đánh số [20.1])
-            if skipped_parents:
-                for f in active_form.fields:
-                    name = f.get("name", "")
-                    m = re.search(r'\[(\d+)\.\d+\]', name)
-                    if m and m.group(1) in skipped_parents:
-                        child_key = f.get("key")
-                        if child_key and child_key not in collected_data:
-                            collected_data[child_key] = "__SKIPPED__"
-                            
-            # Tự động đánh dấu SKIPPED cho các trường thuộc nhóm require_one_of_group đã được thỏa mãn bởi trường khác
-            fulfilled_groups = set()
-            for f in active_form.fields:
-                grp = f.get("require_one_of_group")
-                val = collected_data.get(f.get("key"))
-                if grp and val and val != "__SKIPPED__":
-                    fulfilled_groups.add(grp)
-            
-            for f in active_form.fields:
-                grp = f.get("require_one_of_group")
-                k = f.get("key")
-                if grp and grp in fulfilled_groups:
-                    val = collected_data.get(k)
-                    if not val or val == "__SKIPPED__":
-                        collected_data[k] = "__SKIPPED__"
-
-            # Auto-skip theo cấu hình depends_on từ UI (có hỗ trợ đệ quy/cascading)
-            changed = True
-            while changed:
-                changed = False
-                for f in active_form.fields:
-                    depends_on = f.get("depends_on")
-                    if depends_on:
-                        target_name = depends_on.get("field")
-                        if target_name:
-                            target_key = next((tf.get("key") for tf in active_form.fields if tf.get("name") == target_name), None)
-                            if target_key:
-                                target_val = collected_data.get(target_key)
-                                if target_val == "__SKIPPED__" or (isinstance(target_val, str) and target_val.lower() in {"không", "khong", "no", "false", "0", "☐", "bỏ qua", "bo qua", "không có", "khong co", "ko", "ko có", "ko co"}):
-                                    child_key = f.get("key")
-                                    if child_key:
-                                        child_val = collected_data.get(child_key)
-                                        if child_val != "__SKIPPED__":
-                                            collected_data[child_key] = "__SKIPPED__"
-                                            changed = True
+            # Deterministic flow: applies/reopens dependent branches and settles
+            # one-of groups.  The provenance lets a later parent answer reopen
+            # only values skipped automatically, never a user's explicit skip.
+            flow_state = apply_flow_rules(active_form.fields or [], collected_data, flow_state)
 
             # Kết hợp invalid_fields cũ (chưa được hỏi lại) với mới phát hiện
             # Loại bỏ khỏi invalid_fields những key vừa được điền thành công
@@ -413,36 +364,13 @@ Yêu cầu:
 
             # ── GROUND-TRUTH COMPLETION CHECK (không tin hoàn toàn vào LLM) ──────
             # Dùng is_auto_fill_field() thay vì check chuỗi [TU_DONG_DIEN] — chính xác hơn
-            personal_fields = [
+            personal_fields = order_fields([
                 f for f in (active_form.fields or [])
                 if not is_auto_fill_field(f)
-            ]
+            ])
             
             # 1. Tính toán missing_fields thực sự (sau khi đã chạy cascade logic)
-            missing_fields = []
-            for f in personal_fields:
-                k = f.get("key", "")
-                val = collected_data.get(k)
-                
-                if val and val != "__SKIPPED__":
-                    continue
-                if val == "__SKIPPED__":
-                    continue
-                
-                # Chỉ hiển thị field con nếu field cha ĐÃ ĐƯỢC ĐIỀN (ẩn field con nếu field cha bị missing)
-                depends_on = f.get("depends_on")
-                parent_missing = False
-                if depends_on:
-                    target_name = depends_on.get("field")
-                    if target_name:
-                        target_key = next((tf.get("key") for tf in active_form.fields if tf.get("name") == target_name), None)
-                        if target_key:
-                            target_val = collected_data.get(target_key)
-                            if not target_val:  # Nếu cha chưa có dữ liệu gì cả -> Ẩn con
-                                parent_missing = True
-                
-                if not parent_missing:
-                    missing_fields.append(f)
+            missing_fields = get_missing_fields(personal_fields, collected_data)
             
             invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
             
@@ -504,6 +432,7 @@ Yêu cầu:
                 "is_complete": result.is_complete,
                 "last_asked_field": new_last_asked,
                 "invalid_fields": invalid_fields,  # MỚI: trường có dữ liệu không hợp lệ
+                "flow_state": flow_state,
             }
             flag_modified(conv_record, "state")
             await db.commit()
@@ -528,7 +457,9 @@ Yêu cầu:
             latency_ms = rag_response.latency_ms
             is_fallback = rag_response.is_fallback
             retrieved_chunks = [
-                {"text": c.text[:200], "score": c.score, "source_name": c.source_name}
+                # Qdrant / reranker can return numpy.float32. PostgreSQL JSONB
+                # only accepts native JSON values, so normalise before persisting.
+                {"text": c.text[:200], "score": float(c.score), "source_name": c.source_name}
                 for c in rag_response.retrieved_chunks
             ]
             citations = [
@@ -550,7 +481,7 @@ Yêu cầu:
             content=answer_text,
             intent=intent_val,
             retrieved_chunks=retrieved_chunks,
-            citations=[c.model_dump() for c in citations],
+            citations=[c.model_dump(mode="json") for c in citations],
             confidence=confidence,
             latency_ms=latency_ms,
             is_fallback=is_fallback,

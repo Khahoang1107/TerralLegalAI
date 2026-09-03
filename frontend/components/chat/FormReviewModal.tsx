@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { formsApi } from "@/lib/api";
 import { X, Download, FileText, RefreshCw } from "lucide-react";
 
@@ -9,12 +9,25 @@ interface FormReviewModalProps {
 }
 
 export default function FormReviewModal({ formId, initialData, onClose }: FormReviewModalProps) {
-  const [formData, setFormData] = useState<Record<string, string>>(initialData || {});
+  // Normalize initialData: convert boolean/number values to strings
+  const normalizeData = (data: Record<string, any>): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const [k, v] of Object.entries(data || {})) {
+      if (v === null || v === undefined) result[k] = '';
+      else if (typeof v === 'boolean') result[k] = v ? 'true' : 'false';
+      else result[k] = String(v);
+    }
+    return result;
+  };
+  const [formData, setFormData] = useState<Record<string, string>>(() => normalizeData(initialData));
   const [formSchema, setFormSchema] = useState<any>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [downloadingWord, setDownloadingWord] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  // dùng ref để tránh dependency loop (previewUrl → loadPreview → effect → previewUrl...)
+  const previewUrlRef = useRef<string | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     formsApi.getForm(formId).then(form => {
@@ -22,24 +35,43 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
     }).catch(console.error);
   }, [formId]);
 
-  const loadPreview = async () => {
+  // Load preview với data bất kỳ (không phụ thuộc state previewUrl)
+  const loadPreview = (data: Record<string, string>) => {
     setLoadingPreview(true);
-    try {
-      const blob = await formsApi.previewPdf(formId, formData);
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
-    } catch (err) {
-      console.error("Lỗi tải bản xem trước", err);
-    } finally {
-      setLoadingPreview(false);
-    }
+    formsApi.previewPdf(formId, data)
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = url;
+        setPreviewUrl(url);
+      })
+      .catch(err => console.error("Lỗi tải bản xem trước", err))
+      .finally(() => setLoadingPreview(false));
   };
 
+  // Tải preview ngay khi mở modal (1 lần duy nhất)
   useEffect(() => {
-    loadPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadPreview(formData);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Khi user thay đổi formData, ẩn preview cũ ngay để không hiển thị dữ liệu
+  // lệch với cột nhập liệu; sau đó render lại nhanh với dữ liệu mới.
+  // mountCountRef để bỏ qua lần đầu tiên (mount) — chỉ react với thay đổi của user
+  const mountCountRef = useRef(0);
+  useEffect(() => {
+    mountCountRef.current += 1;
+    if (mountCountRef.current <= 1) return; // bỏ qua lần mount đầu
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    setLoadingPreview(true);
+    debounceTimerRef.current = setTimeout(() => {
+      loadPreview(formData);
+    }, 400);
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
 
   const handleDownload = async (format: "docx" | "pdf") => {
     if (format === "docx") setDownloadingWord(true);
@@ -64,6 +96,39 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
     }
   };
 
+  // Lấy giá trị hiện tại của field theo nhiều key
+  const getFieldValue = (field: any): string => {
+    const keys = [field.group_key, field.key, field.name].filter(Boolean);
+    for (const key of keys) {
+      const v = formData[key];
+      if (v !== undefined && v !== null) return String(v);
+    }
+    return '';
+  };
+
+  // Set giá trị theo TẤT CẢ keys của field (key + name + group_key)
+  const setFieldValue = (field: any, value: string) => {
+    const keys = [field.group_key, field.key, field.name].filter(Boolean);
+    setFormData(prev => {
+      const next = { ...prev };
+      keys.forEach(k => { next[k] = value; });
+      return next;
+    });
+  };
+
+  // Các ô số tách rời trong file Word cùng dùng một giá trị chung. Chỉ gộp ở
+  // lớp hiển thị để người dùng nhập một lần; payload vẫn giữ nguyên key cũ.
+  const displayFields = (() => {
+    const groups = new Set<string>();
+    return (formSchema?.fields || []).filter((field: any) => {
+      if (field.type !== "digit_group") return true;
+      const groupKey = field.group_key || field.name || field.key;
+      if (groups.has(groupKey)) return false;
+      groups.add(groupKey);
+      return true;
+    });
+  })();
+
   if (!formSchema) return (
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
       <div style={{ background: "white", padding: 20, borderRadius: 8 }}>Đang tải thông tin biểu mẫu...</div>
@@ -71,10 +136,15 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
   );
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-      <div style={{ background: "white", width: "90%", maxWidth: 1200, height: "85vh", borderRadius: 12, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}>
+    <div
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "white", width: "90%", maxWidth: 1200, height: "85vh", borderRadius: 12, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)", position: "relative", isolation: "isolate" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
           <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
             <FileText size={22} color="#4f46e5" />
@@ -85,137 +155,94 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
           </button>
         </div>
 
-        {/* Content */}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          
-          {/* Left Panel: Form Data */}
-          <div style={{ width: "40%", borderRight: "1px solid #e5e7eb", padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+          {/* LEFT PANEL - form fields */}
+          <div style={{ flex: "0 0 40%", width: "40%", minWidth: 0, borderRight: "1px solid #e5e7eb", padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, position: "relative", zIndex: 2 }}>
             <h3 style={{ margin: 0, fontSize: "1rem", color: "#334155" }}>Thông tin đã thu thập</h3>
-            <p style={{ fontSize: "0.875rem", color: "#64748b", margin: 0 }}>Vui lòng kiểm tra và chỉnh sửa thông tin trước khi tải xuống tài liệu.</p>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
-              {(() => {
-                const displayFields: any[] = [];
-                const processedGroups = new Set();
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 8 }}>
+              {displayFields.map((field: any, idx: number) => {
+                const val = getFieldValue(field);
+                const labelText = (field.name && field.name.includes('_') && field.description && !field.description.startsWith('Nhập')) ? field.description : (field.name || field.key);
                 
-                formSchema.fields?.forEach((field: any) => {
-                  if (field.type === 'digit_group') {
-                    const gKey = field.group_key || field.key || field.name;
-                    if (!processedGroups.has(gKey)) {
-                      processedGroups.add(gKey);
-                      displayFields.push({ ...field, uiKey: gKey, isGroup: true });
-                    }
-                  } else {
-                    displayFields.push({ ...field, uiKey: field.key || field.name });
-                  }
-                });
-                
-                return displayFields.map((field: any) => (
-                  <label key={field.uiKey} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.875rem", fontWeight: 500, color: "#475569" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {(field.name && field.name.includes('_') && field.description && !field.description.startsWith('Nhập thông tin')) ? field.description : (field.name || field.key)}
-                      {field.isGroup && (
-                        <span style={{ fontSize: "0.7rem", color: "#6366f1", background: "#eef2ff", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>
-                          Mỗi ký tự = 1 ô
-                        </span>
-                      )}
-                    </span>
-                    {field.type === 'boolean' ? (
+                if (field.type === 'boolean') {
+                  const isChecked = ['true', 'có', 'x', '☑', 'rồi', 'đúng', '1'].includes(String(val ?? '').toLowerCase().trim());
+                  return (
+                    <label key={idx} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.875rem", cursor: 'pointer', userSelect: 'none', position: 'relative', zIndex: 10 }}>
                       <input
                         type="checkbox"
-                        checked={(() => {
-                          const v = formData[field.uiKey] ?? formData[field.key] ?? formData[field.name];
-                          return v === 'true' || v === 'có' || v === 'x' || v === '☑';
-                        })()}
+                        checked={isChecked}
                         onChange={(e) => {
-                          const next = { ...formData, [field.uiKey]: e.target.checked ? 'true' : 'false' };
-                          if (field.key && field.key !== field.uiKey) next[field.key] = e.target.checked ? 'true' : 'false';
-                          setFormData(next);
+                          e.stopPropagation();
+                          setFieldValue(field, e.target.checked ? 'true' : 'false');
                         }}
-                        style={{ width: 20, height: 20, marginTop: 4, cursor: 'pointer' }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: 18, height: 18, cursor: 'pointer', flexShrink: 0, pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
+                      />
+                      <span style={{ color: "#475569" }}>{labelText}</span>
+                    </label>
+                  );
+                }
+
+                if (field.type === 'choice') {
+                  const options = Array.isArray(field.options) ? field.options : [];
+                  return <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 6 }}><span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#475569" }}>{labelText}</span><select value={val === '__SKIPPED__' ? '' : val} onChange={(e) => setFieldValue(field, e.target.value)} style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem" }}><option value="">Chọn đáp án...</option>{options.map((option: string) => <option key={option} value={option}>{option}</option>)}</select></div>;
+                }
+
+                return (
+                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 4, position: 'relative', zIndex: 10 }}>
+                    <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#475569" }}>
+                      {labelText}
+                    </span>
+                    {field.type === 'textarea' || (val && val.length > 50) ? (
+                      <textarea
+                        value={val === '__SKIPPED__' ? '' : val}
+                        onChange={(e) => setFieldValue(field, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem", width: "100%", minHeight: "80px", boxSizing: "border-box", pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
                       />
                     ) : (
-                      <>
-                        {(() => {
-                          const isLongText = field.type === 'textarea' || field.type === 'long_text' || 
-                            ['ly_do', 'dia_chi', 'noi_dung', 'ghi_chu', 'thuong_tru', 'tam_tru', 'chuyen_mon'].some(k => (field.name || '').toLowerCase().includes(k) || (field.key || '').toLowerCase().includes(k)) || 
-                            (formData[field.uiKey] && formData[field.uiKey].length > 40);
-
-                          const val = (() => {
-                            const v = formData[field.uiKey] ?? formData[field.key] ?? formData[field.name] ?? '';
-                            return v === '__SKIPPED__' ? '' : v;
-                          })();
-
-                          const onChange = (e: any) => {
-                            const next = { ...formData, [field.uiKey]: e.target.value };
-                            if (field.key && field.key !== field.uiKey) next[field.key] = e.target.value;
-                            if (field.name && field.name !== field.uiKey) next[field.name] = e.target.value;
-                            setFormData(next);
-                          };
-
-                          const commonStyle = { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem", cursor: 'text', fontFamily: "inherit", width: "100%", boxSizing: "border-box" as const };
-                          const placeholder = field.isGroup ? "Nhập liền không dấu cách (vd: 110122008111)" : "";
-
-                          return isLongText && !field.isGroup ? (
-                            <textarea
-                              value={val}
-                              onChange={onChange}
-                              style={{ ...commonStyle, resize: 'vertical', minHeight: "80px" }}
-                              placeholder={placeholder}
-                            />
-                          ) : (
-                            <input
-                              type="text"
-                              value={val}
-                              onChange={onChange}
-                              style={commonStyle}
-                              placeholder={placeholder}
-                            />
-                          );
-                        })()}
-                        {field.isGroup && (
-                          <span style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                            Nhập chuỗi số liền nhau — hệ thống sẽ tự điền từng ô
-                          </span>
+                      <input
+                        type="text"
+                        value={val === '__SKIPPED__' ? '' : val}
+                        inputMode={field.type === 'digit_group' ? "numeric" : undefined}
+                        onChange={(e) => setFieldValue(
+                          field,
+                          field.type === 'digit_group' ? e.target.value.replace(/\D/g, '') : e.target.value
                         )}
-                      </>
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.9rem", width: "100%", boxSizing: "border-box", pointerEvents: 'auto', position: 'relative', zIndex: 10 }}
+                      />
                     )}
-                  </label>
-                ));
-              })()}
-            </div>
-            
-            <div style={{ marginTop: "auto", paddingTop: 20 }}>
-              <button 
-                type="button"
-                onClick={loadPreview}
-                disabled={loadingPreview}
-                style={{ width: "100%", padding: "10px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", color: "#334155", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-              >
-                <RefreshCw size={16} className={loadingPreview ? "animate-spin" : ""} />
-                Cập nhật bản xem trước (PDF)
-              </button>
+                    {field.type === 'digit_group' && (
+                      <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                        Nhập một dãy số liền nhau — bản xem trước sẽ đặt từng chữ số vào từng ô.
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           
-          {/* Right Panel: PDF Preview */}
-          <div style={{ width: "60%", background: "#f1f5f9", display: "flex", flexDirection: "column", padding: 16 }}>
+          {/* RIGHT PANEL - PDF preview, fully contained */}
+          <div style={{ flex: "0 0 60%", width: "60%", minWidth: 0, background: "#f1f5f9", display: "flex", flexDirection: "column", padding: 16, overflow: "hidden", position: "relative", zIndex: 1 }}>
             <div style={{ flex: 1, background: "white", borderRadius: 8, overflow: "hidden", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
               {loadingPreview ? (
                 <div style={{ color: "#64748b", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   <RefreshCw size={24} className="animate-spin" />
-                  <span>Đang tạo bản xem trước...</span>
+                  <span>Đang cập nhật...</span>
                 </div>
               ) : previewUrl ? (
-                <iframe src={`${previewUrl}#toolbar=0`} style={{ width: "100%", height: "100%", border: "none" }} />
-              ) : (
-                <span style={{ color: "#94a3b8" }}>Không có bản xem trước</span>
-              )}
+                <iframe
+                  src={`${previewUrl}#toolbar=0`}
+                  style={{ width: "100%", height: "100%", border: "none", display: "block", maxWidth: "100%", maxHeight: "100%" }}
+                />
+              ) : null}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ padding: "16px 24px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end", gap: 12, background: "#f8fafc" }}>
           <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", color: "#475569", fontWeight: 500, cursor: "pointer" }}>
             Đóng
@@ -237,7 +264,6 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
             {downloadingWord ? "Đang tạo..." : "Tải xuống Word"}
           </button>
         </div>
-        
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir google-genai
 RUN pip install --no-cache-dir mammoth
+RUN pip install --no-cache-dir langchain-google-genai
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim AS runtime

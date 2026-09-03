@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # ── Reranker ──────────────────────────────────────────────────
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
     reranker_top_k: int = 3
+    reranker_enabled: bool = True
 
     # ── PostgreSQL ────────────────────────────────────────────────
     database_url: str = (

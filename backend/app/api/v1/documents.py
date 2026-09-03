@@ -59,6 +59,14 @@ class ReindexResponse(BaseModel):
     message: str
 
 
+class ChunkResponse(BaseModel):
+    id: str
+    text: str
+    article: Optional[str] = None
+    clause: Optional[str] = None
+    field_type: Optional[str] = None
+
+
 # ─── Background Task: Index Document ─────────────────────────────
 
 def _index_document_sync(
@@ -361,6 +369,17 @@ async def get_document(
         chunk_count=chunk_count or 0,
         created_at=doc.created_at.isoformat(),
     )
+
+
+@router.get("/documents/{document_id}/chunks", response_model=list[ChunkResponse])
+async def list_document_chunks(document_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Inspect source chunks before deciding whether to replace or re-index a document."""
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="document_id không hợp lệ")
+    chunks = (await db.execute(select(DocumentChunk).where(DocumentChunk.document_id == doc_uuid).order_by(DocumentChunk.id))).scalars().all()
+    return [ChunkResponse(id=chunk.id, text=chunk.text, article=chunk.article, clause=chunk.clause, field_type=chunk.field_type) for chunk in chunks]
 
 
 @router.delete("/documents/{document_id}", status_code=204)

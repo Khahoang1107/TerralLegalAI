@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy import text
 from backend.app.core.config import settings
 
 # Create async engine for PostgreSQL
@@ -38,5 +39,7 @@ async def init_db():
     async with engine.begin() as conn:
         # Trong production nên dùng Alembic, ở đây tạo bảng tạm cho Phase 1
         await conn.run_sync(Base.metadata.create_all)
-
+        # Lightweight forward-compatible schema addition for the per-case RAG
+        # evidence introduced after the initial evaluation table existed.
+        await conn.execute(text("ALTER TABLE evaluation_case_results ADD COLUMN IF NOT EXISTS retrieved_contexts JSONB"))
 

@@ -10,6 +10,7 @@ from google import genai
 from google.genai import types
 
 from backend.app.core.config import settings
+from backend.app.core.form_flow import get_missing_fields, order_fields
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,14 @@ def is_auto_fill_field(field: Dict[str, Any]) -> bool:
       2. Mô tả chứa tag [TU_DONG_DIEN]
       3. Tên trường (sau khi normalize bỏ dấu) khớp với danh sách pattern
     """
+    # Form mới luôn lưu value_source. Giá trị explicit này phải ưu tiên hơn
+    # heuristic cũ theo tên (ví dụ "Ngày cấp" không được tự nhiên bị coi là
+    # ngày tự động nếu admin đã chọn "Người dùng nhập").
+    source = field.get("value_source")
+    if source in {"ai_document", "current_date"}:
+        return True
+    if source == "user_input":
+        return False
     if field.get("is_auto_fill"):
         return True
     description = field.get("description", "")
@@ -111,13 +120,60 @@ def quick_validate_value(field: Dict[str, Any], value: str) -> bool:
         if _DOC_KEYWORDS.search(value):
             return False
 
-    # Trường kiểu boolean: chỉ chấp nhận "có" / "không" / giá trị tương đương
+    # Trường kiểu boolean: chỉ chấp nhận các giá trị có/không tương đương
     if field_type == "boolean":
         normalized = value.lower().strip()
-        if normalized not in {"có", "không", "co", "khong", "yes", "no", "đúng", "sai", "rồi", "chưa"}:
+        BOOL_OK = {
+            "có", "co", "yes", "true", "1", "x", "☑", "đúng", "rồi", "được",
+            "không", "khong", "no", "false", "0", "☐", "sai", "chưa", "ko",
+        }
+        if normalized not in BOOL_OK:
+            return False
+
+    # Trường kiểu digit_group: chỉ chấp nhận chuỗi số (có thể có dấu chấm, gạch ngang)
+    if field_type == "digit_group":
+        cleaned = re.sub(r"[\s.\-/]", "", value)
+        if cleaned and not cleaned.isdigit():
+            return False
+
+    if field_type == "choice":
+        options = [str(option).strip().casefold() for option in field.get("options", [])]
+        if options and value.strip().casefold() not in options:
             return False
 
     return True
+
+
+
+def normalize_field_value(field: Dict[str, Any], value: str) -> str:
+    """
+    Chuẩn hóa giá trị trước khi lưu vào collected_data:
+    - Boolean: chuyển về 'có' hoặc 'không'
+    - Digit_group: giữ lại chỉ chữ số
+    - String: giữ nguyên
+    """
+    if not value or value == "__SKIPPED__":
+        return value
+
+    field_type = field.get("type", "string")
+
+    if field_type == "boolean":
+        v = value.lower().strip()
+        TRUE_SET = {"có", "co", "yes", "true", "1", "x", "☑", "đúng", "rồi", "được", "đồng ý", "ok"}
+        FALSE_SET = {"không", "khong", "no", "false", "0", "☐", "sai", "chưa", "ko", "chưa có", "khong co"}
+        if v in TRUE_SET:
+            return "có"
+        if v in FALSE_SET:
+            return "không"
+        # Nếu không nhận ra → giữ nguyên (sẽ bị reject bởi quick_validate_value)
+        return value
+
+    if field_type == "digit_group":
+        # Chỉ giữ chữ số
+        digits_only = re.sub(r"[^0-9]", "", value)
+        return digits_only if digits_only else value
+
+    return value
 
 
 # ─── Data Models ──────────────────────────────────────────────────────────────
@@ -182,28 +238,21 @@ class FormAgent:
         auto_fill_fields = [f for f in form_fields if is_auto_fill_field(f)]
         personal_fields = [f for f in form_fields if not is_auto_fill_field(f)]
 
-        # ── Sắp xếp personal_fields theo nhãn (VD: [1], [2], [1.1]) ─────────
-        # Các trường phụ không có nhãn sẽ kế thừa nhãn của trường liền trước
-        enriched_personal = []
-        last_val = 0.0
-        for i, f in enumerate(personal_fields):
-            name = f.get("name", "")
-            m = re.search(r'\[(\d+(?:\.\d+)?)\]', name)
-            if m:
-                last_val = float(m.group(1))
-            enriched_personal.append((last_val, i, f))
-        enriched_personal.sort(key=lambda x: (x[0], x[1]))
-        personal_fields = [x[2] for x in enriched_personal]
+        # Backend and AI share the same Admin/PDF ordering rule.
+        personal_fields = order_fields(personal_fields)
 
         # ── Build schema description ──────────────────────────────────────────
         schema_desc = []
         for f in personal_fields:
             req = "Bắt buộc" if f.get("required") else "Tùy chọn"
             desc = f.get("description", "")
+            section_name = f.get("section_name")
             field_type = f.get("type", "string")
+            choices = f"; lựa chọn: {' | '.join(f.get('options', []))}" if field_type == "choice" else ""
             schema_desc.append(
                 f"- {get_friendly_name(f)} "
-                f"(Key: {f.get('key', '')}, Kiểu: {field_type}, {req}): {desc}"
+                f"(Key: {f.get('key', '')}, Kiểu: {field_type}, {req}{choices}"
+                f"{', Cụm: ' + section_name if section_name else ''}): {desc}"
             )
 
         schema_text = "\n".join(schema_desc) or "  (Không có trường cá nhân nào)"
@@ -223,26 +272,9 @@ class FormAgent:
         ]) or "  (Không có)"
 
         # ── Missing personal fields (Required and Optional) ────────────────────
-        fulfilled_groups = set()
-        for f in personal_fields:
-            grp = f.get("require_one_of_group")
-            val = collected_data.get(f.get("key", ""))
-            if grp and val and val != "__SKIPPED__":
-                fulfilled_groups.add(grp)
-
-        missing_personal = []
-        for f in personal_fields:
-            k = f.get("key", "")
-            val = collected_data.get(k, "")
-            grp = f.get("require_one_of_group")
-            
-            if val and val != "__SKIPPED__":
-                continue
-            if val == "__SKIPPED__":
-                continue
-            if grp and grp in fulfilled_groups:
-                continue
-            missing_personal.append(f)
+        # Includes one representative when an entire require_one_of_group is
+        # unanswered, even if a user has skipped every individual alternative.
+        missing_personal = get_missing_fields(personal_fields, collected_data)
 
         # Ưu tiên invalid fields lên đầu danh sách missing
         invalid_set = set(invalid_fields)
@@ -390,7 +422,6 @@ Sau khi tổng hợp tất cả dữ liệu (bao gồm collected_data cũ + các
 - GỘP HỎI ĐỊA CHỈ: Nếu các trường tiếp theo cần hỏi là một chuỗi các thành phần địa chỉ (Số nhà, Đường, Tổ, Phường, Quận, Tỉnh), BẠN KHÔNG ĐƯỢC HỎI LẮT NHẮT TỪNG TRƯỜNG. Hãy hỏi gộp: "Bạn vui lòng cung cấp địa chỉ đầy đủ (số nhà, đường, tổ/thôn, phường/xã, quận/huyện, tỉnh/thành) của [Tên người/Nơi chốn] nhé." Khi người dùng trả lời 1 địa chỉ dài, hãy TỰ ĐỘNG BÓC TÁCH và gán TẤT CẢ các thành phần đó vào các key tương ứng trong `extracted_fields` cùng 1 lượt.
 - Khi hỏi thông tin về CON NGƯỜI (ví dụ: tên người sử dụng đất, người chuyển nhượng, v.v.), TUYỆT ĐỐI KHÔNG DÙNG "là gì". Hãy dùng "là ai" hoặc "vui lòng cho biết họ và tên của...".
 - ĐỊNH DẠNG NGÀY THÁNG: Nếu trường đang hỏi liên quan đến ngày, tháng, năm (ví dụ: Ngày sinh, Ngày cấp, Ngày hợp đồng, ...), hãy LUÔN LUÔN tự động chuyển đổi câu trả lời của người dùng về đúng định dạng chuẩn `DD/MM/YYYY` (Ví dụ: "ngày 22 tháng 12 năm 1999" -> "22/12/1999") trước khi gán vào `extracted_fields`.
-- HỎI XÁC NHẬN TRƯỚC (ai_ask_first): NẾU trường có cờ `ai_ask_first=true`, BẠN BẮT BUỘC PHẢI đặt một câu hỏi xác nhận (Có/Không) trước. Ví dụ: "Bạn có [Tên trường] không?". Nếu người dùng trả lời "Không", hãy tự động gán giá trị "__SKIPPED__" (bỏ qua) cho trường đó.
 - SUY LUẬN BỎ QUA (SKIP LOGIC): Nếu câu trả lời của người dùng HOẶC dữ liệu đã có cho thấy một/nhiều trường khác không còn ý nghĩa (Ví dụ: chọn "Lần đầu" = Có thì "Bổ sung lần thứ" bị vô hiệu; "Không có đại lý thuế" thì các trường mã số/tên/địa chỉ đại lý thuế cũng vô hiệu), hãy TỰ ĐỘNG GÁN giá trị "__SKIPPED__" cho các trường không cần thiết đó và đưa vào `extracted_fields` để không bao giờ hỏi chúng.
 
 Phản hồi phải tuân thủ JSON schema được yêu cầu.

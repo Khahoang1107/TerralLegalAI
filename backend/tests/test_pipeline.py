@@ -125,6 +125,49 @@ class TestRAGPipeline:
 
         assert 0.0 <= response.confidence <= 1.0
 
+    def test_hybrid_retrieval_keeps_exact_legal_keyword_hit(self):
+        """BM25 can recover a legal identifier missed by semantic candidates."""
+        pipeline, mock_vs, _, _ = self._make_pipeline()
+        mock_vs.scroll_chunks.return_value = [
+            {
+                "text": "Mẫu số 09/ĐK dùng để đăng ký biến động đất đai.",
+                "source_name": "QĐ 1085",
+                "source_file": "qd1085.pdf",
+                "chunk_index": 1,
+                "article": "",
+                "clause": "",
+                "field_type": "mau_don",
+                "procedure_type": "dang_ky_bien_dong",
+            },
+            {
+                "text": "Thời hạn giải quyết hồ sơ cấp đổi giấy chứng nhận.",
+                "source_name": "QĐ khác",
+                "source_file": "other.pdf",
+                "chunk_index": 2,
+                "article": "",
+                "clause": "",
+                "field_type": "thoi_han",
+                "procedure_type": "dang_ky_bien_dong",
+            },
+        ]
+        results = pipeline._hybrid_retrieve(
+            "Mẫu số 09/ĐK là gì?",
+            vector_results=[],
+            procedure_type="dang_ky_bien_dong",
+            top_k=3,
+        )
+        assert results
+        assert "09/ĐK" in results[0]["text"]
+
+    def test_citations_prefer_passages_supporting_answer(self):
+        pipeline, _, _, _ = self._make_pipeline()
+        from backend.app.rag.pipeline import RetrievedChunk
+        citations = pipeline._extract_citations([
+            RetrievedChunk("Hồ sơ chuyển nhượng gồm đơn đăng ký biến động.", 0.9, "QĐ 1085"),
+            RetrievedChunk("Lệ phí cấp đổi được áp dụng theo nghị quyết.", 0.8, "NQ phí"),
+        ], "Hồ sơ chuyển nhượng cần đơn đăng ký biến động.")
+        assert [citation.source_name for citation in citations] == ["QĐ 1085"]
+
 
 class TestTextCleaner:
     """Unit tests cho TextCleaner."""

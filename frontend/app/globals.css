@@ -166,3 +166,11 @@ button:disabled { cursor:not-allowed; opacity:.65; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.6; } }
+.modal-backdrop { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(15,23,42,.45); }
+.modal-content { width:min(620px,100%); max-height:calc(100vh - 48px); overflow:auto; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 24px 60px rgba(15,23,42,.25); }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid #e2e8f0; }
+.modal-header h2 { margin:0; font-size:20px; }
+.modal-body { display:flex; flex-direction:column; gap:14px; padding:22px; }
+.modal-body label { display:flex; flex-direction:column; gap:7px; color:#334155; font-size:14px; font-weight:600; }
+.modal-body input, .modal-body textarea, .modal-body select { box-sizing:border-box; width:100%; padding:10px 12px; color:#0f172a; font:inherit; font-weight:400; border:1px solid #cbd5e1; border-radius:8px; background:#fff; }
+.modal-body textarea { min-height:110px; resize:vertical; }

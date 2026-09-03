@@ -24,12 +24,18 @@ class RAGASEvaluator:
         self._ragas_available = self._check_ragas()
 
     def _check_ragas(self) -> bool:
-        """Kiểm tra xem RAGAS có được cài đặt không."""
+        """Chỉ bật RAGAS khi đầy đủ runtime để chấm thật.
+
+        Không coi việc có package ``ragas`` là đủ: bộ chấm này còn cần
+        LangChain adapter cho Gemini. Nếu thiếu adapter, kết quả phải được
+        gắn rõ là heuristic thay vì hiển thị nhầm là RAGAS.
+        """
         try:
             import ragas  # noqa
+            import langchain_google_genai  # noqa
             return True
         except ImportError:
-            logger.warning("RAGAS không được cài đặt. Dùng `pip install ragas` để cài.")
+            logger.warning("RAGAS runtime chưa đủ (cần ragas và langchain-google-genai).")
             return False
 
     def evaluate(self, samples: list[dict]) -> dict:

@@ -21,6 +21,9 @@ class TestResult:
     procedure_group: Optional[str]
     # Scores
     answer_similarity: float = 0.0   # Token overlap với expected answer
+    grounding_score: float = 0.0     # Answer token coverage by retrieved context
+    context_recall_score: float = 0.0  # Expected-answer coverage by context
+    retrieved_contexts: list[str] = field(default_factory=list)
     has_citation: bool = False        # Có citation không
     is_fallback: bool = False         # RAG trả về fallback không
     confidence: float = 0.0
@@ -55,6 +58,20 @@ class EvaluationResults:
             "avg_latency_ms": round(self.avg_latency_ms, 0),
             "fallback_rate": round(self.fallback_rate, 3),
             "citation_rate": round(self.citation_rate, 3),
+            "details": [
+                {
+                    "test_case_id": item.test_case_id,
+                    "question": item.question,
+                    "expected_answer": item.expected_answer,
+                    "actual_answer": item.actual_answer,
+                    "answer_similarity": item.answer_similarity,
+                    "grounding_score": item.grounding_score,
+                    "retrieved_contexts": item.retrieved_contexts,
+                    "is_fallback": item.is_fallback,
+                    "error": item.error,
+                }
+                for item in self.details
+            ],
         }
 
 
@@ -62,10 +79,10 @@ class TestRunner:
     """
     Chạy bộ test cases qua RAG pipeline.
 
-    Metrics heuristic (không cần RAGAS API):
+    Metrics heuristic (không cần RAGAS API, dùng để regression chứ không thay RAGAS):
     - answer_relevancy: Token overlap giữa answer và expected_answer
-    - faithfulness: Tỉ lệ câu trả lời không phải fallback (proxy)
-    - context_precision: Tỉ lệ có citation
+    - faithfulness: token coverage của câu trả lời bởi context đã retrieve
+    - context_precision: citation có phần trùng với câu trả lời
     - confidence_avg: Average confidence score từ pipeline
     """
 
@@ -107,6 +124,9 @@ class TestRunner:
             similarity = self._token_overlap(
                 response.answer, tc["expected_answer"]
             )
+            contexts = [chunk.text for chunk in response.retrieved_chunks]
+            grounding = self._coverage(response.answer, " ".join(contexts))
+            context_recall = self._coverage(tc["expected_answer"], " ".join(contexts))
 
             return TestResult(
                 test_case_id=tc.get("id", "unknown"),
@@ -115,6 +135,9 @@ class TestRunner:
                 actual_answer=response.answer,
                 procedure_group=tc.get("procedure_group"),
                 answer_similarity=similarity,
+                grounding_score=grounding,
+                context_recall_score=context_recall,
+                retrieved_contexts=contexts,
                 has_citation=bool(response.citations),
                 is_fallback=response.is_fallback,
                 confidence=response.confidence,
@@ -156,6 +179,15 @@ class TestRunner:
         union = len(a_tokens | e_tokens)
         return round(intersection / union, 3) if union > 0 else 0.0
 
+    def _coverage(self, target: str, source: str) -> float:
+        """How much of a target's meaningful vocabulary is present in a source."""
+        if not target or not source:
+            return 0.0
+        import re
+        target_tokens = set(re.findall(r"\b\w+\b", target.lower()))
+        source_tokens = set(re.findall(r"\b\w+\b", source.lower()))
+        return round(len(target_tokens & source_tokens) / len(target_tokens), 3) if target_tokens else 0.0
+
     def _aggregate(self, results: list[TestResult]) -> EvaluationResults:
         """Tổng hợp kết quả từ tất cả test cases."""
         if not results:
@@ -171,7 +203,9 @@ class TestRunner:
         similarities = [r.answer_similarity for r in valid]
         passed = [r for r in valid if r.answer_similarity >= self.PASS_THRESHOLD]
 
-        faithfulness = len(non_fallback) / len(valid) if valid else 0.0
+        faithfulness = sum(r.grounding_score for r in valid) / len(valid) if valid else 0.0
+        # Citation rate remains useful operationally; the score below is not
+        # presented as legal proof and RAGAS is still recommended for releases.
         context_precision = len(with_citation) / len(valid) if valid else 0.0
         answer_relevancy = sum(similarities) / len(similarities) if similarities else 0.0
         avg_confidence = sum(r.confidence for r in valid) / len(valid) if valid else 0.0
@@ -183,7 +217,7 @@ class TestRunner:
             faithfulness=round(faithfulness, 3),
             answer_relevancy=round(answer_relevancy, 3),
             context_precision=round(context_precision, 3),
-            context_recall=None,  # Cần RAGAS API để tính chính xác
+            context_recall=round(sum(r.context_recall_score for r in valid) / len(valid), 3),
             avg_confidence=avg_confidence,
             avg_latency_ms=avg_latency,
             fallback_rate=round(1 - faithfulness, 3),

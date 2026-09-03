@@ -5,6 +5,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
+import TestsView from "@/components/admin/TestsView";
 import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import {
   AlertCircle, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
@@ -662,6 +663,8 @@ function DocumentsView() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [chunkDoc, setChunkDoc] = useState<Document | null>(null);
+  const [chunks, setChunks] = useState<{id:string;text:string;article?:string;clause?:string;field_type?:string}[]>([]);
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   useEffect(() => {
@@ -676,22 +679,32 @@ function DocumentsView() {
       showToast("Đã xóa tài liệu.", "success");
     } catch { showToast("Lỗi khi xóa.", "error"); }
   };
+  const viewChunks = async (doc: Document) => { try { setChunks(await documentsApi.getChunks(doc.id)); setChunkDoc(doc); } catch { showToast("Không tải được chunks.", "error"); } };
+  const reindex = async (doc: Document) => { if (!window.confirm(`Lập chỉ mục lại “${doc.source_name}”? Chunks cũ sẽ được thay bằng chunks mới từ file gốc.`)) return; try { const out = await documentsApi.reindexDocument(doc.id); showToast(out.message, "success"); setDocs(prev => prev.map(item => item.id === doc.id ? {...item, status: "indexing"} : item)); } catch { showToast("Không thể lập chỉ mục lại tài liệu.", "error"); } };
 
   return <><div className="page-heading"><div><span className="eyebrow">Kho tri thức</span><h1>Quản lý tài liệu</h1><p>Cập nhật, kiểm duyệt và theo dõi quá trình lập chỉ mục.</p></div><button className="primary-button fit" onClick={() => setShowUpload(true)}><UploadCloud size={17} /> Tải tài liệu lên</button></div>
     <section className="panel table-panel"><div className="table-wrap"><table><thead><tr><th>Tài liệu</th><th>Ngày cập nhật</th><th>Chunks</th><th>Trạng thái</th><th /></tr></thead><tbody>
       {loading ? <tr><td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>Đang tải...</td></tr>
       : docs.length === 0 ? <tr><td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>Chưa có tài liệu nào.</td></tr>
-      : docs.map(doc => { const sl = statusLabel(doc.status); return <tr key={doc.id}><td><div className="document-name"><FileText size={19} /><span><strong>{doc.source_name}</strong><small>{doc.group_type}</small></span></div></td><td>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</td><td>{doc.chunk_count || "—"}</td><td><span className={`status ${sl.cls}`}>{sl.icon}{sl.label}</span></td><td><button className="icon-button" style={{ color: "red" }} onClick={() => handleDelete(doc.id)} title="Xóa"><Trash2 size={17} /></button></td></tr>; })
+      : docs.map(doc => { const sl = statusLabel(doc.status); return <tr key={doc.id}><td><div className="document-name"><FileText size={19} /><span><strong>{doc.source_name}</strong><small>{doc.group_type} · {doc.procedure_type}</small></span></div></td><td>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</td><td>{doc.chunk_count || "—"}</td><td><span className={`status ${sl.cls}`}>{sl.icon}{sl.label}</span></td><td style={{display:"flex",gap:4}}><button className="secondary-button" onClick={() => viewChunks(doc)}>Xem chunks</button><button className="secondary-button" onClick={() => reindex(doc)}>Re-index</button><button className="icon-button" style={{ color: "red" }} onClick={() => handleDelete(doc.id)} title="Xóa"><Trash2 size={17} /></button></td></tr>; })
       }
     </tbody></table></div></section>
     {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => { documentsApi.getDocuments().then(setDocs).catch(console.error); showToast("Tải lên thành công!", "success"); }} />}
+    {chunkDoc && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:820}}><div className="modal-header"><div><h2>Chunks: {chunkDoc.source_name}</h2><small>{chunks.length} chunk · chỉ xem để đối chiếu nguồn</small></div><button className="icon-button" onClick={()=>setChunkDoc(null)}>×</button></div><div className="modal-body">{chunks.length===0?<p>Chưa có chunk. Hãy re-index tài liệu.</p>:chunks.map((chunk,index)=><article key={chunk.id} style={{border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><strong>Chunk {index+1} {chunk.field_type ? `· ${chunk.field_type}` : ""}</strong><small style={{display:"block",color:"#64748b",margin:"4px 0 8px"}}>{[chunk.article,chunk.clause].filter(Boolean).join(" · ") || "Chưa có Điều/Khoản"}</small><p style={{whiteSpace:"pre-wrap",margin:0,lineHeight:1.55}}>{chunk.text}</p></article>)}</div></div></div>}
     {toast && <Toast msg={toast.msg} type={toast.type} onClose={hideToast} />}
   </>;
 }
 
-function TestsView() { return <><div className="page-heading"><div><span className="eyebrow">Đánh giá định kỳ</span><h1>Bộ kiểm thử</h1><p>Quản lý câu hỏi và câu trả lời chuẩn dùng để đánh giá AI.</p></div><button className="primary-button fit"><Plus size={17} /> Thêm test case</button></div><section className="panel"><div className="test-summary"><div><strong>15</strong><span>Tổng test case</span></div><div><strong>13</strong><span>Đạt yêu cầu</span></div><div><strong>2</strong><span>Cần rà soát</span></div><button className="secondary-button"><TestTube2 size={16} /> Chạy đánh giá</button></div><div className="test-list"><div><span className="test-id">TC-001</span><div><strong>Hồ sơ cấp đổi Giấy chứng nhận gồm những gì?</strong><p>Ground truth: Đơn đăng ký biến động, bản gốc Giấy chứng nhận...</p></div><span className="status done"><Check size={13} /> Đạt</span><button className="icon-button"><MoreHorizontal /></button></div><div><span className="test-id">TC-002</span><div><strong>Thời hạn cấp đổi sổ đỏ là bao lâu?</strong><p>Ground truth: Không quá thời hạn quy định theo từng địa bàn...</p></div><span className="status processing"><Clock3 size={13} /> Rà soát</span><button className="icon-button"><MoreHorizontal /></button></div></div></section></>; }
 
-function ReportsView() { return <><div className="page-heading"><div><span className="eyebrow">Theo dõi sử dụng</span><h1>Nhật ký & báo cáo</h1><p>Phân tích nhu cầu tra cứu và các trường hợp AI chưa giải quyết tốt.</p></div><button className="secondary-button"><FileText size={16} /> Xuất báo cáo</button></div><section className="admin-grid"><div className="panel"><div className="panel-title"><div><h2>Chủ đề được hỏi nhiều</h2><p>30 ngày gần nhất</p></div></div><div className="topic-list"><div><span>Cấp đổi Giấy chứng nhận</span><strong>38%</strong><i style={{ width: "38%" }} /></div><div><span>Chuyển nhượng đất</span><strong>29%</strong><i style={{ width: "29%" }} /></div><div><span>Thời hạn giải quyết</span><strong>18%</strong><i style={{ width: "18%" }} /></div></div></div><div className="panel"><div className="panel-title"><div><h2>Phản hồi người dùng</h2><p>328 lượt đánh giá</p></div></div><div className="feedback-score"><div><ThumbsUp /><strong>91%</strong><span>Hữu ích</span></div><div><ThumbsDown /><strong>9%</strong><span>Chưa hữu ích</span></div></div></div></section><section className="panel"><div className="panel-title"><div><h2>Câu hỏi fallback gần đây</h2><p>Cần bổ sung dữ liệu hoặc điều chỉnh truy xuất</p></div></div><div className="log-list"><div><time>09:42</time><span><strong>Thủ tục tách thửa đối với đất đang tranh chấp?</strong><small>Không tìm thấy ngữ cảnh đủ tin cậy · similarity 0.41</small></span><button>Rà soát</button></div><div><time>08:15</time><span><strong>Lệ phí cấp lại GCN năm 2026?</strong><small>Tài liệu hiện tại chưa có biểu phí · similarity 0.38</small></span><button>Rà soát</button></div></div></section></>; }
+function ReportsView() {
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof reportsApi.getStats>> | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => { reportsApi.getStats().then(setStats).catch(() => setError("Không tải được số liệu báo cáo thực tế.")); }, []);
+  const topics = stats?.topic_stats || [];
+  const feedback = stats?.feedback_stats;
+  const fallbacks = stats?.fallback_logs || [];
+  return <><div className="page-heading"><div><span className="eyebrow">Theo dõi sử dụng</span><h1>Nhật ký & báo cáo</h1><p>Số liệu lấy trực tiếp từ hội thoại, phản hồi và các fallback đã lưu trong hệ thống.</p></div></div>{error && <p style={{color:"#b91c1c"}}>{error}</p>}<section className="admin-grid"><div className="panel"><div className="panel-title"><div><h2>Chủ đề được hỏi nhiều</h2><p>30 ngày gần nhất</p></div></div><div className="topic-list">{topics.length ? topics.map(topic => <div key={topic.name}><span>{topic.name}</span><strong>{topic.percentage}%</strong><i style={{ width: `${topic.percentage}%` }} /></div>) : <p style={{color:"#64748b"}}>Chưa có đủ hội thoại để tổng hợp.</p>}</div></div><div className="panel"><div className="panel-title"><div><h2>Phản hồi người dùng</h2><p>{feedback?.total ?? 0} lượt đánh giá</p></div></div><div className="feedback-score"><div><ThumbsUp /><strong>{feedback?.up_pct ?? 0}%</strong><span>Hữu ích</span></div><div><ThumbsDown /><strong>{feedback?.down_pct ?? 0}%</strong><span>Chưa hữu ích</span></div></div></div></section><section className="panel"><div className="panel-title"><div><h2>Câu hỏi fallback gần đây</h2><p>Cần bổ sung dữ liệu hoặc điều chỉnh truy xuất</p></div></div><div className="log-list">{fallbacks.length ? fallbacks.map((item, index) => <div key={`${item.time}-${index}`}><time>{item.time}</time><span><strong>{item.question}</strong><small>{item.reason}</small></span></div>) : <p style={{color:"#64748b"}}>Chưa có câu hỏi fallback nào được ghi nhận.</p>}</div></section></>;
+}
 
 // ─── Forms View ───────────────────────────────────────────────────
 function FormsView() {
@@ -768,7 +781,10 @@ function FormsView() {
       setLabeledCount(Object.keys(newLabeledSnapshot).length);
       setFieldData(newFieldData);
       
-      showToast(`AI đã gợi ý và tự động chọn ${addedCount} vùng!`, "success");
+      const manualUncertain = res.zones.filter((zone: any) => String(zone.suggested_label || "") === "Cần đặt tên").length;
+      showToast(manualUncertain
+        ? `AI đã phân tích. Có ${manualUncertain} vùng vẽ tay cần bạn kiểm tra và đặt tên.`
+        : `AI đã gợi ý và tự động chọn ${addedCount} vùng!`, manualUncertain ? "error" : "success");
     } catch (err) {
       showToast("Lỗi khi gọi AI phân tích", "error");
     } finally {
@@ -881,11 +897,19 @@ function FormsView() {
   const [fieldRequired, setFieldRequired] = useState<Record<string, boolean>>({});
   const [fieldDesc, setFieldDesc] = useState<Record<string, string>>({});
   const [fieldType, setFieldType] = useState<Record<string, string>>({});
+  const [fieldOptions, setFieldOptions] = useState<Record<string, string>>({});
   const [fieldGroupKey, setFieldGroupKey] = useState<Record<string, string>>({});
   const [fieldDependsOn, setFieldDependsOn] = useState<Record<string, string>>({});
+  const [fieldDependsValue, setFieldDependsValue] = useState<Record<string, string>>({});
+  const [alternativeGroups, setAlternativeGroups] = useState<{ id: string; name: string }[]>([]);
   const [fieldRequireOneOfGroup, setFieldRequireOneOfGroup] = useState<Record<string, string>>({});
   const [fieldAutoFill, setFieldAutoFill] = useState<Record<string, boolean>>({});
-  const [fieldAskBeforeFill, setFieldAskBeforeFill] = useState<Record<string, boolean>>({});
+  const [fieldValueSource, setFieldValueSource] = useState<Record<string, string>>({});
+  const [fieldDatePart, setFieldDatePart] = useState<Record<string, string>>({});
+  const [virtualConditions, setVirtualConditions] = useState<{ id: string; name: string; beforeField: string }[]>([]);
+  const [formSections, setFormSections] = useState<{ id: string; name: string; mode: "always" | "yes_no"; question: string }[]>([]);
+  const [fieldSectionId, setFieldSectionId] = useState<Record<string, string>>({});
+  const [fieldSectionBranch, setFieldSectionBranch] = useState<Record<string, "yes" | "no">>({});
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   const fetchForms = useCallback(async () => {
@@ -985,8 +1009,44 @@ function FormsView() {
       showToast("Vui lòng nhập Tên trường dữ liệu cho TẤT CẢ các nhãn", "error");
       return;
     }
+    const radioWithoutChoices = labeledList.find(f => (fieldType[f.id] || "text") === "radio" && (fieldOptions[f.id] || "").split("|").map(v => v.trim()).filter(Boolean).length < 2);
+    if (radioWithoutChoices) {
+      showToast("Câu hỏi chọn một đáp án cần ít nhất 2 lựa chọn, ngăn cách bằng dấu |.", "error");
+      return;
+    }
+    const invalidAlternativeGroup = alternativeGroups.find(group => !group.name.trim() || Object.values(fieldRequireOneOfGroup).filter(id => id === group.id).length < 2);
+    if (invalidAlternativeGroup) {
+      showToast("Mỗi nhóm lựa chọn thay thế cần có tên và ít nhất 2 ô được chọn.", "error");
+      return;
+    }
+    const invalidVirtualCondition = virtualConditions.find(condition => !condition.name.trim() || !condition.beforeField);
+    if (invalidVirtualCondition) {
+      showToast("Mỗi câu hỏi điều kiện cần có nội dung và vị trí hỏi trước một ô thông tin.", "error");
+      return;
+    }
+    const invalidSection = formSections.find(section => !section.name.trim() || !Object.values(fieldSectionId).includes(section.id) || (section.mode === "yes_no" && !section.question.trim()));
+    if (invalidSection) {
+      showToast("Mỗi cụm cần có tên, ít nhất một ô; cụm Có/Không cần có câu hỏi.", "error");
+      return;
+    }
     setUploading(true);
-    const fields = labeledList.map(f => {
+    const sectionConditions = formSections.filter(section => section.mode === "yes_no").map(section => {
+      const members = labeledList.filter(field => fieldSectionId[field.id] === section.id);
+      const firstMember = members[0];
+      return { id: `section_condition_${section.id}`, name: section.question.trim(), beforeField: firstMember?.id || "" };
+    });
+    const allVirtualConditions = [...virtualConditions.filter(condition => condition.name.trim()), ...sectionConditions];
+    const virtualFields = allVirtualConditions.map((condition, index) => ({
+      key: condition.id,
+      name: condition.name.trim(),
+      description: `Câu hỏi điều kiện: ${condition.name.trim()}?`,
+      required: true,
+      type: "boolean",
+      value_source: "user_input",
+      is_virtual: true,
+      display_order: ((labeledList.find(field => field.id === condition.beforeField)?.num || 1) * 100) - 1 - index,
+    }));
+    const fields = [...virtualFields, ...labeledList.map(f => {
       const zone = editableZones?.find((z: any) => String(z.idx) === f.blankIdx);
       const isCheckbox = zone?.field_type === 'checkbox';
       const suggested = zone?.suggested_label || zone?.ai_label || "";
@@ -994,23 +1054,44 @@ function FormsView() {
       
       const customDesc = fieldDesc[f.id];
       const resolvedType = fieldType[f.id] || (isCheckbox ? 'checkbox' : 'text');
-      const defaultDesc = resolvedType === 'checkbox' ? `Có hay không: ${finalName}?` : `Nhập thông tin cho ${finalName}`;
+      const defaultDesc = resolvedType === 'checkbox' ? `Có hay không: ${finalName}?` : resolvedType === 'radio' ? `Chọn một phương án cho ${finalName}` : `Nhập thông tin cho ${finalName}`;
       
       const base: any = {
         key: f.id,
         name: finalName,
         description: customDesc || defaultDesc,
         required: fieldRequired[f.id] !== false,
-        type: resolvedType === 'checkbox' ? 'boolean' : resolvedType === 'digit_group' ? 'digit_group' : 'string',
-        is_auto_fill: fieldAutoFill[f.id] || false,
-        ai_ask_first: fieldAskBeforeFill[f.id] || false
+        // Persist the visual/PDF order so the backend asks consistently even if
+        // a field name has no numeric prefix such as [01].
+        display_order: f.num * 100,
+        type: resolvedType === 'checkbox' ? 'boolean' : resolvedType === 'radio' ? 'choice' : resolvedType === 'digit_group' ? 'digit_group' : 'string',
+        is_auto_fill: fieldValueSource[f.id] === "ai_document" || fieldAutoFill[f.id] || false,
+        value_source: fieldValueSource[f.id] || "user_input",
+        auto_rule: fieldValueSource[f.id] === "current_date" ? `current_date_${fieldDatePart[f.id] || "day"}` : null,
       };
       
       if (fieldDependsOn[f.id]) {
-        base.depends_on = { field: fieldDependsOn[f.id], value: true };
+        const parentId = fieldDependsOn[f.id];
+        const parentZone = editableZones?.find((z: any) => String(z.idx) === labeledList.find(l => l.id === parentId)?.blankIdx);
+        const parentType = virtualConditions.some(condition => condition.id === parentId) ? "checkbox" : fieldType[parentId] || (parentZone?.field_type === "checkbox" ? "checkbox" : "text");
+        base.depends_on = {
+          field: parentId,
+          value: parentType === "checkbox" ? fieldDependsValue[f.id] !== "false" : fieldDependsValue[f.id],
+        };
       }
-      if (fieldRequireOneOfGroup[f.id]?.trim()) {
-        base.require_one_of_group = fieldRequireOneOfGroup[f.id].trim();
+      const section = formSections.find(item => item.id === fieldSectionId[f.id]);
+      if (section?.name.trim()) {
+        base.section_name = section.name.trim();
+      }
+      if (section?.mode === "yes_no") {
+        base.depends_on = { field: `section_condition_${section.id}`, value: fieldSectionBranch[f.id] !== "no" };
+      }
+      if (resolvedType === 'radio') {
+        base.options = (fieldOptions[f.id] || "").split("|").map(option => option.trim()).filter(Boolean);
+      }
+      const alternativeGroup = alternativeGroups.find(group => group.id === fieldRequireOneOfGroup[f.id]);
+      if (alternativeGroup?.name.trim()) {
+        base.require_one_of_group = alternativeGroup.name.trim();
       }
       
       if (resolvedType === 'digit_group') {
@@ -1019,7 +1100,7 @@ function FormsView() {
         base.digit_index = parseInt(String(zone?.idx)) || 0;
       }
       return base;
-    });
+    })];
     const payload = {
       name: formName,
       procedure_type: procedureType,
@@ -1241,7 +1322,7 @@ function FormsView() {
 
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Loại dữ liệu</span>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Loại câu trả lời</span>
                         <select 
                           value={field.type || "text"}
                           onChange={(e) => {
@@ -1251,9 +1332,10 @@ function FormsView() {
                           }}
                           style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 12, background: "#fff", cursor: "pointer" }}
                         >
-                          <option value="text">📝 Văn bản (Text)</option>
-                          <option value="checkbox">☑ Hộp kiểm (Checkbox)</option>
-                          <option value="digit_group">🔢 Dãy số (Digit Group)</option>
+                          <option value="text">📝 Nhập nội dung</option>
+                          <option value="checkbox">☑ Có / Không</option>
+                          <option value="choice">◉ Chọn một đáp án</option>
+                          <option value="digit_group">🔢 Dãy số tách ô</option>
                         </select>
                       </div>
 
@@ -1272,25 +1354,11 @@ function FormsView() {
                         </label>
                       </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Hỏi xác nhận (Có/Không)</span>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", padding: "6px 8px", background: field.ai_ask_first ? "#fff7ed" : "#f1f5f9", borderRadius: 4, border: field.ai_ask_first ? "1px solid #f97316" : "1px solid #e2e8f0" }}>
-                          <input 
-                            type="checkbox" 
-                            checked={field.ai_ask_first || false}
-                            onChange={(e) => {
-                              const newFields = [...editFields];
-                              newFields[idx].ai_ask_first = e.target.checked;
-                              setEditFields(newFields);
-                            }}
-                          /> Hỏi trước khi điền
-                        </label>
-                      </div>
                     </div>
 
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Logic phân nhánh (Chỉ hỏi khi...)</span>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Chỉ hiển thị khi</span>
                         <select
                           value={typeof field.depends_on === 'object' && field.depends_on !== null ? field.depends_on.field : (field.depends_on || "")}
                           onChange={(e) => {
@@ -1304,12 +1372,12 @@ function FormsView() {
                           }}
                           style={{ border: "1px solid #d8b4fe", background: "#faf5ff", color: "#6b21a8", padding: "6px 8px", borderRadius: 4, fontSize: 12, cursor: "pointer" }}
                         >
-                          <option value="">Không có (Luôn hỏi)</option>
+                          <option value="">Luôn hiển thị</option>
                           {editFields.filter((_, i) => i !== idx).map((otherField, i2) => {
                             const tgtName = otherField.name || otherField.id;
                             return (
                               <option key={i2} value={tgtName}>
-                                Chỉ hỏi khi điền: {tgtName}
+                                Có câu trả lời: {tgtName}
                               </option>
                             );
                           })}
@@ -1317,7 +1385,7 @@ function FormsView() {
                       </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Nhóm bắt buộc 1 trong 2</span>
+                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Chỉ cần trả lời một trong nhóm</span>
                         <input 
                           value={field.require_one_of_group || ""}
                           onChange={(e) => {
@@ -1325,7 +1393,7 @@ function FormsView() {
                             newFields[idx].require_one_of_group = e.target.value;
                             setEditFields(newFields);
                           }}
-                          placeholder="VD: giayto1"
+                          placeholder="Ví dụ: Giấy tờ tùy thân"
                           style={{ border: "1px solid #fca5a5", background: "#fef2f2", padding: "6px 8px", borderRadius: 4, fontSize: 12 }}
                         />
                       </div>
@@ -1549,12 +1617,19 @@ function FormsView() {
                         <hr style={{ margin: "20px 0", borderColor: "#e5e7eb" }} />
 
                         {/* FIX BUG 1: Show suggested_label hint so user knows which zone = which number */}
-                        <h4 style={{ marginBottom: 16, color: "#4f46e5" }}>
-                          Nhập Tên trường dữ liệu cho {labeledList.length} nhãn đã chọn:
-                        </h4>
+                        <h4 style={{ marginBottom: 8, color: "#4f46e5" }}>Thiết lập {labeledList.length} ô thông tin</h4>
+                        <div style={{ fontSize: "0.78rem", color: "#475569", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "9px 10px", marginBottom: 16, lineHeight: 1.5 }}>
+                          <strong>Cách dùng:</strong> Checkbox là câu <strong>Có/Không</strong>; “Chọn một đáp án” dùng khi chỉ được chọn một trạng thái. Với nhiều ô liên quan, hãy dùng <strong>Cụm thông tin</strong> để AI hỏi đúng một lần rồi mở nhánh phù hợp.
+                        </div>
+                        <div style={{ marginBottom: 16, padding: 10, border: "1px solid #ddd6fe", borderRadius: 8, background: "#faf5ff" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}><strong style={{ fontSize: "0.82rem", color: "#6b21a8" }}>Cụm thông tin</strong><button type="button" onClick={() => setFormSections([...formSections, { id: `section_${Date.now()}`, name: "", mode: "always", question: "" }])} style={{ border: 0, borderRadius: 5, padding: "5px 8px", background: "#7c3aed", color: "#fff", cursor: "pointer", fontSize: "0.75rem" }}>+ Thêm cụm</button></div>
+                          <p style={{ fontSize: "0.72rem", color: "#6b7280", margin: "6px 0" }}>Cụm luôn hỏi là câu dẫn. Cụm Có/Không sẽ được AI hỏi một lần ngay trước ô con đầu tiên; câu trả lời không xuất hiện trên PDF.</p>
+                          {formSections.map(section => <div key={section.id} style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 7 }}><input value={section.name} onChange={e => setFormSections(formSections.map(item => item.id === section.id ? { ...item, name: e.target.value } : item))} placeholder="Tên cụm, ví dụ: Địa chỉ cư trú" style={{ flex: 1, minWidth: 150, padding: "4px 7px", border: "1px solid #c4b5fd", borderRadius: 4, fontSize: "0.75rem" }}/><select value={section.mode} onChange={e => setFormSections(formSections.map(item => item.id === section.id ? { ...item, mode: e.target.value as "always" | "yes_no" } : item))} style={{ padding: 4, border: "1px solid #c4b5fd", borderRadius: 4, fontSize: "0.75rem" }}><option value="always">Không cần hỏi Có/Không</option><option value="yes_no">Hỏi Có/Không trước</option></select>{section.mode === "yes_no" && <input value={section.question} onChange={e => setFormSections(formSections.map(item => item.id === section.id ? { ...item, question: e.target.value } : item))} placeholder="Ví dụ: Có nhà cho thuê không?" style={{ flex: 1, minWidth: 170, padding: "4px 7px", border: "1px solid #c4b5fd", borderRadius: 4, fontSize: "0.75rem" }}/>}<button type="button" onClick={() => { setFormSections(formSections.filter(item => item.id !== section.id)); const next = { ...fieldSectionId }; const nextBranch = { ...fieldSectionBranch }; Object.keys(next).forEach(key => { if (next[key] === section.id) { delete next[key]; delete nextBranch[key]; } }); setFieldSectionId(next); setFieldSectionBranch(nextBranch); }} style={{ border: 0, background: "transparent", color: "#b91c1c", cursor: "pointer" }}>Xóa</button></div>)}
+                        </div>
                         {labeledList.map(field => {
                           const zone = editableZones?.find((z: any) => String(z.idx) === field.blankIdx);
                           const isCheckbox = zone?.field_type === 'checkbox';
+                          const selectedType = fieldType[field.id] || (isCheckbox ? "checkbox" : "text");
                           // BUG 1 FIX: Get the AI suggested label for this zone
                           const suggestedLabel = zone?.suggested_label || zone?.ai_label || "";
 
@@ -1602,47 +1677,50 @@ function FormsView() {
                                                                     {/* Advanced Field Options */}
                                   <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
                                     <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                                      <select value={fieldSectionId[field.id] || ""} onChange={e => { const sectionId = e.target.value; setFieldSectionId({ ...fieldSectionId, [field.id]: sectionId }); if (sectionId && !fieldSectionBranch[field.id]) setFieldSectionBranch({ ...fieldSectionBranch, [field.id]: "yes" }); }} title="Gom ô này vào cụm để AI hiểu đây là phần thông tin liên quan" style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #c4b5fd", borderRadius: 4, background: "#faf5ff", color: "#6b21a8" }}><option value="">Không thuộc cụm</option>{formSections.filter(section => section.name.trim()).map(section => <option key={section.id} value={section.id}>Cụm: {section.name}</option>)}</select>
+                                      <button type="button" title="Tạo cụm mới và đưa ô này vào cụm đó" onClick={() => { const id = `section_${Date.now()}`; setFormSections([...formSections, { id, name: "", mode: "always", question: "" }]); setFieldSectionId({ ...fieldSectionId, [field.id]: id }); }} style={{ border: 0, borderRadius: 4, padding: "3px 6px", background: "#7c3aed", color: "#fff", cursor: "pointer", fontSize: "0.75rem" }}>+ Cụm</button>
+                                      {(() => { const section = formSections.find(item => item.id === fieldSectionId[field.id]); return section?.mode === "yes_no" ? <select value={fieldSectionBranch[field.id] || "yes"} onChange={e => setFieldSectionBranch({ ...fieldSectionBranch, [field.id]: e.target.value as "yes" | "no" })} title="Ô này xuất hiện sau câu trả lời Có hay Không" style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #c4b5fd", borderRadius: 4, background: "#faf5ff", color: "#6b21a8" }}><option value="yes">Khi trả lời Có</option><option value="no">Khi trả lời Không</option></select> : null; })()}
                                       <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0 }}>
                                         <input
                                           type="checkbox"
                                           checked={fieldRequired[field.id] !== false}
                                           onChange={(e) => setFieldRequired({ ...fieldRequired, [field.id]: e.target.checked })}
                                         />
-                                        Bắt buộc điền
+                                        Bắt buộc trả lời
                                       </label>
                                       
                                       <select
-                                        value={fieldType[field.id] || (editableZones?.find((z: any) => String(z.idx) === field.blankIdx)?.field_type === 'checkbox' ? 'checkbox' : 'text')}
-                                        onChange={(e) => setFieldType({ ...fieldType, [field.id]: e.target.value })}
+                                        value={selectedType}
+                                        onChange={(e) => {
+                                          const nextType = e.target.value;
+                                          setFieldType({ ...fieldType, [field.id]: nextType });
+                                        }}
                                         style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px", cursor: "pointer", flexShrink: 0 }}
                                       >
-                                        <option value="text">📝 Text</option>
-                                        <option value="checkbox">☑ Checkbox</option>
-                                        <option value="digit_group">🔢 Digit Group</option>
+                                        <option value="text">📝 Nhập nội dung</option>
+                                        <option value="checkbox">☑ Có / Không</option>
+                                        <option value="radio">◉ Chọn một đáp án</option>
+                                        <option value="digit_group">🔢 Dãy số tách ô</option>
                                       </select>
                                       
-                                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0, padding: "2px 6px", background: fieldAutoFill[field.id] ? "#ecfdf5" : "#f1f5f9", borderRadius: "4px", border: fieldAutoFill[field.id] ? "1px solid #10b981" : "1px solid #e2e8f0" }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={fieldAutoFill[field.id] || false}
-                                          onChange={(e) => setFieldAutoFill({ ...fieldAutoFill, [field.id]: e.target.checked })}
-                                        />
-                                        Tự động điền (AI)
-                                      </label>
+                                      <select value={fieldValueSource[field.id] || (fieldAutoFill[field.id] ? "ai_document" : "user_input")} onChange={e => setFieldValueSource({ ...fieldValueSource, [field.id]: e.target.value })} title="Chọn nơi lấy giá trị cho ô này" style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #10b981", borderRadius: 4, background: "#ecfdf5", color: "#065f46" }}><option value="user_input">Người dùng nhập</option><option value="ai_document">AI đọc từ hồ sơ</option><option value="current_date">Tự lấy ngày lập đơn</option></select>
+                                      {fieldValueSource[field.id] === "current_date" && <select value={fieldDatePart[field.id] || "day"} onChange={e => setFieldDatePart({ ...fieldDatePart, [field.id]: e.target.value })} style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #10b981", borderRadius: 4, background: "#ecfdf5", color: "#065f46" }}><option value="day">Ngày</option><option value="month">Tháng</option><option value="year">Năm</option></select>}
                                       
-                                      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", cursor: "pointer", flexShrink: 0, padding: "2px 6px", background: fieldAskBeforeFill[field.id] ? "#fff7ed" : "#f1f5f9", borderRadius: "4px", border: fieldAskBeforeFill[field.id] ? "1px solid #f97316" : "1px solid #e2e8f0" }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={fieldAskBeforeFill[field.id] || false}
-                                          onChange={(e) => setFieldAskBeforeFill({ ...fieldAskBeforeFill, [field.id]: e.target.checked })}
-                                        />
-                                        Hỏi xác nhận trước (Có/Không)
-                                      </label>
                                       
-                                      {(fieldType[field.id] === 'digit_group') && (
+                                      {selectedType === 'radio' && (
+                                        <input
+                                          type="text"
+                                          placeholder="Ví dụ: Đã có | Chưa có"
+                                          value={fieldOptions[field.id] || ""}
+                                          onChange={(e) => setFieldOptions({ ...fieldOptions, [field.id]: e.target.value })}
+                                          style={{ minWidth: 190, padding: "3px 8px", fontSize: "0.75rem", border: "1px solid #60a5fa", borderRadius: "4px", background: "#eff6ff" }}
+                                          title="Ví dụ: Đã có giấy chứng nhận | Chưa có giấy chứng nhận"
+                                        />
+                                      )}
+                                      {selectedType === 'digit_group' && (
                                           <input
                                             type="text"
-                                            placeholder="Group Key (vd: ma_so_thue)"
+                                            placeholder="Tên dãy số (vd: Mã số thuế)"
                                             value={fieldGroupKey[field.id] || ""}
                                             onChange={(e) => setFieldGroupKey({ ...fieldGroupKey, [field.id]: e.target.value })}
                                             style={{ width: 150, padding: "3px 8px", fontSize: "0.75rem", border: "1px solid #f59e0b", borderRadius: "4px", background: "#fffbeb" }}
@@ -1652,38 +1730,49 @@ function FormsView() {
                                     <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                                       <input
                                         type="text"
-                                        placeholder="Mô tả / Điều kiện (vd: Chỉ điền khi không có MST)"
+                                        placeholder="Ghi chú cho AI hoặc người dùng (không bắt buộc)"
                                         value={fieldDesc[field.id] || ""}
                                         onChange={(e) => setFieldDesc({ ...fieldDesc, [field.id]: e.target.value })}
                                         style={{ flex: 1, minWidth: 100, padding: "4px 8px", fontSize: "0.75rem", border: "1px solid #d1d5db", borderRadius: "4px" }}
                                       />
                                       
-                                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                      {!fieldSectionId[field.id] ? <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                                         <Sparkles size={14} color="#a855f7" />
                                         <select
                                           value={fieldDependsOn[field.id] || ""}
-                                          onChange={(e) => setFieldDependsOn({ ...fieldDependsOn, [field.id]: e.target.value })}
+                                          onChange={(e) => {
+                                            const parentId = e.target.value;
+                                            setFieldDependsOn({ ...fieldDependsOn, [field.id]: parentId });
+                                            const parentType = virtualConditions.some(condition => condition.id === parentId) ? "checkbox" : fieldType[parentId] || (editableZones?.find((z: any) => String(z.idx) === labeledList.find(l => l.id === parentId)?.blankIdx)?.field_type === "checkbox" ? "checkbox" : "text");
+                                            setFieldDependsValue({ ...fieldDependsValue, [field.id]: parentType === "checkbox" ? "true" : "" });
+                                          }}
                                           style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d8b4fe", borderRadius: "4px", background: "#faf5ff", color: "#6b21a8", cursor: "pointer", maxWidth: 200 }}
                                         >
-                                          <option value="">Không có logic nhánh (Luôn hỏi)</option>
-                                          {labeledList.filter(l => l.id !== field.id).map(l => {
+                                          <option value="">Luôn hiển thị</option>
+                                          {virtualConditions.filter(condition => condition.name.trim()).map(condition => <option key={condition.id} value={condition.id}>Chỉ hiển thị khi: {condition.name}</option>)}
+                                          {labeledList.filter(l => {
+                                            if (l.id === field.id) return false;
+                                            const candidateZone = editableZones?.find((z: any) => String(z.idx) === l.blankIdx);
+                                            const candidateType = fieldType[l.id] || (candidateZone?.field_type === "checkbox" ? "checkbox" : "text");
+                                            return candidateType === "checkbox" || candidateType === "radio";
+                                          }).map(l => {
                                             const tgtName = fieldData[l.id] !== undefined ? fieldData[l.id] : (editableZones?.find((z: any) => String(z.idx) === l.blankIdx)?.suggested_label || l.id);
-                                            return <option key={l.id} value={tgtName}>Chỉ hỏi khi điền: {tgtName}</option>;
+                                            return <option key={l.id} value={l.id}>Chỉ hiển thị khi: {tgtName}</option>;
                                           })}
                                         </select>
-                                      </div>
+                                        {fieldDependsOn[field.id] && (() => {
+                                          const parentId = fieldDependsOn[field.id];
+                                          const parentType = virtualConditions.some(condition => condition.id === parentId) ? "checkbox" : fieldType[parentId] || (editableZones?.find((z: any) => String(z.idx) === labeledList.find(l => l.id === parentId)?.blankIdx)?.field_type === "checkbox" ? "checkbox" : "text");
+                                          const optionText = fieldOptions[parentId] || "";
+                                          const options = optionText.split("|").map(v => v.trim()).filter(Boolean);
+                                          return parentType === "checkbox" ? (
+                                            <select value={fieldDependsValue[field.id] || "true"} onChange={(e) => setFieldDependsValue({ ...fieldDependsValue, [field.id]: e.target.value })} style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d8b4fe", borderRadius: 4, background: "#faf5ff", color: "#6b21a8" }}><option value="true">= Có / tick</option><option value="false">= Không</option></select>
+                                          ) : parentType === "radio" ? (
+                                            <select value={fieldDependsValue[field.id] || ""} onChange={(e) => setFieldDependsValue({ ...fieldDependsValue, [field.id]: e.target.value })} style={{ padding: "3px 6px", fontSize: "0.75rem", border: "1px solid #d8b4fe", borderRadius: 4, background: "#faf5ff", color: "#6b21a8" }}><option value="">Chọn đáp án...</option>{options.map(option => <option key={option} value={option}>= {option}</option>)}</select>
+                                          ) : <span style={{ fontSize: "0.72rem", color: "#b45309" }}>Câu điều kiện nên là Có/Không hoặc Chọn một đáp án.</span>;
+                                        })()}
+                                      </div> : <span style={{ color: "#6b21a8", fontSize: "0.75rem" }}>Điều kiện hiển thị do cụm quyết định</span>}
                                       
-                                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingLeft: 6, borderLeft: "1px dashed #cbd5e1" }}>
-                                        <span style={{ fontSize: "0.75rem", color: "#b91c1c", fontWeight: 600 }}>Hoặc:</span>
-                                        <input
-                                          type="text"
-                                          placeholder="Nhóm 1 trong 2 (vd: giayto1)"
-                                          value={fieldRequireOneOfGroup[field.id] || ""}
-                                          onChange={(e) => setFieldRequireOneOfGroup({ ...fieldRequireOneOfGroup, [field.id]: e.target.value })}
-                                          style={{ width: 140, padding: "3px 8px", fontSize: "0.75rem", border: "1px solid #fca5a5", borderRadius: "4px", background: "#fef2f2" }}
-                                          title="Nhập chung tên nhóm cho MST và CCCD để bắt buộc khách phải điền ít nhất 1 loại"
-                                        />
-                                      </div>
                                     </div>
                                   </div>
                                   {/* BUG 1 FIX: Show zone number in a more visible way to correlate with PDF */}

@@ -3,7 +3,8 @@ TerraLegalAI — Evaluation Models
 SQLAlchemy models cho TestCase và EvaluationRun.
 """
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, Float, SmallInteger, Integer
+from sqlalchemy import Column, String, DateTime, Text, Float, SmallInteger, Integer, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 
 from backend.app.models.base import Base
 
@@ -36,4 +37,26 @@ class EvaluationRun(Base):
     total_questions = Column(Integer, nullable=True)
     passed_questions = Column(Integer, nullable=True)   # số câu đạt ngưỡng
     notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EvaluationCaseResult(Base):
+    """One immutable automatic result plus the auditor's controlled verdict."""
+    __tablename__ = "evaluation_case_results"
+
+    id = Column(String(36), primary_key=True)
+    run_id = Column(String(36), ForeignKey("evaluation_runs.id"), nullable=False, index=True)
+    test_case_id = Column(String(36), ForeignKey("test_cases.id"), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    expected_answer = Column(Text, nullable=False)
+    actual_answer = Column(Text, nullable=True)
+    answer_similarity = Column(Float, nullable=True)
+    grounding_score = Column(Float, nullable=True)
+    retrieved_contexts = Column(JSONB, nullable=True, default=list)
+    is_fallback = Column(String(10), nullable=True)
+    auto_status = Column(String(20), nullable=False, default="review")
+    manual_status = Column(String(20), nullable=False, default="pending")  # pending/pass/fail
+    manual_note = Column(Text, nullable=True)
+    reviewed_by = Column(String(36), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

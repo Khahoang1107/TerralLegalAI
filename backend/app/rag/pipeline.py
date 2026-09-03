@@ -14,12 +14,26 @@ Luồng:
 9. Trả về answer + sources
 """
 import logging
+import re
+import time
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Optional
 from google import genai
 from google.genai import types
 
 logger = logging.getLogger(__name__)
+
+_STOP_WORDS = {
+    "và", "là", "của", "cho", "có", "cần", "tôi", "bạn", "về", "ở", "được", "các", "một", "những",
+    "thì", "khi", "nào", "bao", "nhiêu", "để", "theo", "với", "trong", "này", "đó", "không", "gì",
+}
+
+
+def _tokens(text: str) -> list[str]:
+    """Stable Vietnamese-friendly tokens for lexical retrieval and evidence checks."""
+    normalised = unicodedata.normalize("NFC", text or "").lower()
+    return [token for token in re.findall(r"[\wđ]{2,}", normalised, flags=re.UNICODE) if token not in _STOP_WORDS]
 
 
 @dataclass
@@ -107,6 +121,8 @@ class RAGPipeline:
         gemini_model: str = "gemini-1.5-flash",
         top_k: int = 10,
         reranker_top_k: int = 3,
+        reranker_model_name: str = "BAAI/bge-reranker-v2-m3",
+        reranker_enabled: bool = False,
         similarity_threshold: float = 0.65,
         temperature: float = 0.1,
         max_tokens: int = 2048,
@@ -117,9 +133,14 @@ class RAGPipeline:
         self.gemini_model = gemini_model
         self.top_k = top_k
         self.reranker_top_k = reranker_top_k
+        self.reranker_model_name = reranker_model_name
+        self.reranker_enabled = reranker_enabled
         self.similarity_threshold = similarity_threshold
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self._cross_encoder = None
+        self._cross_encoder_failed = False
+        self._lexical_cache: dict[str, tuple[float, object, list[dict], list[list[str]]]] = {}
 
     def query(
         self,
@@ -138,7 +159,6 @@ class RAGPipeline:
         Returns:
             RAGResponse với answer, citations, confidence
         """
-        import time
         start_time = time.time()
 
         logger.info(f"🔍 Query: {question[:100]}...")
@@ -155,11 +175,19 @@ class RAGPipeline:
         if procedure_filter in ["chuyen_nhuong", "tang_cho"]:
             search_proc_type = [procedure_filter, "dang_ky_bien_dong"]
 
-        raw_results = self.vector_store.search(
+        vector_results = self.vector_store.search(
             query_vector=query_vector,
-            top_k=self.top_k,
+            # Retrieve a broader semantic candidate set before hybrid fusion.
+            top_k=max(self.top_k * 3, self.reranker_top_k * 4),
             procedure_type=search_proc_type,
             score_threshold=self.similarity_threshold,
+        )
+
+        raw_results = self._hybrid_retrieve(
+            question=expanded_query,
+            vector_results=vector_results,
+            procedure_type=search_proc_type,
+            top_k=self.top_k,
         )
 
         retrieved_chunks = [
@@ -204,8 +232,8 @@ class RAGPipeline:
         llm_response = self._call_llm(messages)
 
         # ── Step 8: Parse citations ───────────────────────────────────
-        citations = self._extract_citations(top_chunks)
-        confidence = self._calculate_confidence(top_chunks, llm_response)
+        citations = self._extract_citations(top_chunks, llm_response)
+        confidence = self._calculate_confidence(top_chunks, llm_response, citations)
 
         latency_ms = int((time.time() - start_time) * 1000)
         logger.info(f"✅ Query done in {latency_ms}ms | confidence={confidence:.2f}")
@@ -265,13 +293,74 @@ class RAGPipeline:
         chunks: list[RetrievedChunk],
         top_k: int = None,
     ) -> list[RetrievedChunk]:
-        """
-        Rerank chunks theo relevance score.
-        MVP: dùng vector score. Phase 2: upgrade sang cross-encoder.
-        """
+        """Rerank hybrid candidates with a cross-encoder when available."""
         top_k = top_k or self.reranker_top_k
-        sorted_chunks = sorted(chunks, key=lambda c: c.score, reverse=True)
-        return sorted_chunks[:top_k]
+        if self.reranker_enabled and not self._cross_encoder_failed:
+            try:
+                if self._cross_encoder is None:
+                    from sentence_transformers import CrossEncoder
+                    self._cross_encoder = CrossEncoder(self.reranker_model_name, max_length=512)
+                scores = self._cross_encoder.predict([(question, chunk.text) for chunk in chunks])
+                low, high = min(scores), max(scores)
+                span = high - low
+                for chunk, score in zip(chunks, scores):
+                    cross_score = (float(score) - low) / span if span else 1.0
+                    # Keep a small hybrid prior for tied or short passages.
+                    chunk.score = 0.80 * cross_score + 0.20 * chunk.score
+            except Exception as exc:
+                self._cross_encoder_failed = True
+                logger.warning("Cross-encoder reranker unavailable; using hybrid retrieval score: %s", exc)
+        return sorted(chunks, key=lambda c: c.score, reverse=True)[:top_k]
+
+    @staticmethod
+    def _chunk_key(chunk: dict) -> tuple:
+        return (chunk.get("source_file", ""), chunk.get("chunk_index", 0), chunk.get("text", "")[:120])
+
+    def _lexical_candidates(self, question: str, procedure_type, top_k: int) -> list[dict]:
+        """BM25 retrieval over Qdrant payloads; cache is short to allow re-indexing."""
+        cache_key = ",".join(procedure_type) if isinstance(procedure_type, list) else (procedure_type or "all")
+        now = time.time()
+        cached = self._lexical_cache.get(cache_key)
+        if not cached or now - cached[0] > 300:
+            try:
+                from rank_bm25 import BM25Okapi
+                documents = self.vector_store.scroll_chunks(procedure_type=procedure_type)
+                tokenized = [_tokens(f"{d.get('source_name', '')} {d.get('article', '')} {d.get('text', '')}") for d in documents]
+                cached = (now, BM25Okapi(tokenized), documents, tokenized)
+                self._lexical_cache[cache_key] = cached
+            except Exception as exc:
+                logger.warning("Lexical retrieval unavailable; semantic retrieval only: %s", exc)
+                return []
+        _, bm25, documents, _ = cached
+        query_tokens = _tokens(question)
+        if not query_tokens or not documents:
+            return []
+        scores = bm25.get_scores(query_tokens)
+        # BM25's IDF is zero for a one-document/same-term corpus. A small
+        # deterministic overlap fallback keeps exact legal identifiers usable.
+        if max((float(score) for score in scores), default=0.0) <= 0:
+            query_terms = set(query_tokens)
+            scores = [len(query_terms & set(tokens)) / len(query_terms) for tokens in cached[3]]
+        ranked = sorted(range(len(documents)), key=lambda index: scores[index], reverse=True)[:top_k]
+        best = max((float(scores[index]) for index in ranked), default=0.0)
+        return [{**documents[index], "lexical_score": float(scores[index]) / best if best > 0 else 0.0} for index in ranked if scores[index] > 0]
+
+    def _hybrid_retrieve(self, question: str, vector_results: list[dict], procedure_type, top_k: int) -> list[dict]:
+        """Fuse dense and BM25 rankings, so legal identifiers survive semantic misses."""
+        lexical_results = self._lexical_candidates(question, procedure_type, max(self.top_k * 3, 20))
+        merged: dict[tuple, dict] = {}
+        max_vector = max((float(item.get("score", 0)) for item in vector_results), default=0.0)
+        for item in vector_results:
+            merged[self._chunk_key(item)] = {**item, "semantic_score": float(item.get("score", 0)) / max_vector if max_vector else 0.0, "lexical_score": 0.0}
+        for item in lexical_results:
+            key = self._chunk_key(item)
+            current = merged.get(key, {**item, "semantic_score": 0.0})
+            current["lexical_score"] = item.get("lexical_score", 0.0)
+            merged[key] = current
+        for item in merged.values():
+            # Dense retrieval carries intent; BM25 protects exact law/form numbers.
+            item["score"] = 0.65 * item["semantic_score"] + 0.35 * item["lexical_score"]
+        return sorted(merged.values(), key=lambda item: item["score"], reverse=True)[:max(top_k, self.reranker_top_k)]
 
     def _build_context(self, chunks: list[RetrievedChunk]) -> str:
         """Ghép chunks thành context block cho prompt."""
@@ -344,23 +433,34 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
         logger.info("Gemini finish_reason=%s | response_chars=%s", finish_reason, len(response.text or ""))
         return response.text
 
-    def _extract_citations(self, chunks: list[RetrievedChunk]) -> list[Citation]:
-        """Tạo danh sách citations từ top chunks."""
+    def _extract_citations(self, chunks: list[RetrievedChunk], answer: str) -> list[Citation]:
+        """Return only source passages with lexical evidence in the generated answer."""
+        answer_terms = set(_tokens(answer))
+        supported = []
+        for chunk in chunks:
+            chunk_terms = set(_tokens(chunk.text))
+            support = len(answer_terms & chunk_terms) / max(len(answer_terms), 1)
+            if support >= 0.08:
+                supported.append((chunk, support))
+        # Keep one provenance item when the answer is a very short paraphrase.
+        if not supported and chunks:
+            supported = [(chunks[0], 0.0)]
         return [
             Citation(
                 source_name=c.source_name,
                 article=c.article,
                 clause=c.clause,
                 text_snippet=c.text[:200],
-                relevance_score=c.score,
+                relevance_score=round(0.7 * c.score + 0.3 * support, 3),
             )
-            for c in chunks
+            for c, support in supported
         ]
 
     def _calculate_confidence(
         self,
         chunks: list[RetrievedChunk],
         answer: str,
+        citations: list[Citation],
     ) -> float:
         """
         Tính confidence score dựa trên:
@@ -370,13 +470,17 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
         if not chunks:
             return 0.0
 
-        top_score = chunks[0].score if chunks else 0.0
+        top_score = chunks[0].score
         fallback_phrases = ["chưa tìm thấy", "không có thông tin", "ngoài phạm vi"]
         has_fallback = any(p in answer.lower() for p in fallback_phrases)
 
         if has_fallback:
             return min(top_score * 0.5, 0.4)
-        return min(top_score, 0.99)
+        answer_terms = set(_tokens(answer))
+        evidence_terms = set().union(*(set(_tokens(c.text_snippet)) for c in citations)) if citations else set()
+        grounding = len(answer_terms & evidence_terms) / max(len(answer_terms), 1)
+        citation_coverage = len(citations) / max(len(chunks), 1)
+        return round(min(0.99, 0.55 * top_score + 0.35 * grounding + 0.10 * citation_coverage), 3)
 
     def _detect_procedure(self, chunks: list[RetrievedChunk]) -> str:
         """Detect loại thủ tục từ retrieved chunks."""
