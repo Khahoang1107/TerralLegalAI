@@ -66,6 +66,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       # Cập nhật DATABASE_URL để trỏ vào container postgres thay vì localhost
       - DATABASE_URL=postgresql+asyncpg://terralegal_user:terralegal_pass_dev@postgres:5432/terralegal
+      - CORS_ORIGINS=["*"]
     ports:
       - "8000:8000"
     volumes:
@@ -87,14 +88,12 @@ services:
       dockerfile: Dockerfile.dev
     container_name: terralegal_frontend
     environment:
-      # LƯU Ý: Nếu gửi qua máy khác và truy cập từ xa, hãy đổi 'localhost' thành IP của máy đó (vd: http://192.168.1.100:8000)
-      - NEXT_PUBLIC_API_URL=http://180.93.102.134:8000
+      - NEXT_PUBLIC_API_URL=https://api.trolyphaplydatdai.online
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     restart: unless-stopped
