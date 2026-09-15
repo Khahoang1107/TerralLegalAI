@@ -5,6 +5,8 @@ Hỗ trợ batch encoding và caching.
 """
 import logging
 from functools import lru_cache
+from collections import OrderedDict
+from threading import Lock
 
 import numpy as np
 
@@ -34,6 +36,9 @@ class EmbeddingModel:
         self.max_length = max_length
         self.use_fp16 = use_fp16
         self._model = None
+        self._query_cache: OrderedDict[str, tuple[float, ...]] = OrderedDict()
+        self._query_cache_lock = Lock()
+        self._query_cache_size = 256
 
     def _load_model(self):
         """Lazy load model (chỉ load khi cần, tránh load lúc khởi động)."""
@@ -104,8 +109,23 @@ class EmbeddingModel:
 
     def encode_single(self, text: str) -> list[float]:
         """Encode một text đơn lẻ (dùng cho query embedding)."""
+        cache_key = " ".join((text or "").casefold().split())
+        with self._query_cache_lock:
+            cached = self._query_cache.get(cache_key)
+            if cached is not None:
+                self._query_cache.move_to_end(cache_key)
+                logger.debug("Query embedding cache hit")
+                return list(cached)
+
         results = self.encode([text])
-        return results[0] if results else []
+        vector = results[0] if results else []
+        if vector:
+            with self._query_cache_lock:
+                self._query_cache[cache_key] = tuple(vector)
+                self._query_cache.move_to_end(cache_key)
+                while len(self._query_cache) > self._query_cache_size:
+                    self._query_cache.popitem(last=False)
+        return vector
 
     @property
     def dimension(self) -> int:

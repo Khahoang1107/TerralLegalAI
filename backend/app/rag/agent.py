@@ -11,6 +11,7 @@ from google.genai import types
 
 from backend.app.core.config import settings
 from backend.app.core.form_flow import get_missing_fields, order_fields
+from backend.app.core.intent_router import detect_digression
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +215,58 @@ class FormAgent:
         self.client = genai.Client(api_key=settings.gemini_api_key)
         self.model = settings.gemini_model
 
+    async def _handle_legal_digression(
+        self,
+        user_message: str,
+        form_name: str,
+        last_asked_field: Optional[Dict[str, str]],
+        rag_pipeline: Any,
+    ) -> FormExtractionResult:
+        """
+        Xử lý khi người dùng hỏi quy định pháp lý giữa chừng điền form (Digression).
+        Gọi RAG pipeline thật để tìm câu trả lời chính xác,
+        sau đó nhắc tiếp tục điền field đang dở mà không làm mất collected_data.
+        """
+        logger.info(f"Digression: user asked legal question while filling '{form_name}'")
+        rag_answer = ""
+        try:
+            import asyncio
+            rag_response = await asyncio.to_thread(
+                rag_pipeline.query,
+                question=user_message,
+                procedure_filter=None,
+                chat_history=[],
+            )
+            rag_answer = rag_response.answer or ""
+        except Exception as exc:
+            logger.warning(f"RAG query failed in digression handler: {exc}")
+            rag_answer = "Tôi chưa tìm được thông tin cụ thể về quy định này trong cơ sở dữ liệu."
+
+        # Compose reply: trả lời luật + nhắc tiếp tục điền field cũ
+        if last_asked_field:
+            field_name = last_asked_field.get("name", "thông tin còn thiếu")
+            resume_hint = (
+                f"\n\n---\n💬 **Quay lại biểu mẫu:** Bạn vui lòng tiếp tục cung cấp thông tin "
+                f"**{field_name}** để tôi hoàn thiện tờ khai giúp bạn nhé!"
+            )
+            next_key = last_asked_field.get("key")
+            next_name = field_name
+        else:
+            resume_hint = (
+                "\n\n---\n💬 **Quay lại biểu mẫu:** Khi bạn đã rõ, hãy tiếp tục cung cấp thông tin "
+                "để tôi hoàn thiện tờ khai nhé!"
+            )
+            next_key = None
+            next_name = None
+
+        return FormExtractionResult(
+            extracted_fields=[],    # Không điền gì — giữ nguyên collected_data
+            is_complete=False,
+            assistant_reply=f"{rag_answer}{resume_hint}",
+            next_field_key=next_key,
+            next_field_name=next_name,
+        )
+
     async def run_extraction(
         self,
         form_name: str,
@@ -224,15 +277,29 @@ class FormAgent:
         rag_context: str = "",
         last_asked_field: Optional[Dict[str, str]] = None,
         invalid_fields: Optional[List[str]] = None,
+        rag_pipeline: Any = None,
     ) -> FormExtractionResult:
         """
         Uses LLM to extract form fields from the conversation and decide the next step.
 
         Args:
-            last_asked_field: {\"key\": \"field_9002\", \"name\": \"Số CMND/CCCD\"} — field asked in PREVIOUS turn.
+            last_asked_field: {"key": "field_9002", "name": "Số CMND/CCCD"} — field asked in PREVIOUS turn.
             invalid_fields: list of field keys where previously collected data was detected as invalid.
+            rag_pipeline: RAG pipeline instance — dùng để trả lời câu hỏi pháp lý khi người dùng
+                          hỏi quy định giữa chừng điền form (Digression Handling).
         """
         invalid_fields = invalid_fields or []
+
+        # ── Digression detection: Người dùng hỏi quy định giữa chừng điền form? ──
+        current_field_name = last_asked_field.get("name", "") if last_asked_field else ""
+        if detect_digression(user_message, current_field_name) == "ASK_LEGAL" and rag_pipeline is not None:
+            return await self._handle_legal_digression(
+                user_message=user_message,
+                form_name=form_name,
+                last_asked_field=last_asked_field,
+                rag_pipeline=rag_pipeline,
+            )
+        # ─────────────────────────────────────────────────────────────────────────
 
         # ── Phân loại trường tự động vs cá nhân ──────────────────────────────
         auto_fill_fields = [f for f in form_fields if is_auto_fill_field(f)]

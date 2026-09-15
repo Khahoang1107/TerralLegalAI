@@ -5,6 +5,8 @@ form group is complete or whether a dependent field is applicable.
 """
 from __future__ import annotations
 
+import ast
+from decimal import Decimal, InvalidOperation
 import re
 from typing import Any, Dict, Iterable, List, MutableMapping, Tuple
 
@@ -13,10 +15,107 @@ SKIPPED = "__SKIPPED__"
 _TRUE_VALUES = {"có", "co", "yes", "true", "1", "x", "☑", "đúng", "rồi", "được", "ok"}
 _FALSE_VALUES = {"không", "khong", "no", "false", "0", "☐", "sai", "chưa", "ko", "bỏ qua", "bo qua", "không có", "khong co"}
 _LABEL_RE = re.compile(r"\[(\d+(?:\.\d+)*)\]")
+_FORMULA_REF_RE = re.compile(r"\[([^\[\]]+)\]")
 
 
 def is_real_value(value: Any) -> bool:
     return value not in (None, "", SKIPPED)
+
+
+def _decimal_value(value: Any) -> Decimal:
+    """Parse common Vietnamese currency/number input without guessing text."""
+    if isinstance(value, bool) or value in (None, "", SKIPPED):
+        raise InvalidOperation
+    if isinstance(value, (int, float, Decimal)):
+        return Decimal(str(value))
+    raw = str(value).strip().replace(" ", "")
+    if not re.fullmatch(r"[-+]?\d[\d.,]*", raw):
+        raise InvalidOperation
+    if "." in raw and "," in raw:
+        raw = raw.replace(".", "").replace(",", ".")
+    elif raw.count(".") > 1 or ("." in raw and len(raw.rsplit(".", 1)[1]) == 3):
+        raw = raw.replace(".", "")
+    elif raw.count(",") > 1 or ("," in raw and len(raw.rsplit(",", 1)[1]) == 3):
+        raw = raw.replace(",", "")
+    else:
+        raw = raw.replace(",", ".")
+    return Decimal(raw)
+
+
+def _eval_decimal_expression(expression: str) -> Decimal:
+    """Evaluate arithmetic only; names, calls and every other AST node are rejected."""
+    operators = {
+        ast.Add: lambda a, b: a + b,
+        ast.Sub: lambda a, b: a - b,
+        ast.Mult: lambda a, b: a * b,
+        ast.Div: lambda a, b: a / b,
+    }
+
+    def visit(node: ast.AST) -> Decimal:
+        if isinstance(node, ast.Expression):
+            return visit(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+            return Decimal(str(node.value))
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+            value = visit(node.operand)
+            return value if isinstance(node.op, ast.UAdd) else -value
+        if isinstance(node, ast.BinOp) and type(node.op) in operators:
+            return operators[type(node.op)](visit(node.left), visit(node.right))
+        raise ValueError("Công thức chỉ được dùng số và các phép +, -, *, /, ().")
+
+    return visit(ast.parse(expression, mode="eval"))
+
+
+def apply_calculated_fields(fields: Iterable[Dict[str, Any]], data: MutableMapping[str, Any]) -> None:
+    """Resolve formula fields in display order when all referenced inputs exist."""
+    ordered = order_fields(fields)
+    references: Dict[str, Dict[str, Any]] = {}
+    for field in ordered:
+        key = str(field.get("key", ""))
+        name = str(field.get("name", ""))
+        if key:
+            references[key] = field
+        if name:
+            references[name] = field
+        label = _label_order(name)
+        if label:
+            references[".".join(str(part) for part in label)] = field
+        raw_order = field.get("display_order")
+        if isinstance(raw_order, int) and raw_order > 0 and raw_order % 100 == 0:
+            references[str(raw_order // 100)] = field
+
+    for field in ordered:
+        if field.get("value_source") != "formula":
+            continue
+        target = str(field.get("key", ""))
+        formula = str(field.get("calculation_formula") or "").strip()
+        if not target or not formula:
+            continue
+        missing = False
+
+        def replace_reference(match: re.Match[str]) -> str:
+            nonlocal missing
+            ref = match.group(1).strip()
+            source = references.get(ref)
+            value = data.get(source.get("key", "")) if source else None
+            try:
+                return str(_decimal_value(value))
+            except (InvalidOperation, ValueError):
+                missing = True
+                return "0"
+
+        expression = _FORMULA_REF_RE.sub(replace_reference, formula)
+        if missing or _FORMULA_REF_RE.search(expression):
+            data.pop(target, None)
+            continue
+        try:
+            result = _eval_decimal_expression(expression)
+            if not result.is_finite():
+                raise ValueError("Kết quả không hữu hạn")
+            integral = result == result.to_integral_value()
+            data[target] = str(result.quantize(Decimal("1"))) if integral else format(result.normalize(), "f")
+        except (ArithmeticError, InvalidOperation, SyntaxError, ValueError):
+            data.pop(target, None)
 
 
 def is_false_value(value: Any) -> bool:
@@ -108,6 +207,33 @@ def apply_flow_rules(
     branch_skipped = set(state.get("branch_skipped_keys", []))
     group_skipped = set(state.get("group_skipped_keys", []))
 
+    # Resolve output-only fields from an earlier answer. These fields represent
+    # physical marks on the PDF and must never become extra questions. Members
+    # may be far apart in PDF order; resolving them does not affect fields in
+    # between.
+    for field in ordered:
+        derived_from = field.get("derived_from")
+        key = field.get("key")
+        if not key or not isinstance(derived_from, dict) or not derived_from.get("field"):
+            continue
+        parent_ref = str(derived_from["field"])
+        parent = field_by_name.get(parent_ref) or next(
+            (candidate for candidate in field_by_name.values() if str(candidate.get("key", "")) == parent_ref),
+            None,
+        )
+        if not parent:
+            continue
+        parent_value = data.get(parent.get("key", ""))
+        if parent_value in (None, "", SKIPPED):
+            data.pop(key, None)
+            continue
+        expected = derived_from.get("value", True)
+        if isinstance(expected, bool):
+            matches = (not is_false_value(parent_value)) if expected else is_false_value(parent_value)
+        else:
+            matches = str(parent_value).strip().casefold() == str(expected).strip().casefold()
+        data[key] = "có" if matches else "không"
+
     # Re-evaluate dependencies until parent/child cascades settle.
     changed = True
     while changed:
@@ -185,6 +311,8 @@ def get_missing_fields(fields: Iterable[Dict[str, Any]], data: Dict[str, Any]) -
     missing: List[Dict[str, Any]] = []
     for field in ordered:
         key = field.get("key", "")
+        if field.get("derived_from"):
+            continue
         group = field.get("require_one_of_group")
         if group:
             if unmet_representatives.get(str(group)) == key:
@@ -200,3 +328,62 @@ def get_missing_fields(fields: Iterable[Dict[str, Any]], data: Dict[str, Any]) -
             continue
         missing.append(field)
     return missing
+
+
+def get_one_of_members(
+    fields: Iterable[Dict[str, Any]],
+    field_or_key: Dict[str, Any] | str,
+) -> List[Dict[str, Any]]:
+    """Return the alternatives belonging to the same legacy one-of group.
+
+    Newer forms have a virtual ``choice`` lead field. Older saved forms only
+    carry ``require_one_of_group`` on each alternative. Chat uses this helper
+    to give both schemas the same two-step UX: choose an alternative, then
+    provide its value.
+    """
+    ordered = order_fields(fields)
+    if isinstance(field_or_key, dict):
+        target = field_or_key
+    else:
+        target = next(
+            (field for field in ordered if str(field.get("key", "")) == str(field_or_key)),
+            None,
+        )
+    if not target or not target.get("require_one_of_group"):
+        return []
+    group = str(target["require_one_of_group"])
+    return [field for field in ordered if str(field.get("require_one_of_group") or "") == group]
+
+
+def build_one_of_choice_question(members: Iterable[Dict[str, Any]]) -> str:
+    """Build the canonical, user-facing question for a legacy one-of group."""
+    names = []
+    for field in members:
+        name = str(field.get("name") or field.get("key") or "").strip()
+        # Labels such as "[15]" are useful for PDF ordering, not conversation.
+        name = _LABEL_RE.sub("", name, count=1).strip(" .:-")
+        names.append(name)
+    names = [name for name in names if name]
+    if not names:
+        return "Bạn cần khai báo một trong các thông tin của nhóm này. Bạn muốn cung cấp thông tin nào?"
+    if len(names) == 1:
+        choices = names[0]
+    elif len(names) == 2:
+        choices = f"{names[0]} hoặc {names[1]}"
+    else:
+        choices = f"{', '.join(names[:-1])} hoặc {names[-1]}"
+    return f"Bạn cần khai báo một trong các thông tin sau: {choices}. Bạn muốn cung cấp thông tin nào?"
+
+
+def is_valid_one_of_next_field(
+    fields: Iterable[Dict[str, Any]],
+    representative: Dict[str, Any] | None,
+    candidate_key: str | None,
+) -> bool:
+    """Allow the AI to move from a group representative to a chosen member."""
+    if not representative or not candidate_key:
+        return False
+    return any(
+        str(member.get("key", "")) == str(candidate_key)
+        for member in get_one_of_members(fields, representative)
+    )

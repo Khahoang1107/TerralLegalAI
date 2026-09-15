@@ -8,9 +8,9 @@ import UsersView from "@/components/admin/UsersView";
 import TestsView from "@/components/admin/TestsView";
 import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import {
-  AlertCircle, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
-  FileCheck2, FileText, LayoutDashboard, LogOut,
-  Menu, MessageSquare, MoreHorizontal, Paperclip, Pencil, Plus, RefreshCw, Search,
+  AlertCircle, ArrowRight, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
+  ExternalLink, Eye, EyeOff, FileCheck2, FileText, GitBranch, Layers, LayoutDashboard, Lock, LogOut, Mail,
+  Maximize2, Menu, MessageSquare, Minimize2, MoreHorizontal, Paperclip, Pencil, Plus, RefreshCw, Save, Search,
   Send, Settings, ShieldCheck, Sparkles, TestTube2, ThumbsDown, ThumbsUp,
   Trash2, UploadCloud, User, Users, X,
 } from "lucide-react";
@@ -154,6 +154,7 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
 function Login({ onLogin, onRegister }: { onLogin: (role: Role) => void; onRegister: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -174,39 +175,161 @@ function Login({ onLogin, onRegister }: { onLogin: (role: Role) => void; onRegis
       setLoading(false);
     }
   };
+
   return (
     <main className="login-page">
       <section className="login-intro">
-        <div className="brand-mark"><BookOpen size={25} /></div>
-        <div className="brand-name">TerraLegalAI</div>
-        <div className="intro-copy">
-          <span className="eyebrow">Hệ thống thông tin pháp lý đất đai</span>
-          <h1>Tra cứu thủ tục rõ ràng, đúng nguồn.</h1>
-          <p>Hỗ trợ người dân và cán bộ tiếp cận quy trình, hồ sơ và căn cứ pháp lý từ tài liệu chính thức.</p>
-          <div className="trust-list">
-            <span><ShieldCheck size={18} /> Trích dẫn theo văn bản gốc</span>
-            <span><FileCheck2 size={18} /> Theo dõi hiệu lực tài liệu</span>
-            <span><Clock3 size={18} /> Hỗ trợ tra cứu mọi lúc</span>
+        <div className="login-intro-glow glow-1" />
+        <div className="login-intro-glow glow-2" />
+        <div className="login-intro-grid" />
+
+        <div className="intro-top">
+          <div className="brand-header">
+            <div className="brand-mark-glow">
+              <BookOpen size={24} />
+            </div>
+            <div>
+              <div className="brand-title">TerraLegalAI</div>
+              <div className="brand-badge">Hệ thống Pháp lý Đất đai</div>
+            </div>
           </div>
+        </div>
+
+        <div className="intro-copy">
+          <div className="intro-pill">
+            <Sparkles size={13} />
+            <span>NỀN TẢNG THÔNG TIN PHÁP LÝ SỐ</span>
+          </div>
+          <h1>Tra cứu thủ tục rõ ràng,<br /><span className="text-highlight">chuẩn xác đúng nguồn.</span></h1>
+          <p>Hỗ trợ người dân và cán bộ tiếp cận nhanh chóng quy trình, hồ sơ mẫu và căn cứ pháp lý từ tài liệu chính thức của cơ quan nhà nước.</p>
+          
+          <div className="trust-cards">
+            <div className="trust-card">
+              <div className="trust-card-icon"><ShieldCheck size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Trích dẫn theo văn bản gốc</strong>
+                <span>Đối chiếu trực tiếp từng điều, khoản trong Luật & Nghị định</span>
+              </div>
+            </div>
+            <div className="trust-card">
+              <div className="trust-card-icon"><FileCheck2 size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Theo dõi hiệu lực tài liệu</strong>
+                <span>Cập nhật quyết định từ UBND tỉnh & Bộ Tài nguyên Môi trường</span>
+              </div>
+            </div>
+            <div className="trust-card">
+              <div className="trust-card-icon"><Clock3 size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Hỗ trợ tra cứu 24/7</strong>
+                <span>Hỗ trợ điền mẫu hồ sơ và rà soát điều kiện pháp lý tức thì</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="intro-foot">
+          <span>© 2026 TerraLegalAI • Dữ liệu chuẩn hóa theo Luật Đất đai mới nhất</span>
         </div>
       </section>
 
       <section className="login-panel">
-        <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
-          <div className="mobile-brand"><div className="brand-mark"><BookOpen size={22} /></div><strong>TerraLegalAI</strong></div>
-          <div>
-            <span className="eyebrow">Đăng nhập hệ thống</span>
-            <h2>Chào mừng bạn quay lại</h2>
-            <p>Sử dụng tài khoản được cấp để tiếp tục.</p>
+        <div className="login-card">
+          <div className="mobile-brand">
+            <div className="brand-mark-glow small"><BookOpen size={20} /></div>
+            <strong>TerraLegalAI</strong>
           </div>
 
-          <label>Email hoặc tên đăng nhập<input value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} autoComplete="username" placeholder="Nhập tài khoản của bạn" /></label>
-          <label>Mật khẩu<input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }} autoComplete="current-password" placeholder="Nhập mật khẩu" /></label>
-          {error && <div className="login-error" role="alert"><CircleAlert size={16} /> {error}</div>}
-          <div className="form-row"><label className="check-label"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Ghi nhớ đăng nhập</label><button type="button" className="text-button">Quên mật khẩu?</button></div>
-          <button className="primary-button" type="submit" disabled={loading}>{loading ? "Đang đăng nhập..." : "Đăng nhập"}</button>
-          <p className="auth-switch">Bạn chưa có tài khoản? <button type="button" className="text-button" onClick={onRegister}>Đăng ký</button></p>
-        </form>
+          <div className="login-header">
+            <span className="eyebrow">Cổng đăng nhập hệ thống</span>
+            <h2>Chào mừng bạn quay lại</h2>
+            <p>Nhập thông tin tài khoản được cấp để tiếp tục.</p>
+          </div>
+
+          <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+            <div className="field-group">
+              <label htmlFor="login-email">Email hoặc tên đăng nhập</label>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><User size={18} /></span>
+                <input
+                  id="login-email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  autoComplete="username"
+                  placeholder="Nhập email hoặc tên đăng nhập"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <div className="label-with-link">
+                <label htmlFor="login-pass">Mật khẩu</label>
+                <button type="button" className="text-button text-xs">Quên mật khẩu?</button>
+              </div>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><Lock size={18} /></span>
+                <input
+                  id="login-pass"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  autoComplete="current-password"
+                  placeholder="Nhập mật khẩu"
+                  required
+                />
+                <button
+                  type="button"
+                  className="input-suffix-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="login-error" role="alert">
+                <CircleAlert size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="form-row">
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <span>Ghi nhớ đăng nhập</span>
+              </label>
+            </div>
+
+            <button className="primary-button submit-btn" type="submit" disabled={loading}>
+              <span>{loading ? "Đang xử lý đăng nhập..." : "Đăng nhập hệ thống"}</span>
+              {!loading && <ArrowRight size={17} />}
+            </button>
+
+            <div className="auth-divider">
+              <span>hoặc</span>
+            </div>
+
+            <p className="auth-switch">
+              Bạn chưa có tài khoản?{" "}
+              <button type="button" className="text-button strong-link" onClick={onRegister}>
+                Đăng ký tài khoản mới
+              </button>
+            </p>
+          </form>
+
+          <div className="panel-subfooter">
+            <ShieldCheck size={14} />
+            <span>Kết nối bảo mật mã hóa SSL 256-bit</span>
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -217,6 +340,8 @@ function Register({ onBack, onRegister }: { onBack: () => void; onRegister: (rol
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -240,39 +365,191 @@ function Register({ onBack, onRegister }: { onBack: () => void; onRegister: (rol
       setLoading(false);
     }
   };
+
   return (
     <main className="login-page">
       <section className="login-intro">
-        <div className="brand-mark"><BookOpen size={25} /></div>
-        <div className="brand-name">TerraLegalAI</div>
-        <div className="intro-copy">
-          <span className="eyebrow">Hệ thống thông tin pháp lý đất đai</span>
-          <h1>Tra cứu thủ tục rõ ràng, đúng nguồn.</h1>
-          <p>Tạo tài khoản để lưu lịch sử tra cứu và tiếp tục các cuộc trò chuyện của bạn.</p>
-          <div className="trust-list">
-            <span><ShieldCheck size={18} /> Trích dẫn theo văn bản gốc</span>
-            <span><FileCheck2 size={18} /> Theo dõi hiệu lực tài liệu</span>
-            <span><Clock3 size={18} /> Hỗ trợ tra cứu mọi lúc</span>
+        <div className="login-intro-glow glow-1" />
+        <div className="login-intro-glow glow-2" />
+        <div className="login-intro-grid" />
+
+        <div className="intro-top">
+          <div className="brand-header">
+            <div className="brand-mark-glow">
+              <BookOpen size={24} />
+            </div>
+            <div>
+              <div className="brand-title">TerraLegalAI</div>
+              <div className="brand-badge">Hệ thống Pháp lý Đất đai</div>
+            </div>
           </div>
+        </div>
+
+        <div className="intro-copy">
+          <div className="intro-pill">
+            <Sparkles size={13} />
+            <span>KHỞI TẠO TÀI KHOẢN MỚI</span>
+          </div>
+          <h1>Tra cứu thủ tục rõ ràng,<br /><span className="text-highlight">chuẩn xác đúng nguồn.</span></h1>
+          <p>Tạo tài khoản cá nhân để lưu trữ toàn bộ lịch sử tư vấn, tải biểu mẫu đã điền và theo dõi văn bản pháp lý quan tâm.</p>
+          
+          <div className="trust-cards">
+            <div className="trust-card">
+              <div className="trust-card-icon"><ShieldCheck size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Lưu trữ an toàn</strong>
+                <span>Dữ liệu hồ sơ và lịch sử tra cứu được bảo mật tuyệt đối</span>
+              </div>
+            </div>
+            <div className="trust-card">
+              <div className="trust-card-icon"><FileCheck2 size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Quản lý biểu mẫu</strong>
+                <span>Xem lại và chỉnh sửa trực tiếp các đơn xin cấp đổi, chuyển nhượng</span>
+              </div>
+            </div>
+            <div className="trust-card">
+              <div className="trust-card-icon"><Clock3 size={20} /></div>
+              <div className="trust-card-content">
+                <strong>Đồng bộ đa thiết bị</strong>
+                <span>Tiếp tục phiên làm việc trên máy tính hoặc điện thoại</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="intro-foot">
+          <span>© 2026 TerraLegalAI • Dữ liệu chuẩn hóa theo Luật Đất đai mới nhất</span>
         </div>
       </section>
 
       <section className="login-panel">
-        <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleRegister(); }}>
-          <div className="mobile-brand"><div className="brand-mark"><BookOpen size={22} /></div><strong>TerraLegalAI</strong></div>
-          <div>
+        <div className="login-card">
+          <div className="mobile-brand">
+            <div className="brand-mark-glow small"><BookOpen size={20} /></div>
+            <strong>TerraLegalAI</strong>
+          </div>
+
+          <div className="login-header">
             <span className="eyebrow">Đăng ký tài khoản</span>
             <h2>Tạo tài khoản mới</h2>
             <p>Điền thông tin bên dưới để bắt đầu sử dụng hệ thống.</p>
           </div>
-          <label>Họ và tên<input value={fullName} onChange={(e) => { setFullName(e.target.value); setError(""); }} autoComplete="name" placeholder="Nhập họ và tên" required minLength={2} /></label>
-          <label>Email<input value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} type="email" autoComplete="email" placeholder="Nhập địa chỉ email" required /></label>
-          <label>Mật khẩu<input value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }} type="password" autoComplete="new-password" placeholder="Tạo mật khẩu (ít nhất 8 ký tự)" required minLength={8} /></label>
-          <label>Xác nhận mật khẩu<input value={confirmation} onChange={(e) => { setConfirmation(e.target.value); setError(""); }} type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" required minLength={8} /></label>
-          {error && <div className="login-error" role="alert"><CircleAlert size={16} /> {error}</div>}
-          <button className="primary-button" type="submit" disabled={loading}>{loading ? "Đang tạo tài khoản..." : "Đăng ký"}</button>
-          <p className="auth-switch">Bạn đã có tài khoản? <button type="button" className="text-button" onClick={onBack}>Đăng nhập</button></p>
-        </form>
+
+          <form className="login-form" onSubmit={(e) => { e.preventDefault(); handleRegister(); }}>
+            <div className="field-group">
+              <label htmlFor="reg-name">Họ và tên</label>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><User size={18} /></span>
+                <input
+                  id="reg-name"
+                  value={fullName}
+                  onChange={(e) => { setFullName(e.target.value); setError(""); }}
+                  autoComplete="name"
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                  required
+                  minLength={2}
+                />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="reg-email">Địa chỉ Email</label>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><Mail size={18} /></span>
+                <input
+                  id="reg-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="reg-pass">Mật khẩu</label>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><Lock size={18} /></span>
+                <input
+                  id="reg-pass"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  autoComplete="new-password"
+                  placeholder="Tối thiểu 8 ký tự"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  className="input-suffix-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="reg-confirm">Xác nhận mật khẩu</label>
+              <div className="input-affix-wrapper">
+                <span className="input-prefix"><Lock size={18} /></span>
+                <input
+                  id="reg-confirm"
+                  type={showConfirmation ? "text" : "password"}
+                  value={confirmation}
+                  onChange={(e) => { setConfirmation(e.target.value); setError(""); }}
+                  autoComplete="new-password"
+                  placeholder="Nhập lại mật khẩu"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  className="input-suffix-btn"
+                  onClick={() => setShowConfirmation(!showConfirmation)}
+                  tabIndex={-1}
+                  title={showConfirmation ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="login-error" role="alert">
+                <CircleAlert size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button className="primary-button submit-btn" type="submit" disabled={loading}>
+              <span>{loading ? "Đang tạo tài khoản..." : "Hoàn tất đăng ký"}</span>
+              {!loading && <ArrowRight size={17} />}
+            </button>
+
+            <div className="auth-divider">
+              <span>hoặc</span>
+            </div>
+
+            <p className="auth-switch">
+              Bạn đã có tài khoản?{" "}
+              <button type="button" className="text-button strong-link" onClick={onBack}>
+                Đăng nhập ngay
+              </button>
+            </p>
+          </form>
+
+          <div className="panel-subfooter">
+            <ShieldCheck size={14} />
+            <span>Kết nối bảo mật mã hóa SSL 256-bit</span>
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -706,6 +983,19 @@ function ReportsView() {
   return <><div className="page-heading"><div><span className="eyebrow">Theo dõi sử dụng</span><h1>Nhật ký & báo cáo</h1><p>Số liệu lấy trực tiếp từ hội thoại, phản hồi và các fallback đã lưu trong hệ thống.</p></div></div>{error && <p style={{color:"#b91c1c"}}>{error}</p>}<section className="admin-grid"><div className="panel"><div className="panel-title"><div><h2>Chủ đề được hỏi nhiều</h2><p>30 ngày gần nhất</p></div></div><div className="topic-list">{topics.length ? topics.map(topic => <div key={topic.name}><span>{topic.name}</span><strong>{topic.percentage}%</strong><i style={{ width: `${topic.percentage}%` }} /></div>) : <p style={{color:"#64748b"}}>Chưa có đủ hội thoại để tổng hợp.</p>}</div></div><div className="panel"><div className="panel-title"><div><h2>Phản hồi người dùng</h2><p>{feedback?.total ?? 0} lượt đánh giá</p></div></div><div className="feedback-score"><div><ThumbsUp /><strong>{feedback?.up_pct ?? 0}%</strong><span>Hữu ích</span></div><div><ThumbsDown /><strong>{feedback?.down_pct ?? 0}%</strong><span>Chưa hữu ích</span></div></div></div></section><section className="panel"><div className="panel-title"><div><h2>Câu hỏi fallback gần đây</h2><p>Cần bổ sung dữ liệu hoặc điều chỉnh truy xuất</p></div></div><div className="log-list">{fallbacks.length ? fallbacks.map((item, index) => <div key={`${item.time}-${index}`}><time>{item.time}</time><span><strong>{item.question}</strong><small>{item.reason}</small></span></div>) : <p style={{color:"#64748b"}}>Chưa có câu hỏi fallback nào được ghi nhận.</p>}</div></section></>;
 }
 
+type FormSection = {
+  id: string;
+  name: string;
+  mode: "always" | "yes_no" | "one_of";
+  question: string;
+  pdfBehavior: "none" | "checkboxes";
+  tickYesField: string;
+  tickNoField: string;
+  oneOfStyle: "fields" | "branches";
+  branches: { id: string; name: string; fieldIds: string[] }[];
+};
+type SectionFieldBehavior = "yes" | "no" | "always";
+
 // ─── Forms View ───────────────────────────────────────────────────
 function FormsView() {
   const [forms, setForms] = useState<any[]>([]);
@@ -724,8 +1014,44 @@ function FormsView() {
   const [editDesc, setEditDesc] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editFields, setEditFields] = useState<any[]>([]);
+  const [editTab, setEditTab] = useState<"fields" | "groups" | "flow">("fields");
   const [editPdfUrl, setEditPdfUrl] = useState<string | null>(null);
+  const [editPageImages, setEditPageImages] = useState<string[]>([]);
+  const [editZoom, setEditZoom] = useState<number>(1);
+  const [editZoomMode, setEditZoomMode] = useState<"a4" | "fit">("a4");
+  const [editViewFormat, setEditViewFormat] = useState<"images" | "pdf">("images");
   const [editPdfLoading, setEditPdfLoading] = useState(false);
+  const [editSections, setEditSections] = useState<FormSection[]>([]);
+  const [editSearchQuery, setEditSearchQuery] = useState("");
+  const [editFilterMode, setEditFilterMode] = useState<"all" | "unassigned" | "assigned">("all");
+  const [editTypeFilter, setEditTypeFilter] = useState<string>("all");
+  const [editAdvancedOpen, setEditAdvancedOpen] = useState<Record<string, boolean>>({});
+  const [editCollapsedSections, setEditCollapsedSections] = useState<Record<string, boolean>>({});
+  const [editGroupMenuOpen, setEditGroupMenuOpen] = useState(false);
+  const [editSplitPercent, setEditSplitPercent] = useState<number>(50);
+  const [editIsDraggingSplit, setEditIsDraggingSplit] = useState(false);
+  const [editPdfOnly, setEditPdfOnly] = useState(false);
+  const editContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!editIsDraggingSplit) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const container = editContainerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const pct = Math.min(Math.max(((e.clientX - rect.left) / rect.width) * 100, 25), 80);
+      setEditSplitPercent(Math.round(pct));
+    };
+    const handleMouseUp = () => {
+      setEditIsDraggingSplit(false);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [editIsDraggingSplit]);
 
   // Visual Builder State
   const [step, setStep] = useState(1);
@@ -1150,17 +1476,99 @@ function FormsView() {
 
   const openEdit = async (form: any) => {
     setEditingForm(form);
-    setEditName(form.name);
-    setEditProcedure(form.procedure_type);
+    setEditName(form.name || "");
+    setEditProcedure(form.procedure_type || "");
     setEditDesc(form.description || "");
-    setEditFields(form.fields || []);
+    const rawFields = (form.fields || []).map((f: any, idx: number) => ({
+      ...f,
+      key: f.key || f.id || `field_${idx + 1}`,
+      name: f.name || f.label || `Trường ${idx + 1}`,
+      type: f.type || "string",
+      required: f.required !== false,
+      value_source: f.value_source || (f.is_auto_fill ? "ai_document" : "user_input"),
+    }));
+    setEditFields(rawFields);
+    setEditTab("fields");
+    setEditSearchQuery("");
+    setEditFilterMode("all");
+    setEditTypeFilter("all");
+    setEditAdvancedOpen({});
+    setEditCollapsedSections({});
+    setEditGroupMenuOpen(false);
+
+    // Parse sections from fields
+    const physical = rawFields.filter((f: any) => !f.is_virtual);
+    const sectionsMap = new Map<string, FormSection>();
+    
+    physical.forEach((f: any) => {
+      const gId = f.alternative_group_id || f.condition_group_id || f.section_id;
+      if (!gId) return;
+      if (!sectionsMap.has(gId)) {
+        const isOneOf = Boolean(f.alternative_group_id);
+        const isYesNo = Boolean(f.condition_group_id);
+        const mode: "always" | "yes_no" | "one_of" = isOneOf ? "one_of" : isYesNo ? "yes_no" : "always";
+        const name = f.alternative_group_name || f.condition_group_name || f.section_name || "Nhóm logic";
+        const virtual = rawFields.find((c: any) => c.is_virtual && c.key === `section_condition_${gId}`);
+        const question = virtual?.name || f.question_group || "";
+        sectionsMap.set(gId, {
+          id: gId,
+          name,
+          mode,
+          question,
+          pdfBehavior: "none",
+          tickYesField: "",
+          tickNoField: "",
+          oneOfStyle: "fields",
+          branches: []
+        });
+      }
+    });
+
+    sectionsMap.forEach((sec, gId) => {
+      if (sec.mode === "one_of") {
+        const branchNames = new Set<string>();
+        physical.forEach((f: any) => {
+          if (f.alternative_group_id === gId && f.alternative_branch_name) {
+            branchNames.add(f.alternative_branch_name);
+          }
+        });
+        if (branchNames.size > 0) {
+          sec.oneOfStyle = "branches";
+          sec.branches = Array.from(branchNames).map((bName, idx) => ({
+            id: `branch_${gId}_${idx + 1}`,
+            name: bName,
+            fieldIds: physical.filter((f: any) => f.alternative_group_id === gId && f.alternative_branch_name === bName).map((f: any) => f.key)
+          }));
+        }
+      } else if (sec.mode === "yes_no") {
+        const yesField = physical.find((f: any) => f.derived_from?.field === `section_condition_${gId}` && f.derived_from?.value === true);
+        const noField = physical.find((f: any) => f.derived_from?.field === `section_condition_${gId}` && f.derived_from?.value === false);
+        if (yesField || noField) {
+          sec.pdfBehavior = "checkboxes";
+          sec.tickYesField = yesField ? yesField.key : "";
+          sec.tickNoField = noField ? noField.key : "";
+        }
+      }
+    });
+
+    setEditSections(Array.from(sectionsMap.values()));
     
     if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
     setEditPdfUrl(null);
+    setEditPageImages([]);
+    setEditZoom(1);
     setEditPdfLoading(true);
     try {
-      const blob = await formsApi.previewPdf(form.id, {}, "admin");
-      setEditPdfUrl(URL.createObjectURL(blob));
+      const [imgs, blob] = await Promise.all([
+        formsApi.previewImages(form.id, {}, "admin").catch(() => []),
+        formsApi.previewPdf(form.id, {}, "admin").catch(() => null),
+      ]);
+      if (imgs && imgs.length > 0) {
+        setEditPageImages(imgs);
+      }
+      if (blob) {
+        setEditPdfUrl(URL.createObjectURL(blob));
+      }
     } catch (e) {
       console.error("Lỗi tải bản xem trước", e);
     } finally {
@@ -1172,6 +1580,133 @@ function FormsView() {
     setEditingForm(null);
     if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
     setEditPdfUrl(null);
+    setEditPageImages([]);
+    setEditPdfOnly(false);
+  };
+
+  const addEditSectionPreset = (preset: "always" | "yes_no_none" | "yes_no_tick" | "one_of") => {
+    const id = `section_${Date.now()}`;
+    let newSec: FormSection;
+    if (preset === "always") {
+      newSec = { id, name: "", mode: "always", question: "", pdfBehavior: "none", tickYesField: "", tickNoField: "", oneOfStyle: "fields", branches: [] };
+    } else if (preset === "yes_no_none") {
+      newSec = { id, name: "", mode: "yes_no", question: "", pdfBehavior: "none", tickYesField: "", tickNoField: "", oneOfStyle: "fields", branches: [] };
+    } else if (preset === "yes_no_tick") {
+      newSec = { id, name: "", mode: "yes_no", question: "", pdfBehavior: "checkboxes", tickYesField: "", tickNoField: "", oneOfStyle: "fields", branches: [] };
+    } else {
+      const stamp = Date.now();
+      newSec = {
+        id,
+        name: "",
+        mode: "one_of",
+        question: "",
+        pdfBehavior: "none",
+        tickYesField: "",
+        tickNoField: "",
+        oneOfStyle: "branches",
+        branches: [
+          { id: `branch_${stamp}_1`, name: "Phương án 1", fieldIds: [] },
+          { id: `branch_${stamp}_2`, name: "Phương án 2", fieldIds: [] },
+        ]
+      };
+    }
+    setEditSections(prev => [...prev, newSec]);
+    setEditGroupMenuOpen(false);
+    setEditTab("groups");
+  };
+
+  const removeEditSection = (sectionId: string) => {
+    setEditSections(prev => prev.filter(s => s.id !== sectionId));
+    setEditFields(prev => prev.map(f => {
+      if (f.section_id === sectionId || f.condition_group_id === sectionId || f.alternative_group_id === sectionId) {
+        const next = { ...f };
+        delete next.section_id;
+        delete next.section_name;
+        delete next.question_group;
+        delete next.condition_group_id;
+        delete next.condition_group_name;
+        delete next.condition_behavior;
+        delete next.derived_from;
+        delete next.alternative_group_id;
+        delete next.alternative_group_name;
+        delete next.alternative_branch_name;
+        if (typeof next.depends_on === "object" && String(next.depends_on?.field || "").startsWith("section_condition_")) {
+          next.depends_on = null;
+        }
+        return next;
+      }
+      return f;
+    }));
+  };
+
+  const toggleEditGroupMember = (sec: FormSection, fieldKey: string, checked: boolean, branchId?: string, behavior?: "yes" | "no" | "always") => {
+    if (sec.mode === "one_of" && sec.oneOfStyle === "branches" && branchId) {
+      setEditSections(prev => prev.map(s => {
+        if (s.id !== sec.id) return s;
+        return {
+          ...s,
+          branches: s.branches.map(b => ({
+            ...b,
+            fieldIds: b.id === branchId
+              ? (checked ? [...b.fieldIds.filter(id => id !== fieldKey), fieldKey] : b.fieldIds.filter(id => id !== fieldKey))
+              : b.fieldIds.filter(id => id !== fieldKey)
+          }))
+        };
+      }));
+      setEditFields(prev => prev.map(f => {
+        if (f.key !== fieldKey) return f;
+        if (!checked) {
+          const next = { ...f };
+          delete next.alternative_group_id;
+          delete next.alternative_group_name;
+          delete next.alternative_branch_name;
+          if (typeof next.depends_on === "object" && String(next.depends_on?.field || "").startsWith("section_condition_")) next.depends_on = null;
+          return next;
+        }
+        const b = sec.branches.find(candidate => candidate.id === branchId);
+        return {
+          ...f,
+          alternative_group_id: sec.id,
+          alternative_group_name: sec.name,
+          alternative_branch_name: b?.name || "",
+          depends_on: { field: `section_condition_${sec.id}`, value: b?.name || "" }
+        };
+      }));
+      return;
+    }
+
+    setEditFields(prev => prev.map(f => {
+      if (f.key !== fieldKey) return f;
+      const next = { ...f };
+      delete next.section_id; delete next.section_name; delete next.question_group;
+      delete next.condition_group_id; delete next.condition_group_name; delete next.condition_behavior;
+      delete next.alternative_group_id; delete next.alternative_group_name; delete next.alternative_branch_name; delete next.derived_from;
+      if (typeof next.depends_on === "object" && String(next.depends_on?.field || "").startsWith("section_condition_")) next.depends_on = null;
+
+      if (!checked) return next;
+
+      if (sec.mode === "always") {
+        return { ...next, section_id: sec.id, section_name: sec.name, question_group: sec.question };
+      }
+      if (sec.mode === "yes_no") {
+        const beh = behavior || next.condition_behavior || "yes";
+        return {
+          ...next,
+          section_id: sec.id,
+          section_name: sec.name,
+          condition_group_id: sec.id,
+          condition_group_name: sec.name,
+          condition_behavior: beh,
+          depends_on: beh === "always" ? null : { field: `section_condition_${sec.id}`, value: beh === "yes" }
+        };
+      }
+      return {
+        ...next,
+        alternative_group_id: sec.id,
+        alternative_group_name: sec.name,
+        depends_on: { field: `section_condition_${sec.id}`, value: next.name }
+      };
+    }));
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -1182,16 +1717,114 @@ function FormsView() {
     }
     setEditSaving(true);
     try {
+      const physicalFields = editFields.filter(f => !f.is_virtual);
+      const invalidFormula = physicalFields.find(f => f.value_source === "formula" && !(f.calculation_formula || "").trim());
+      if (invalidFormula) {
+        showToast(`Vui lòng nhập công thức cho trường "${invalidFormula.name}".`, "error");
+        setEditAdvancedOpen(prev => ({ ...prev, [invalidFormula.key]: true }));
+        setEditSaving(false);
+        return;
+      }
+
+      // 2. Build virtual condition fields for yes_no and one_of sections
+      const virtualConditions = editSections.filter(s => s.mode === "yes_no" || s.mode === "one_of").map(sec => {
+        const members = sec.mode === "one_of" && sec.oneOfStyle === "branches"
+          ? physicalFields.filter(f => sec.branches.some(b => b.fieldIds.includes(f.key)))
+          : physicalFields.filter(f => (sec.mode === "one_of" ? f.alternative_group_id : f.section_id) === sec.id);
+        const options = sec.mode === "one_of" && sec.oneOfStyle === "branches"
+          ? sec.branches.map(b => b.name.trim())
+          : members.map(f => f.name.trim());
+        const genQuestion = sec.mode === "yes_no"
+          ? `Bạn có ${sec.name.trim()} không?`
+          : `Bạn cần khai báo một trong các thông tin sau: ${options.join(", ").replace(/, ([^,]*)$/, " hoặc $1")}. Bạn muốn cung cấp thông tin nào?`;
+        return {
+          key: `section_condition_${sec.id}`,
+          name: sec.question.trim() || genQuestion,
+          description: sec.mode === "one_of" ? `Chọn một phương án: ${sec.name.trim()}` : `Câu hỏi điều kiện: ${sec.name.trim()}?`,
+          required: true,
+          type: sec.mode === "one_of" ? "choice" : "boolean",
+          options: sec.mode === "one_of" ? options : undefined,
+          value_source: "user_input",
+          is_virtual: true,
+          display_order: 10,
+        };
+      });
+
+      // 3. Assemble all physical fields
+      const nonVirtual = physicalFields.map((field, idx) => {
+        const res = { ...field };
+        res.display_order = (idx + 1) * 100;
+        res.is_auto_fill = ["ai_document", "current_date", "formula"].includes(res.value_source) || res.is_auto_fill || false;
+        
+        const sec = editSections.find(s => s.id === (res.section_id || res.condition_group_id || res.alternative_group_id));
+        if (sec) {
+          if (sec.mode === "always") {
+            res.section_id = sec.id;
+            res.section_name = sec.name.trim();
+            res.question_group = sec.question.trim();
+            delete res.condition_group_id;
+            delete res.condition_group_name;
+            delete res.condition_behavior;
+            delete res.alternative_group_id;
+            delete res.alternative_group_name;
+            delete res.alternative_branch_name;
+          } else if (sec.mode === "yes_no") {
+            res.section_id = sec.id;
+            res.section_name = sec.name.trim();
+            res.condition_group_id = sec.id;
+            res.condition_group_name = sec.name.trim();
+            delete res.alternative_group_id;
+            delete res.alternative_group_name;
+            delete res.alternative_branch_name;
+            if (sec.pdfBehavior === "checkboxes" && (sec.tickYesField === res.key || sec.tickNoField === res.key)) {
+              res.derived_from = {
+                field: `section_condition_${sec.id}`,
+                value: sec.tickYesField === res.key,
+              };
+              res.required = false;
+            } else {
+              delete res.derived_from;
+              if (res.condition_behavior === "yes" || res.condition_behavior === "no") {
+                res.depends_on = { field: `section_condition_${sec.id}`, value: res.condition_behavior === "yes" };
+              }
+            }
+          } else if (sec.mode === "one_of") {
+            res.alternative_group_id = sec.id;
+            res.alternative_group_name = sec.name.trim();
+            delete res.section_id;
+            delete res.section_name;
+            delete res.question_group;
+            delete res.condition_group_id;
+            delete res.condition_group_name;
+            delete res.condition_behavior;
+            delete res.derived_from;
+            if (sec.oneOfStyle === "branches") {
+              const b = sec.branches.find(branch => branch.fieldIds.includes(res.key));
+              if (b) {
+                res.alternative_branch_name = b.name.trim();
+                res.depends_on = { field: `section_condition_${sec.id}`, value: b.name.trim() };
+              }
+            } else {
+              res.depends_on = { field: `section_condition_${sec.id}`, value: res.name.trim() };
+            }
+          }
+        }
+        return res;
+      });
+
+      const fieldsToSave = [...virtualConditions, ...nonVirtual];
+
       await formsApi.updateForm(editingForm.id, { 
-        name: editName, 
-        procedure_type: editProcedure, 
-        description: editDesc, 
-        fields: editFields 
+        name: editName.trim(), 
+        procedure_type: editProcedure.trim(), 
+        description: editDesc.trim(), 
+        fields: fieldsToSave
       });
       showToast("Cập nhật biểu mẫu thành công!", "success");
       closeEdit();
       fetchForms();
-    } catch {
+    } catch (err) {
+      console.error(err);
       showToast("Lỗi cập nhật biểu mẫu", "error");
     } finally {
       setEditSaving(false);
@@ -1264,183 +1897,1536 @@ function FormsView() {
       </section>
 
       {/* Edit Form Dialog */}
-      {editingForm && (
-        <div className="dialog-backdrop" onClick={closeEdit}>
-          <form className="rename-dialog" style={{ width: 1200, maxWidth: "100%", display: "flex", flexDirection: "row", gap: 20 }} onSubmit={handleUpdate} onClick={(e) => e.stopPropagation()}>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <div className="dialog-head">
-                <h2>Chỉnh sửa Biểu mẫu</h2>
-                <button type="button" className="icon-button mobile-only" onClick={closeEdit}><X size={18} /></button>
-              </div>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-              Tên Biểu mẫu *
-              <input value={editName} onChange={(e) => setEditName(e.target.value)} style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-              Loại thủ tục *
-              <input value={editProcedure} onChange={(e) => setEditProcedure(e.target.value)} style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-              Mô tả ngắn
-              <input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Mô tả tùy chọn..." style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
-            </label>
-            
-            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Nhãn biểu mẫu (Fields)</span>
-              <div style={{ maxHeight: "350px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6, padding: "10px", display: "flex", flexDirection: "column", gap: 12, background: "#f8fafc" }}>
-                {editFields.length === 0 && <span style={{ fontSize: 12, color: "#64748b" }}>Không có nhãn nào.</span>}
-                {editFields.map((field, idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px", background: "white", border: "1px solid #cbd5e1", borderRadius: 8, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>ID: {field.id || `field_${idx}`}</span>
-                      <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
-                        <input 
-                          type="checkbox" 
-                          checked={field.required !== false}
-                          onChange={(e) => {
-                            const newFields = [...editFields];
-                            newFields[idx].required = e.target.checked;
-                            setEditFields(newFields);
-                          }}
-                        /> Bắt buộc
-                      </label>
-                    </div>
+      {editingForm && (() => {
+        const physicalFields = editFields.filter(f => !f.is_virtual);
+        const assignedCount = physicalFields.filter(f => {
+          const isOneOfBranch = editSections.some(s => s.mode === "one_of" && s.oneOfStyle === "branches" && s.branches.some(b => b.fieldIds.includes(f.key)));
+          const isTickPdf = editSections.some(s => s.pdfBehavior === "checkboxes" && (s.tickYesField === f.key || s.tickNoField === f.key));
+          return Boolean(f.section_id || f.condition_group_id || f.alternative_group_id || isOneOfBranch || isTickPdf);
+        }).length;
+        const unassignedCount = physicalFields.length - assignedCount;
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Tên hiển thị</span>
-                      <input 
-                        value={field.name || ""} 
-                        onChange={(e) => {
-                          const newFields = [...editFields];
-                          newFields[idx].name = e.target.value;
-                          setEditFields(newFields);
-                        }}
-                        placeholder="VD: Họ và tên"
-                        style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 13 }} 
-                      />
-                    </div>
+        const filteredFields = physicalFields.filter((field, idx) => {
+          const q = editSearchQuery.toLowerCase().trim();
+          const num = idx + 1;
+          if (q) {
+            const matchNum = `ô #${num}`.includes(q) || `#${num}`.includes(q) || String(num) === q;
+            const matchKey = (field.key || "").toLowerCase().includes(q);
+            const matchName = (field.name || "").toLowerCase().includes(q);
+            if (!matchNum && !matchKey && !matchName) return false;
+          }
 
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Loại câu trả lời</span>
-                        <select 
-                          value={field.type || "text"}
-                          onChange={(e) => {
-                            const newFields = [...editFields];
-                            newFields[idx].type = e.target.value;
-                            setEditFields(newFields);
-                          }}
-                          style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 12, background: "#fff", cursor: "pointer" }}
-                        >
-                          <option value="text">📝 Nhập nội dung</option>
-                          <option value="checkbox">☑ Có / Không</option>
-                          <option value="choice">◉ Chọn một đáp án</option>
-                          <option value="digit_group">🔢 Dãy số tách ô</option>
-                        </select>
+          const isOneOfBranch = editSections.some(s => s.mode === "one_of" && s.oneOfStyle === "branches" && s.branches.some(b => b.fieldIds.includes(field.key)));
+          const isTickPdf = editSections.some(s => s.pdfBehavior === "checkboxes" && (s.tickYesField === field.key || s.tickNoField === field.key));
+          const isAssigned = Boolean(field.section_id || field.condition_group_id || field.alternative_group_id || isOneOfBranch || isTickPdf);
+
+          if (editFilterMode === "assigned" && !isAssigned) return false;
+          if (editFilterMode === "unassigned" && isAssigned) return false;
+
+          const currentType = field.type === "checkbox" || field.type === "boolean" ? "checkbox" : field.type === "date" ? "date" : field.type === "digit_group" ? "digit_group" : "text";
+          if (editTypeFilter !== "all") {
+            if (currentType !== editTypeFilter) return false;
+          }
+
+          return true;
+        });
+
+        return (
+          <div
+            className="dialog-backdrop"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              padding: 0,
+              background: "rgba(0,0,0,0.65)",
+              display: "flex",
+              alignItems: "stretch",
+              justifyContent: "center",
+              zIndex: 1000
+            }}
+            onClick={closeEdit}
+          >
+            <div
+              ref={editContainerRef}
+              className="rename-dialog"
+              style={{
+                width: "100%",
+                maxWidth: "100%",
+                height: "100vh",
+                maxHeight: "100vh",
+                padding: 0,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "row",
+                gap: 0,
+                borderRadius: 0,
+                boxShadow: "none",
+                border: "none",
+                userSelect: editIsDraggingSplit ? "none" : "auto"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              
+              {/* Left Configuration Panel */}
+              <div style={{
+                width: editPdfOnly ? "0px" : `${editSplitPercent}%`,
+                minWidth: editPdfOnly ? "0px" : "360px",
+                maxWidth: editPdfOnly ? "0px" : "85%",
+                display: editPdfOnly ? "none" : "flex",
+                flexDirection: "column",
+                background: "#f8fafc",
+                borderRight: "1px solid #e2e8f0",
+                overflow: "hidden",
+                flexShrink: 0
+              }}>
+                
+                {/* Panel Header */}
+                <div style={{ padding: "12px 18px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 6px rgba(79, 70, 229, 0.25)" }}>
+                      <Pencil size={17} />
+                    </div>
+                    <div>
+                      <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "#1e293b" }}>Chỉnh sửa Biểu mẫu</h2>
+                      <p style={{ margin: 0, fontSize: "0.74rem", color: "#64748b" }}>Cấu hình nhãn ô, nhóm logic, rẽ nhánh và luồng trợ lý AI</p>
+                    </div>
+                  </div>
+
+                  {/* Preset layout switcher */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditSplitPercent(50)}
+                      style={{
+                        padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
+                        border: `1px solid ${editSplitPercent === 50 ? "#4f46e5" : "#cbd5e1"}`,
+                        background: editSplitPercent === 50 ? "#ede9fe" : "#fff",
+                        color: editSplitPercent === 50 ? "#4338ca" : "#64748b",
+                        cursor: "pointer", fontWeight: editSplitPercent === 50 ? 700 : 500
+                      }}
+                      title="Chia đều 50% cấu hình - 50% tài liệu xem trước"
+                    >
+                      50 : 50
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSplitPercent(60)}
+                      style={{
+                        padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
+                        border: `1px solid ${editSplitPercent === 60 ? "#4f46e5" : "#cbd5e1"}`,
+                        background: editSplitPercent === 60 ? "#ede9fe" : "#fff",
+                        color: editSplitPercent === 60 ? "#4338ca" : "#64748b",
+                        cursor: "pointer", fontWeight: editSplitPercent === 60 ? 700 : 500
+                      }}
+                      title="Ưu tiên cột chỉnh sửa rộng rãi hơn (60% màn hình)"
+                    >
+                      Rộng 60%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSplitPercent(40)}
+                      style={{
+                        padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
+                        border: `1px solid ${editSplitPercent === 40 ? "#4f46e5" : "#cbd5e1"}`,
+                        background: editSplitPercent === 40 ? "#ede9fe" : "#fff",
+                        color: editSplitPercent === 40 ? "#4338ca" : "#64748b",
+                        cursor: "pointer", fontWeight: editSplitPercent === 40 ? 700 : 500
+                      }}
+                      title="Ưu tiên tài liệu xem trước lớn hơn (40% chỉnh sửa : 60% xem)"
+                    >
+                      Rộng 40%
+                    </button>
+                    <button type="button" className="icon-button mobile-only" onClick={closeEdit}><X size={18} /></button>
+                  </div>
+                </div>
+
+                <form id="edit-form" onSubmit={handleUpdate} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                  <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column" }}>
+                    
+                    {/* Form Metadata Card */}
+                    <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.03)", flexShrink: 0 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 10, marginBottom: 8 }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 700, color: "#334155", marginBottom: 4 }}>
+                            Tên Biểu mẫu <span style={{ color: "#ef4444" }}>*</span>
+                          </label>
+                          <input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="VD: Đơn đăng ký cấp đổi GCN"
+                            style={{ width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.82rem", outline: "none", background: "#f8fafc" }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "#4f46e5"; e.currentTarget.style.background = "#fff"; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.background = "#f8fafc"; }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 700, color: "#334155", marginBottom: 4 }}>
+                            Loại thủ tục <span style={{ color: "#ef4444" }}>*</span>
+                          </label>
+                          <input
+                            value={editProcedure}
+                            onChange={(e) => setEditProcedure(e.target.value)}
+                            placeholder="VD: cap_doi"
+                            style={{ width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.82rem", outline: "none", background: "#f8fafc" }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "#4f46e5"; e.currentTarget.style.background = "#fff"; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.background = "#f8fafc"; }}
+                          />
+                        </div>
                       </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Tự động điền (AI)</span>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", padding: "6px 8px", background: field.is_auto_fill ? "#ecfdf5" : "#f1f5f9", borderRadius: 4, border: field.is_auto_fill ? "1px solid #10b981" : "1px solid #e2e8f0" }}>
-                          <input 
-                            type="checkbox" 
-                            checked={field.is_auto_fill || false}
-                            onChange={(e) => {
-                              const newFields = [...editFields];
-                              newFields[idx].is_auto_fill = e.target.checked;
-                              setEditFields(newFields);
-                            }}
-                          /> Bật tính năng
+                      <div>
+                        <label style={{ display: "block", fontSize: "0.74rem", fontWeight: 700, color: "#334155", marginBottom: 4 }}>
+                          Mô tả ngắn
                         </label>
-                      </div>
-
-                    </div>
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Chỉ hiển thị khi</span>
-                        <select
-                          value={typeof field.depends_on === 'object' && field.depends_on !== null ? field.depends_on.field : (field.depends_on || "")}
-                          onChange={(e) => {
-                            const newFields = [...editFields];
-                            if (e.target.value) {
-                              newFields[idx].depends_on = { field: e.target.value, value: true };
-                            } else {
-                              newFields[idx].depends_on = null;
-                            }
-                            setEditFields(newFields);
-                          }}
-                          style={{ border: "1px solid #d8b4fe", background: "#faf5ff", color: "#6b21a8", padding: "6px 8px", borderRadius: 4, fontSize: 12, cursor: "pointer" }}
-                        >
-                          <option value="">Luôn hiển thị</option>
-                          {editFields.filter((_, i) => i !== idx).map((otherField, i2) => {
-                            const tgtName = otherField.name || otherField.id;
-                            return (
-                              <option key={i2} value={tgtName}>
-                                Có câu trả lời: {tgtName}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: "120px" }}>
-                        <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Chỉ cần trả lời một trong nhóm</span>
-                        <input 
-                          value={field.require_one_of_group || ""}
-                          onChange={(e) => {
-                            const newFields = [...editFields];
-                            newFields[idx].require_one_of_group = e.target.value;
-                            setEditFields(newFields);
-                          }}
-                          placeholder="Ví dụ: Giấy tờ tùy thân"
-                          style={{ border: "1px solid #fca5a5", background: "#fef2f2", padding: "6px 8px", borderRadius: 4, fontSize: 12 }}
+                        <input
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                          placeholder="Mô tả tóm tắt thủ tục cho người dùng..."
+                          style={{ width: "100%", padding: "6px 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: "0.8rem", outline: "none", background: "#f8fafc" }}
+                          onFocus={(e) => { e.currentTarget.style.borderColor = "#4f46e5"; e.currentTarget.style.background = "#fff"; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.background = "#f8fafc"; }}
                         />
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>Mô tả / Điều kiện bổ sung</span>
-                      <input 
-                        value={field.description || ""} 
-                        onChange={(e) => {
-                          const newFields = [...editFields];
-                          newFields[idx].description = e.target.value;
-                          setEditFields(newFields);
+                    {/* Segmented 3-Tab Control */}
+                    <div style={{ display: "flex", background: "#f1f5f9", padding: 3, borderRadius: 8, gap: 4, marginBottom: 14, border: "1px solid #e2e8f0", position: "sticky", top: 0, zIndex: 12, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => setEditTab("fields")}
+                        style={{
+                          flex: 1, padding: "7px 6px", borderRadius: 6, border: "none",
+                          background: editTab === "fields" ? "#ffffff" : "transparent",
+                          color: editTab === "fields" ? "#4338ca" : "#64748b",
+                          fontWeight: editTab === "fields" ? 700 : 500, fontSize: "0.76rem", cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          boxShadow: editTab === "fields" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          transition: "all 0.15s ease"
                         }}
-                        placeholder="VD: Chỉ cần điền nếu không có MST (hoặc thêm [TU_DONG_DIEN])"
-                        style={{ border: "1px solid #cbd5e1", padding: "6px 8px", borderRadius: 4, fontSize: 12 }} 
-                      />
+                      >
+                        <FileText size={14} />
+                        <span>DS {physicalFields.length} trường</span>
+                        <span style={{ background: editTab === "fields" ? "#ede9fe" : "#e2e8f0", color: editTab === "fields" ? "#6d28d9" : "#475569", padding: "1px 6px", borderRadius: 10, fontSize: "0.68rem" }}>
+                          {assignedCount}/{physicalFields.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditTab("groups")}
+                        style={{
+                          flex: 1, padding: "7px 6px", borderRadius: 6, border: "none",
+                          background: editTab === "groups" ? "#ffffff" : "transparent",
+                          color: editTab === "groups" ? "#4338ca" : "#64748b",
+                          fontWeight: editTab === "groups" ? 700 : 500, fontSize: "0.76rem", cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          boxShadow: editTab === "groups" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <Layers size={14} />
+                        <span>Nhóm logic</span>
+                        <span style={{ background: editTab === "groups" ? "#ede9fe" : "#e2e8f0", color: editTab === "groups" ? "#6d28d9" : "#475569", padding: "1px 6px", borderRadius: 10, fontSize: "0.68rem" }}>
+                          {editSections.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditTab("flow")}
+                        style={{
+                          flex: 1, padding: "7px 6px", borderRadius: 6, border: "none",
+                          background: editTab === "flow" ? "#ffffff" : "transparent",
+                          color: editTab === "flow" ? "#4338ca" : "#64748b",
+                          fontWeight: editTab === "flow" ? 700 : 500, fontSize: "0.76rem", cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          boxShadow: editTab === "flow" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <Sparkles size={14} />
+                        <span>Luồng AI</span>
+                      </button>
                     </div>
+
+                    {/* TAB 1: DANH SÁCH TRƯỜNG */}
+                    {editTab === "fields" && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {/* Search & Filter Toolbar */}
+                        <div style={{ position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", paddingBottom: 10, borderBottom: "1px solid #e2e8f0", marginBottom: 2 }}>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <div style={{ position: "relative", flex: 1 }}>
+                              <Search size={14} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                              <input
+                                value={editSearchQuery}
+                                onChange={e => setEditSearchQuery(e.target.value)}
+                                placeholder="Tìm theo tên trường, số #, hoặc ID..."
+                                style={{ width: "100%", padding: "7px 28px 7px 28px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: 6, background: "#fff", outline: "none" }}
+                              />
+                              {editSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditSearchQuery("")}
+                                  style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", border: 0, background: "transparent", color: "#9ca3af", cursor: "pointer", padding: 2 }}
+                                >
+                                  <X size={13} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Filter Chips */}
+                          <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => setEditFilterMode("all")}
+                              style={{
+                                padding: "3px 8px", borderRadius: 20,
+                                border: `1px solid ${editFilterMode === "all" ? "#4f46e5" : "#cbd5e1"}`,
+                                background: editFilterMode === "all" ? "#ede9fe" : "#fff",
+                                color: editFilterMode === "all" ? "#4338ca" : "#64748b",
+                                fontSize: "0.72rem", fontWeight: editFilterMode === "all" ? 700 : 500, cursor: "pointer"
+                              }}
+                            >
+                              Tất cả ({physicalFields.length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditFilterMode("unassigned")}
+                              style={{
+                                padding: "3px 8px", borderRadius: 20,
+                                border: `1px solid ${editFilterMode === "unassigned" ? "#f59e0b" : "#cbd5e1"}`,
+                                background: editFilterMode === "unassigned" ? "#fef3c7" : "#fff",
+                                color: editFilterMode === "unassigned" ? "#b45309" : "#64748b",
+                                fontSize: "0.72rem", fontWeight: editFilterMode === "unassigned" ? 700 : 500, cursor: "pointer"
+                              }}
+                            >
+                              Chưa gom ({unassignedCount})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditFilterMode("assigned")}
+                              style={{
+                                padding: "3px 8px", borderRadius: 20,
+                                border: `1px solid ${editFilterMode === "assigned" ? "#10b981" : "#cbd5e1"}`,
+                                background: editFilterMode === "assigned" ? "#d1fae5" : "#fff",
+                                color: editFilterMode === "assigned" ? "#047857" : "#64748b",
+                                fontSize: "0.72rem", fontWeight: editFilterMode === "assigned" ? 700 : 500, cursor: "pointer"
+                              }}
+                            >
+                              Đã gom ({assignedCount})
+                            </button>
+
+                            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                              <select
+                                value={editTypeFilter}
+                                onChange={e => setEditTypeFilter(e.target.value)}
+                                style={{ padding: "3px 6px", fontSize: "0.7rem", border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", color: "#475569" }}
+                              >
+                                <option value="all">Mọi loại ô</option>
+                                <option value="text">📝 Chữ</option>
+                                <option value="checkbox">☑ Checkbox</option>
+                                <option value="date">📅 Ngày tháng</option>
+                                <option value="digit_group">🔢 Dãy số</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Fields List */}
+                        {filteredFields.length === 0 && (
+                          <div style={{ padding: "24px 16px", textAlign: "center", color: "#64748b", fontSize: "0.82rem", background: "#fff", border: "1px dashed #cbd5e1", borderRadius: 8 }}>
+                            Không tìm thấy trường nào phù hợp với bộ lọc.
+                          </div>
+                        )}
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {filteredFields.map((field) => {
+                            const fieldIndex = physicalFields.findIndex(f => f.key === field.key);
+                            const num = fieldIndex + 1;
+                            const isCheckbox = field.type === "checkbox" || field.type === "boolean";
+                            const isDate = field.type === "date";
+                            const isDigitGroup = field.type === "digit_group";
+                            const selectedType = isCheckbox ? "checkbox" : isDate ? "date" : isDigitGroup ? "digit_group" : "text";
+                            
+                            const tickGroup = editSections.find(s => s.pdfBehavior === "checkboxes" && (s.tickYesField === field.key || s.tickNoField === field.key));
+                            const alternativeBranch = editSections
+                              .filter(item => item.mode === "one_of" && item.oneOfStyle === "branches")
+                              .flatMap(item => item.branches.map(branch => ({ section: item, branch })))
+                              .find(item => item.branch.fieldIds.includes(field.key));
+                            const sec = editSections.find(s => s.id === (field.section_id || field.condition_group_id || field.alternative_group_id));
+                            const hasGroup = Boolean(sec || tickGroup || alternativeBranch);
+
+                            const hasAdvanced = Boolean(
+                              field.description || field.depends_on || (field.value_source && field.value_source !== "user_input") || field.calculation_formula
+                            );
+                            const advOpen = editAdvancedOpen[field.key] ?? false;
+
+                            return (
+                              <div key={field.key} style={{
+                                padding: "10px 12px",
+                                border: `1px solid ${hasGroup ? "#c4b5fd" : "#e2e8f0"}`,
+                                borderRadius: 8,
+                                background: hasGroup ? "#faf8ff" : "#ffffff",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                              }}>
+                                {/* Row 1: Badge, Input, Type selector */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <div
+                                    title={`Trường #${num} (${field.key})`}
+                                    style={{
+                                      width: 26, height: 26, borderRadius: "50%",
+                                      background: selectedType === "checkbox" ? "#4f46e5" : selectedType === "date" ? "#059669" : hasGroup ? "#7c3aed" : "#3b82f6",
+                                      color: "#fff", display: "flex", alignItems: "center",
+                                      justifyContent: "center", fontWeight: 700, fontSize: "0.75rem",
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    {num}
+                                  </div>
+
+                                  <input
+                                    type="text"
+                                    value={field.name || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, name: val } : item));
+                                    }}
+                                    placeholder={`Tên hiển thị trường #${num}`}
+                                    style={{
+                                      flex: 1, minWidth: 0, padding: "6px 9px",
+                                      border: "1px solid #cbd5e1", borderRadius: 6,
+                                      fontSize: "0.82rem", fontWeight: 500, background: "#fff", outline: "none"
+                                    }}
+                                  />
+
+                                  <select
+                                    value={selectedType}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const newType = val === "checkbox" ? "boolean" : val === "date" ? "date" : val === "digit_group" ? "digit_group" : "string";
+                                      setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, type: newType } : item));
+                                    }}
+                                    style={{
+                                      padding: "6px 8px", fontSize: "0.74rem",
+                                      border: "1px solid #cbd5e1", borderRadius: 6,
+                                      cursor: "pointer", flexShrink: 0,
+                                      background: "#fff", fontWeight: 600, color: "#334155"
+                                    }}
+                                  >
+                                    <option value="text">📝 Chữ</option>
+                                    <option value="checkbox">☑ Checkbox</option>
+                                    <option value="date">📅 Ngày tháng</option>
+                                    <option value="digit_group">🔢 Dãy số</option>
+                                  </select>
+                                </div>
+
+                                {/* Row 2: Logic nhánh, Group dropdown, Required, Advanced */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                                  
+                                  {/* Logic nhánh (Phụ thuộc vào ô khác) */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                    <GitBranch size={13} style={{ color: field.depends_on ? "#7c3aed" : "#94a3b8" }} />
+                                    <select
+                                      value={typeof field.depends_on === "object" && field.depends_on !== null ? field.depends_on.field : (field.depends_on || "")}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setEditFields(prev => prev.map(item => {
+                                          if (item.key !== field.key) return item;
+                                          if (!val) return { ...item, depends_on: null };
+                                          return { ...item, depends_on: { field: val, value: true } };
+                                        }));
+                                      }}
+                                      style={{
+                                        fontSize: "0.72rem", padding: "4px 8px", borderRadius: 5,
+                                        border: `1px solid ${field.depends_on ? "#c4b5fd" : "#cbd5e1"}`,
+                                        background: field.depends_on ? "#f5f3ff" : "#fff",
+                                        color: field.depends_on ? "#6d28d9" : "#475569",
+                                        fontWeight: field.depends_on ? 600 : 400,
+                                        maxWidth: 240, cursor: "pointer"
+                                      }}
+                                      title="Logic nhánh: Điều kiện phụ thuộc để AI hỏi ô này"
+                                    >
+                                      <option value="">-- Logic nhánh: Luôn hỏi --</option>
+                                      {physicalFields.filter(other => other.key !== field.key).map((other, oIdx) => (
+                                        <option key={other.key} value={other.key}>
+                                          ↳ Chỉ hỏi khi có #{oIdx + 1}: {other.name || other.key}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  {/* Nhóm logic Dropdown */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                    <select
+                                      value={
+                                        (() => {
+                                          if (tickGroup) return `tick:${tickGroup.id}:${tickGroup.tickYesField === field.key ? "yes" : "no"}`;
+                                          if (alternativeBranch) return `branch:${alternativeBranch.section.id}:${alternativeBranch.branch.id}`;
+                                          if (field.alternative_group_id) return `one_of:${field.alternative_group_id}`;
+                                          if (field.condition_group_id) return `yes_no:${field.condition_group_id}:${field.condition_behavior || "yes"}`;
+                                          if (field.section_id) return `always:${field.section_id}`;
+                                          return "";
+                                        })()
+                                      }
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (!val) {
+                                          // Unassign
+                                          setEditFields(prev => prev.map(item => {
+                                            if (item.key !== field.key) return item;
+                                            const next = { ...item };
+                                            delete next.section_id; delete next.section_name; delete next.question_group;
+                                            delete next.condition_group_id; delete next.condition_group_name; delete next.condition_behavior; delete next.derived_from;
+                                            delete next.alternative_group_id; delete next.alternative_group_name; delete next.alternative_branch_name;
+                                            if (typeof next.depends_on === "object" && String(next.depends_on?.field || "").startsWith("section_condition_")) next.depends_on = null;
+                                            return next;
+                                          }));
+                                          setEditSections(prev => prev.map(s => {
+                                            if (s.mode === "one_of" && s.oneOfStyle === "branches") {
+                                              return { ...s, branches: s.branches.map(b => ({ ...b, fieldIds: b.fieldIds.filter(id => id !== field.key) })) };
+                                            }
+                                            if (s.pdfBehavior === "checkboxes") {
+                                              return { ...s, tickYesField: s.tickYesField === field.key ? "" : s.tickYesField, tickNoField: s.tickNoField === field.key ? "" : s.tickNoField };
+                                            }
+                                            return s;
+                                          }));
+                                          return;
+                                        }
+
+                                        const [type, gId, extra] = val.split(":");
+                                        const targetSec = editSections.find(s => s.id === gId);
+                                        if (!targetSec) return;
+
+                                        if (type === "always") {
+                                          toggleEditGroupMember(targetSec, field.key, true);
+                                        } else if (type === "yes_no") {
+                                          toggleEditGroupMember(targetSec, field.key, true, undefined, extra as "yes" | "no" | "always");
+                                        } else if (type === "one_of") {
+                                          toggleEditGroupMember(targetSec, field.key, true);
+                                        } else if (type === "branch") {
+                                          toggleEditGroupMember(targetSec, field.key, true, extra);
+                                        }
+                                      }}
+                                      style={{
+                                        fontSize: "0.72rem", padding: "4px 8px", borderRadius: 5,
+                                        border: `1px solid ${hasGroup ? "#a78bfa" : "#cbd5e1"}`,
+                                        background: hasGroup ? "#f5f3ff" : "#f8fafc",
+                                        color: hasGroup ? "#5b21b6" : "#64748b",
+                                        fontWeight: hasGroup ? 600 : 400,
+                                        maxWidth: 260, cursor: "pointer"
+                                      }}
+                                    >
+                                      <option value="">-- Chưa vào nhóm --</option>
+                                      {editSections.map(s => {
+                                        if (s.mode === "always") {
+                                          return <option key={s.id} value={`always:${s.id}`}>🟢 Cụm: {s.name || "Chưa đặt tên"}</option>;
+                                        }
+                                        if (s.mode === "yes_no") {
+                                          return (
+                                            <optgroup key={s.id} label={`${s.pdfBehavior === "checkboxes" ? "✅" : "🔀"} ${s.name || "Nhóm Có/Không"}`}>
+                                              <option value={`yes_no:${s.id}:yes`}>↳ Khi Có: {s.name}</option>
+                                              <option value={`yes_no:${s.id}:no`}>↳ Khi Không: {s.name}</option>
+                                              <option value={`yes_no:${s.id}:always`}>↳ Luôn hỏi</option>
+                                            </optgroup>
+                                          );
+                                        }
+                                        if (s.mode === "one_of") {
+                                          if (s.oneOfStyle === "branches") {
+                                            return (
+                                              <optgroup key={s.id} label={`◉ ${s.name || "Nhóm Hoặc"}`}>
+                                                {s.branches.map(b => (
+                                                  <option key={b.id} value={`branch:${s.id}:${b.id}`}>↳ Nhánh: {b.name || "Chưa đặt tên"}</option>
+                                                ))}
+                                              </optgroup>
+                                            );
+                                          }
+                                          return <option key={s.id} value={`one_of:${s.id}`}>◉ Hoặc: {s.name || "Chọn 1"}</option>;
+                                        }
+                                        return null;
+                                      })}
+                                    </select>
+                                  </div>
+
+                                  {/* Checkbox Bắt buộc */}
+                                  <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.72rem", cursor: "pointer", color: "#374151" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.required !== false}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, required: checked } : item));
+                                      }}
+                                    />
+                                    Bắt buộc
+                                  </label>
+
+                                  <span style={{ fontSize: "0.68rem", color: "#94a3b8", marginLeft: "auto" }}>
+                                    {field.key}
+                                  </span>
+
+                                  {/* Nút ⋯ Thêm / ▴ Bớt */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditAdvancedOpen(prev => ({ ...prev, [field.key]: !advOpen }))}
+                                    style={{
+                                      border: `1px solid ${hasAdvanced ? "#c084fc" : "#cbd5e1"}`,
+                                      borderRadius: 4, padding: "2px 6px",
+                                      background: hasAdvanced ? "#faf5ff" : "#fff",
+                                      color: hasAdvanced ? "#7e22ce" : "#64748b",
+                                      cursor: "pointer", fontSize: "0.7rem",
+                                      display: "flex", alignItems: "center", gap: 3
+                                    }}
+                                  >
+                                    {hasAdvanced && <span style={{ color: "#a855f7", fontWeight: "bold" }}>●</span>}
+                                    {advOpen ? "▴ Bớt" : "⋯ Thêm"}
+                                  </button>
+                                </div>
+
+                                {/* Drawer mở rộng nâng cao */}
+                                {advOpen && (
+                                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed #e2e8f0", display: "flex", flexDirection: "column", gap: 7 }}>
+                                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                                      <span style={{ fontSize: "0.7rem", color: "#64748b" }}>Nguồn:</span>
+                                      <select
+                                        value={field.value_source || "user_input"}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, value_source: val, is_auto_fill: val !== "user_input" } : item));
+                                        }}
+                                        style={{ padding: "3px 6px", fontSize: "0.72rem", border: "1px solid #10b981", borderRadius: 4, background: "#ecfdf5", color: "#065f46" }}
+                                      >
+                                        <option value="user_input">Người dùng nhập</option>
+                                        <option value="ai_document">AI đọc từ hồ sơ</option>
+                                        <option value="current_date">Tự lấy ngày lập đơn</option>
+                                        <option value="formula">Tự tính theo công thức</option>
+                                      </select>
+
+                                      {field.value_source === "formula" && (
+                                        <input
+                                          value={field.calculation_formula || ""}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, calculation_formula: val } : item));
+                                          }}
+                                          placeholder="Công thức, VD: [45] * 0.02"
+                                          style={{ flex: 1, minWidth: 150, padding: "3px 6px", fontSize: "0.72rem", border: "1px solid #86efac", borderRadius: 4, background: "#f0fdf4" }}
+                                        />
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <input
+                                        value={field.description || ""}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, description: val } : item));
+                                        }}
+                                        placeholder="Mô tả / Điều kiện bổ sung (VD: Chỉ điền nếu không có MST)"
+                                        style={{ width: "100%", padding: "4px 8px", fontSize: "0.72rem", border: "1px solid #cbd5e1", borderRadius: 4 }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 2: QUẢN LÝ NHÓM LOGIC & RẼ NHÁNH */}
+                    {editTab === "groups" && (
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", padding: "8px 0" }}>
+                          <div>
+                            <h4 style={{ margin: 0, color: "#1e293b", fontSize: "0.92rem", fontWeight: 700 }}>
+                              Nhóm Logic & Rẽ nhánh ({editSections.length})
+                            </h4>
+                            <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#64748b" }}>
+                              Gom cụm câu hỏi hoặc tạo điều kiện Có/Không cho chatbot
+                            </p>
+                          </div>
+
+                          <div style={{ position: "relative" }}>
+                            <button
+                              type="button"
+                              onClick={() => setEditGroupMenuOpen(!editGroupMenuOpen)}
+                              style={{
+                                border: "none", borderRadius: 8, padding: "7px 14px",
+                                background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                                color: "#fff", cursor: "pointer", fontSize: "0.78rem",
+                                fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6,
+                                whiteSpace: "nowrap", flexShrink: 0,
+                                boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)",
+                                transition: "all 0.15s ease"
+                              }}
+                            >
+                              <Plus size={14} strokeWidth={2.5} />
+                              <span>Thêm nhóm logic</span>
+                              <ChevronDown size={13} strokeWidth={2.5} style={{ opacity: 0.85 }} />
+                            </button>
+                            {editGroupMenuOpen && (
+                              <div style={{
+                                position: "absolute", zIndex: 20, right: 0, top: "calc(100% + 4px)",
+                                width: 270, padding: 6, border: "1px solid #e2e8f0", borderRadius: 8,
+                                background: "#ffffff", boxShadow: "0 10px 25px rgba(0,0,0,.1)"
+                              }}>
+                                {([
+                                  ["always", "🟢 Cụm thông tin", "Hỏi theo thứ tự, có câu dẫn giới thiệu"],
+                                  ["yes_no_none", "🔀 Có/Không (mở nhánh)", "Nếu Không thì bỏ qua nhóm, không ghi PDF"],
+                                  ["yes_no_tick", "✅ Có/Không (tự tick PDF)", "Hỏi Có/Không rồi tự đánh dấu vào 2 ô checkbox"],
+                                  ["one_of", "◉ Chỉ cần một (Hoặc)", "Chỉ cần trả lời 1 trong nhiều trường con"]
+                                ] as const).map(([preset, title, desc]) => (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() => addEditSectionPreset(preset)}
+                                    style={{
+                                      display: "block", width: "100%", padding: "8px 10px",
+                                      border: 0, background: "transparent", textAlign: "left",
+                                      color: "#1e293b", cursor: "pointer", borderRadius: 6,
+                                      transition: "background 0.15s"
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                                    onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
+                                  >
+                                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1e293b" }}>{title}</div>
+                                    <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: 2 }}>{desc}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Empty state */}
+                        {editSections.length === 0 && (
+                          <div style={{
+                            padding: "24px 16px", textAlign: "center", border: "1px dashed #cbd5e1",
+                            borderRadius: 8, background: "#f8fafc", color: "#64748b", fontSize: "0.78rem"
+                          }}>
+                            <Layers size={28} style={{ color: "#94a3b8", margin: "0 auto 8px" }} />
+                            <strong style={{ display: "block", color: "#334155", marginBottom: 4 }}>Chưa có nhóm logic nào</strong>
+                            <p style={{ margin: "0 0 12px", fontSize: "0.74rem", color: "#64748b", lineHeight: 1.4 }}>
+                              Mặc định các ô sẽ được AI hỏi tuần tự từ trên xuống dưới. Nhấn <strong>"+ Thêm nhóm logic"</strong> để gom nhóm hoặc chia nhánh.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Group Cards List */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {editSections.map(section => {
+                            const memberKeys = section.mode === "one_of" && section.oneOfStyle === "branches"
+                              ? section.branches.flatMap(branch => branch.fieldIds)
+                              : physicalFields.filter(f => (section.mode === "one_of" ? f.alternative_group_id : f.section_id) === section.id).map(f => f.key);
+                            const isCollapsed = editCollapsedSections[section.id] ?? false;
+
+                            return (
+                              <div key={section.id} style={{
+                                border: "1px solid #e2e8f0",
+                                borderRadius: 8,
+                                background: "#ffffff",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                                overflow: "hidden"
+                              }}>
+                                {/* Group Card Header */}
+                                <div style={{
+                                  padding: "10px 12px",
+                                  background: section.mode === "always" ? "#f0fdf4" : section.mode === "yes_no" ? "#eff6ff" : "#fff7ed",
+                                  borderBottom: isCollapsed ? "none" : "1px solid #f1f5f9",
+                                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8
+                                }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                                    <span style={{
+                                      fontSize: "0.7rem", fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                                      background: "#fff",
+                                      color: section.mode === "always" ? "#16a34a" : section.mode === "yes_no" ? "#2563eb" : "#ea580c",
+                                      border: `1px solid ${section.mode === "always" ? "#bbf7d0" : section.mode === "yes_no" ? "#bfdbfe" : "#fed7aa"}`,
+                                      flexShrink: 0
+                                    }}>
+                                      {section.mode === "always" ? "🟢 Cụm" : section.mode === "yes_no" ? (section.pdfBehavior === "checkboxes" ? "✅ Tick PDF" : "🔀 Có/Không") : "◉ Hoặc"}
+                                    </span>
+                                    <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {section.name || "(Chưa đặt tên nhóm)"}
+                                    </span>
+                                    <span style={{
+                                      fontSize: "0.68rem",
+                                      padding: "1px 6px",
+                                      borderRadius: 10,
+                                      background: memberKeys.length > 0 ? "#e2e8f0" : "#fef3c7",
+                                      color: memberKeys.length > 0 ? "#475569" : "#b45309",
+                                      fontWeight: 600,
+                                      flexShrink: 0
+                                    }}>
+                                      {memberKeys.length > 0 ? `${memberKeys.length} trường` : "Chưa có trường nào"}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditCollapsedSections({ ...editCollapsedSections, [section.id]: !isCollapsed })}
+                                      style={{
+                                        border: "1px solid #cbd5e1", borderRadius: 4, padding: "3px 8px",
+                                        background: "#fff", color: "#475569", fontSize: "0.7rem",
+                                        fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 3
+                                      }}
+                                    >
+                                      {isCollapsed ? "Chi tiết ▾" : "Thu gọn ▴"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeEditSection(section.id)}
+                                      style={{
+                                        border: 0, background: "transparent", color: "#ef4444",
+                                        fontSize: "0.72rem", cursor: "pointer", padding: "3px 5px",
+                                        borderRadius: 4
+                                      }}
+                                      title="Xóa nhóm này"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Group Card Body */}
+                                {!isCollapsed && (
+                                  <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                                      <div>
+                                        <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, color: "#475569", marginBottom: 3 }}>
+                                          Tên nhóm logic:
+                                        </label>
+                                        <input
+                                          value={section.name}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            setEditSections(prev => prev.map(s => s.id === section.id ? { ...s, name: val } : s));
+                                            setEditFields(prev => prev.map(f => {
+                                              if (f.alternative_group_id === section.id) return { ...f, alternative_group_name: val };
+                                              if (f.condition_group_id === section.id) return { ...f, condition_group_name: val };
+                                              if (f.section_id === section.id) return { ...f, section_name: val };
+                                              return f;
+                                            }));
+                                          }}
+                                          placeholder="VD: Thông tin thửa đất"
+                                          style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: "0.78rem" }}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, color: "#475569", marginBottom: 3 }}>
+                                          Loại nhóm:
+                                        </label>
+                                        <select
+                                          value={section.mode}
+                                          onChange={e => {
+                                            const mode = e.target.value as "always" | "yes_no" | "one_of";
+                                            setEditSections(prev => prev.map(s => s.id === section.id ? { ...s, mode } : s));
+                                          }}
+                                          style={{ padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: "0.78rem", background: "#fff" }}
+                                        >
+                                          <option value="always">🟢 Cụm thông tin</option>
+                                          <option value="yes_no">🔀 Có/Không</option>
+                                          <option value="one_of">◉ Chỉ cần một (Hoặc)</option>
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, color: "#475569", marginBottom: 3 }}>
+                                        {section.mode === "always" ? "Câu dẫn trước cụm:" : section.mode === "yes_no" ? "Câu hỏi Có/Không của AI:" : "Câu hỏi chọn một:"}
+                                      </label>
+                                      <input
+                                        value={section.question}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          setEditSections(prev => prev.map(s => s.id === section.id ? { ...s, question: val } : s));
+                                          if (section.mode === "always") {
+                                            setEditFields(prev => prev.map(f => f.section_id === section.id ? { ...f, question_group: val } : f));
+                                          }
+                                        }}
+                                        placeholder={
+                                          section.mode === "always"
+                                            ? "VD: Sau đây là thông tin về thửa đất:"
+                                            : section.mode === "yes_no"
+                                              ? "VD: Bạn đã có giấy chứng nhận quyền sử dụng đất chưa?"
+                                              : "VD: Bạn muốn dùng loại giấy tờ nào?"
+                                        }
+                                        style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: "0.78rem" }}
+                                      />
+                                    </div>
+
+                                    {/* One_of Branches Config */}
+                                    {section.mode === "one_of" && (
+                                      <div style={{ padding: "9px 10px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, display: "flex", flexDirection: "column", gap: 8 }}>
+                                        <div>
+                                          <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 700, color: "#9a3412", marginBottom: 4 }}>Cấu trúc lựa chọn:</label>
+                                          <select
+                                            value={section.oneOfStyle}
+                                            onChange={e => {
+                                              const oneOfStyle = e.target.value as "fields" | "branches";
+                                              setEditSections(prev => prev.map(item => {
+                                                if (item.id !== section.id) return item;
+                                                if (oneOfStyle === "branches" && item.branches.length === 0) {
+                                                  const stamp = Date.now();
+                                                  return { ...item, oneOfStyle, branches: [
+                                                    { id: `branch_${stamp}_1`, name: "Phương án 1", fieldIds: [] },
+                                                    { id: `branch_${stamp}_2`, name: "Phương án 2", fieldIds: [] },
+                                                  ] };
+                                                }
+                                                return { ...item, oneOfStyle };
+                                              }));
+                                            }}
+                                            style={{ width: "100%", padding: "6px 8px", border: "1px solid #fdba74", borderRadius: 5, fontSize: "0.75rem", background: "#fff", color: "#7c2d12", fontWeight: 600 }}
+                                          >
+                                            <option value="fields">Mỗi lựa chọn là một trường đơn</option>
+                                            <option value="branches">Mỗi lựa chọn là một nhánh có nhiều trường con</option>
+                                          </select>
+                                        </div>
+
+                                        {section.oneOfStyle === "branches" && (
+                                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                            <div style={{ fontSize: "0.69rem", color: "#9a3412", lineHeight: 1.4 }}>
+                                              AI hỏi câu chọn một ở trên đúng một lần, sau đó chỉ hỏi các trường trong nhánh người dùng chọn.
+                                            </div>
+                                            {section.branches.map((branch, branchIndex) => (
+                                              <div key={branch.id} style={{ padding: 8, background: "#fff", border: "1px solid #fed7aa", borderRadius: 6 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                                                  <span style={{ fontSize: "0.68rem", color: "#c2410c", fontWeight: 700, whiteSpace: "nowrap" }}>Nhánh {branchIndex + 1}</span>
+                                                  <input
+                                                    value={branch.name}
+                                                    onChange={e => {
+                                                      const val = e.target.value;
+                                                      setEditSections(prev => prev.map(item => item.id === section.id ? {
+                                                        ...item,
+                                                        branches: item.branches.map(candidate => candidate.id === branch.id ? { ...candidate, name: val } : candidate),
+                                                      } : item));
+                                                      setEditFields(prev => prev.map(f => {
+                                                        if (f.alternative_group_id === section.id && branch.fieldIds.includes(f.key)) {
+                                                          return { ...f, alternative_branch_name: val, depends_on: { field: `section_condition_${section.id}`, value: val } };
+                                                        }
+                                                        return f;
+                                                      }));
+                                                    }}
+                                                    placeholder="VD: Dùng mã số thuế"
+                                                    style={{ flex: 1, minWidth: 0, padding: "5px 7px", border: "1px solid #fdba74", borderRadius: 4, fontSize: "0.73rem" }}
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    disabled={section.branches.length <= 2}
+                                                    onClick={() => setEditSections(prev => prev.map(item => item.id === section.id ? { ...item, branches: item.branches.filter(candidate => candidate.id !== branch.id) } : item))}
+                                                    title={section.branches.length <= 2 ? "Nhóm Hoặc cần ít nhất 2 nhánh" : "Xóa nhánh"}
+                                                    style={{ border: 0, background: "transparent", color: section.branches.length <= 2 ? "#cbd5e1" : "#ef4444", cursor: section.branches.length <= 2 ? "not-allowed" : "pointer", padding: 3 }}
+                                                  >
+                                                    <Trash2 size={13} />
+                                                  </button>
+                                                </div>
+                                                <details>
+                                                  <summary style={{ cursor: "pointer", fontSize: "0.69rem", fontWeight: 600, color: "#c2410c" }}>
+                                                    Chọn trường con ({branch.fieldIds.length} trường) ▾
+                                                  </summary>
+                                                  <div style={{ marginTop: 6, maxHeight: 150, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 4, padding: 6, background: "#fffaf5", borderRadius: 5 }}>
+                                                    {physicalFields.map((f, fIdx) => {
+                                                      const belongs = branch.fieldIds.includes(f.key);
+                                                      const belongsToOtherBranch = section.branches.some(candidate => candidate.id !== branch.id && candidate.fieldIds.includes(f.key));
+                                                      return (
+                                                        <label key={f.key} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 5px", borderRadius: 4, border: `1px solid ${belongs ? "#fb923c" : "#e2e8f0"}`, background: belongs ? "#ffedd5" : "#fff", color: "#334155", cursor: "pointer", minWidth: 0 }}>
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={belongs}
+                                                            onChange={e => toggleEditGroupMember(section, f.key, e.target.checked, branch.id)}
+                                                          />
+                                                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.72rem" }}>#{fIdx + 1} · {f.name || f.key}</span>
+                                                          {belongsToOtherBranch && !belongs && <span title="Đang ở nhánh khác" style={{ marginLeft: "auto", color: "#f97316", fontSize: "0.7rem" }}>↔</span>}
+                                                        </label>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                </details>
+                                              </div>
+                                            ))}
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditSections(prev => prev.map(item => item.id === section.id ? { ...item, branches: [...item.branches, { id: `branch_${Date.now()}`, name: `Phương án ${item.branches.length + 1}`, fieldIds: [] }] } : item))}
+                                              style={{ alignSelf: "flex-start", border: "1px dashed #fb923c", borderRadius: 5, background: "#fff", color: "#c2410c", padding: "5px 9px", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer" }}
+                                            >
+                                              + Thêm nhánh lựa chọn
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Yes/No PDF Behavior */}
+                                    {section.mode === "yes_no" && (
+                                      <div style={{ padding: "8px 10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                          <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#475569" }}>Kết quả trên PDF:</span>
+                                          <select
+                                            value={section.pdfBehavior}
+                                            onChange={e => {
+                                              const pdfBehavior = e.target.value as "none" | "checkboxes";
+                                              setEditSections(prev => prev.map(item => item.id === section.id ? { ...item, pdfBehavior } : item));
+                                            }}
+                                            style={{ padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: "0.74rem", background: "#fff" }}
+                                          >
+                                            <option value="none">Không ghi gì trên PDF</option>
+                                            <option value="checkboxes">Tự tick checkbox theo câu trả lời</option>
+                                          </select>
+                                        </div>
+                                        {section.pdfBehavior === "checkboxes" && (
+                                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+                                            <select
+                                              value={section.tickYesField}
+                                              onChange={e => {
+                                                const tickYesField = e.target.value;
+                                                setEditSections(prev => prev.map(item => item.id === section.id ? { ...item, tickYesField } : item));
+                                              }}
+                                              style={{ flex: 1, minWidth: 140, padding: "5px 7px", border: "1px solid #86efac", borderRadius: 4, fontSize: "0.72rem", background: "#f0fdf4" }}
+                                            >
+                                              <option value="">Ô tick khi CÓ...</option>
+                                              {physicalFields.filter(f => f.key !== section.tickNoField).map((f, fIdx) => (
+                                                <option key={f.key} value={f.key}>
+                                                  #{fIdx + 1} · {f.name || f.key}
+                                                </option>
+                                              ))}
+                                            </select>
+                                            <select
+                                              value={section.tickNoField}
+                                              onChange={e => {
+                                                const tickNoField = e.target.value;
+                                                setEditSections(prev => prev.map(item => item.id === section.id ? { ...item, tickNoField } : item));
+                                              }}
+                                              style={{ flex: 1, minWidth: 140, padding: "5px 7px", border: "1px solid #fca5a5", borderRadius: 4, fontSize: "0.72rem", background: "#fef2f2" }}
+                                            >
+                                              <option value="">Ô tick khi KHÔNG...</option>
+                                              {physicalFields.filter(f => f.key !== section.tickYesField).map((f, fIdx) => (
+                                                <option key={f.key} value={f.key}>
+                                                  #{fIdx + 1} · {f.name || f.key}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Field Assignment Checklist */}
+                                    {!(section.mode === "one_of" && section.oneOfStyle === "branches") && (
+                                      <details>
+                                        <summary style={{ cursor: "pointer", color: "#4f46e5", fontWeight: 600, padding: "4px 0", fontSize: "0.75rem" }}>
+                                          {section.mode === "yes_no" ? "Gán trường vào nhánh Có / Không / Luôn hỏi ▾" : `Gán các trường vào nhóm (${memberKeys.length} trường đã chọn) ▾`}
+                                        </summary>
+                                        <div style={{ marginTop: 6, maxHeight: 180, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 5, padding: 8, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                                          {physicalFields.map((f, fIdx) => {
+                                            const belongs = memberKeys.includes(f.key);
+                                            const isResultCheckbox = section.mode === "yes_no" && (section.tickYesField === f.key || section.tickNoField === f.key);
+                                            return (
+                                              <div
+                                                key={f.key}
+                                                style={{
+                                                  display: "flex", alignItems: "center", gap: 4, minWidth: 0,
+                                                  padding: "3px 6px", borderRadius: 4,
+                                                  background: belongs ? "#ede9fe" : "#ffffff",
+                                                  border: `1px solid ${belongs ? "#c4b5fd" : "#e2e8f0"}`,
+                                                  color: isResultCheckbox ? "#94a3b8" : "#334155"
+                                                }}
+                                              >
+                                                <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: isResultCheckbox ? "not-allowed" : "pointer", minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                  <input
+                                                    type="checkbox"
+                                                    disabled={isResultCheckbox}
+                                                    checked={belongs}
+                                                    onChange={e => toggleEditGroupMember(section, f.key, e.target.checked)}
+                                                  />
+                                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", fontSize: "0.72rem" }}>#{fIdx + 1} · {f.name || f.key}</span>
+                                                </label>
+                                                {section.mode === "yes_no" && belongs && (
+                                                  <select
+                                                    value={f.condition_behavior || "yes"}
+                                                    onChange={e => toggleEditGroupMember(section, f.key, true, undefined, e.target.value as "yes" | "no" | "always")}
+                                                    style={{ padding: "2px 4px", fontSize: "0.68rem", border: "1px solid #a5b4fc", borderRadius: 4, background: "#fff", color: "#3730a3" }}
+                                                  >
+                                                    <option value="yes">Khi Có</option>
+                                                    <option value="no">Khi Không</option>
+                                                    <option value="always">Luôn hỏi</option>
+                                                  </select>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </details>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 3: LUỒNG AI SIMULATION */}
+                    {editTab === "flow" && (
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                        <div style={{ marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", padding: "8px 0" }}>
+                          <h4 style={{ margin: 0, color: "#1e293b", fontSize: "0.92rem", fontWeight: 700 }}>
+                            Mô phỏng Luồng AI Trò chuyện
+                          </h4>
+                          <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#64748b" }}>
+                            Trình tự chatbot hỏi người dân để thu thập thông tin và tự động điền vào biểu mẫu
+                          </p>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, position: "relative", paddingLeft: 24 }}>
+                          {/* Vertical timeline line */}
+                          <div style={{ position: "absolute", left: 10, top: 12, bottom: 20, width: 2, background: "#e2e8f0", zIndex: 0 }} />
+
+                          {(() => {
+                            const sectionMembers = (sec: FormSection) => sec.mode === "one_of" && sec.oneOfStyle === "branches"
+                              ? physicalFields.filter(f => sec.branches.some(branch => branch.fieldIds.includes(f.key)))
+                              : physicalFields.filter(f => (sec.mode === "one_of" ? f.alternative_group_id : f.section_id) === sec.id);
+                            
+                            const sectionByField = new Map<string, FormSection>();
+                            editSections.forEach(sec => sectionMembers(sec).forEach(f => sectionByField.set(f.key, sec)));
+                            const resultTickIds = new Set(editSections.flatMap(sec => [sec.tickYesField, sec.tickNoField]).filter(Boolean));
+
+                            const entries: Array<{ order: number; kind: "field"; field: typeof physicalFields[number]; num: number } | { order: number; kind: "section"; section: FormSection; members: typeof physicalFields }> = [];
+
+                            editSections.forEach((sec, idx) => {
+                              const members = sectionMembers(sec);
+                              const firstIdx = physicalFields.findIndex(f => members.some(m => m.key === f.key));
+                              entries.push({ order: firstIdx >= 0 ? firstIdx + 1 : (physicalFields.length + idx + 1), kind: "section", section: sec, members });
+                            });
+
+                            physicalFields.forEach((field, fIdx) => {
+                              if (!sectionByField.has(field.key) && !resultTickIds.has(field.key)) {
+                                entries.push({ order: fIdx + 1, kind: "field", field, num: fIdx + 1 });
+                              }
+                            });
+
+                            entries.sort((a, b) => a.order - b.order || (a.kind === "section" ? -1 : 1));
+
+                            return entries.map((entry, index) => {
+                              if (entry.kind === "field") {
+                                const field = entry.field;
+                                const isAuto = field.value_source && field.value_source !== "user_input";
+                                const parent = physicalFields.find(item => item.key === (typeof field.depends_on === "object" ? field.depends_on?.field : field.depends_on));
+                                return (
+                                  <div key={`flow-field-${field.key}`} style={{ position: "relative", zIndex: 1 }}>
+                                    <div style={{ position: "absolute", left: -21, top: 6, width: 16, height: 16, borderRadius: "50%", background: isAuto ? "#0891b2" : "#64748b", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.55rem", fontWeight: 700, boxShadow: "0 0 0 3px #fff" }}>
+                                      {index + 1}
+                                    </div>
+                                    <div style={{ background: isAuto ? "#ecfeff" : "#fff", border: `1px solid ${isAuto ? "#a5f3fc" : "#e2e8f0"}`, borderRadius: 8, padding: "8px 10px" }}>
+                                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                        <strong style={{ fontSize: "0.76rem", color: "#1e293b" }}>#{entry.num} · {field.name || field.key}</strong>
+                                        <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: isAuto ? "#0e7490" : "#64748b", fontWeight: 600 }}>
+                                          {isAuto ? "Tự điền · không hỏi" : "AI hỏi"}
+                                        </span>
+                                      </div>
+                                      {parent && <div style={{ marginTop: 4, fontSize: "0.69rem", color: "#7c3aed" }}>↳ Chỉ hỏi khi trường "{parent.name || parent.key}" thỏa điều kiện</div>}
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              const { section, members } = entry;
+                              const isYesNo = section.mode === "yes_no";
+                              const isOneOf = section.mode === "one_of";
+                              const memberText = (items: typeof physicalFields) => items.map(f => f.name || f.key).join(" → ") || "chưa có trường";
+
+                              return (
+                                <div key={`flow-section-${section.id}`} style={{ position: "relative", zIndex: 1 }}>
+                                  <div style={{ position: "absolute", left: -21, top: 6, width: 16, height: 16, borderRadius: "50%", background: isYesNo ? "#2563eb" : isOneOf ? "#ea580c" : "#16a34a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.55rem", fontWeight: 700, boxShadow: "0 0 0 3px #fff" }}>
+                                    {index + 1}
+                                  </div>
+                                  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                                      <span style={{ fontSize: "0.68rem", fontWeight: 700, color: isYesNo ? "#2563eb" : isOneOf ? "#ea580c" : "#16a34a" }}>
+                                        {isYesNo ? "🔀 Có/Không" : isOneOf ? "◉ Chọn một" : "🟢 Cụm"}
+                                      </span>
+                                      <strong style={{ fontSize: "0.78rem", color: "#1e293b" }}>{section.name || "(Chưa đặt tên)"}</strong>
+                                      <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "#64748b" }}>{members.length} trường</span>
+                                    </div>
+                                    <div style={{ fontSize: "0.73rem", color: "#334155", background: "#f8fafc", padding: "6px 8px", borderRadius: 5, marginBottom: 6 }}>
+                                      🗣️ AI hỏi một lần: “{section.question || (isYesNo
+                                        ? `Bạn có ${section.name || "thông tin này"} không?`
+                                        : isOneOf
+                                          ? `Bạn muốn chọn ${(section.oneOfStyle === "branches" ? section.branches.map(b => b.name) : members.map(m => m.name)).join(" hay ")}?`
+                                          : `Sau đây là ${section.name || "các thông tin cần cung cấp"}:`)}”
+                                    </div>
+                                    {isYesNo ? (
+                                      <div style={{ display: "grid", gap: 4, fontSize: "0.69rem" }}>
+                                        <div style={{ padding: "4px 7px", background: "#f0fdf4", borderRadius: 4, color: "#166534" }}><strong>Khi CÓ:</strong> {memberText(members.filter(f => (f.condition_behavior || "yes") === "yes"))}</div>
+                                        <div style={{ padding: "4px 7px", background: "#fef2f2", borderRadius: 4, color: "#991b1b" }}><strong>Khi KHÔNG:</strong> {members.some(f => f.condition_behavior === "no") ? memberText(members.filter(f => f.condition_behavior === "no")) : "Bỏ qua"}</div>
+                                        {members.some(f => f.condition_behavior === "always") && <div style={{ padding: "4px 7px", background: "#f8fafc", borderRadius: 4, color: "#475569" }}><strong>Luôn hỏi:</strong> {memberText(members.filter(f => f.condition_behavior === "always"))}</div>}
+                                      </div>
+                                    ) : isOneOf && section.oneOfStyle === "branches" ? (
+                                      <div style={{ display: "grid", gap: 4, fontSize: "0.69rem" }}>
+                                        {section.branches.map(b => (
+                                          <div key={b.id} style={{ padding: "4px 7px", background: "#fff7ed", borderRadius: 4, color: "#9a3412" }}>
+                                            <strong>{b.name || "Nhánh chưa đặt tên"}:</strong> {memberText(physicalFields.filter(f => b.fieldIds.includes(f.key)))}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{ fontSize: "0.69rem", color: "#475569", lineHeight: 1.5 }}>
+                                        {isOneOf ? "Chọn một trong: " : "Sau câu dẫn, hỏi lần lượt: "}{memberText(members)}
+                                      </div>
+                                    )}
+                                    {section.pdfBehavior === "checkboxes" && <div style={{ marginTop: 5, fontSize: "0.67rem", color: "#0369a1" }}>✓ Câu trả lời tự tick ô Có/Không trên PDF; hai ô kết quả không được hỏi lại.</div>}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+
+                          {/* Completion Node */}
+                          <div style={{ position: "relative", zIndex: 1 }}>
+                            <div style={{ position: "absolute", left: -21, top: 6, width: 16, height: 16, borderRadius: "50%", background: "#10b981", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 0 3px #fff" }}>
+                              <Check size={10} />
+                            </div>
+                            <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, padding: "10px 12px" }}>
+                              <strong style={{ fontSize: "0.78rem", color: "#047857", display: "block" }}>
+                                Hoàn tất kê khai
+                              </strong>
+                              <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "#065f46" }}>
+                                AI tổng hợp dữ liệu, tự động điền vào phôi Word và xuất file PDF chuẩn cho người dân.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="dialog-actions" style={{ marginTop: "auto" }}>
-              <button type="button" className="secondary-button" onClick={closeEdit}>Hủy</button>
-              <button type="submit" className="primary-button" disabled={editSaving}>{editSaving ? "Đang lưu..." : "Lưu thay đổi"}</button>
-            </div>
-            </div>
-
-            {/* Form Preview Section */}
-            <div className="doc-preview-shell" style={{ flex: 1, minHeight: 400, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <div style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}>
-                <button type="button" className="icon-button" onClick={closeEdit} title="Đóng"><X size={18} /></button>
+                  {/* Panel Footer */}
+                  <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                    <button type="button" className="secondary-button" onClick={closeEdit} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editSaving}
+                      style={{
+                        padding: "8px 22px", borderRadius: 8, border: "none",
+                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                        color: "#fff", fontWeight: 700, fontSize: "0.84rem",
+                        cursor: editSaving ? "not-allowed" : "pointer",
+                        display: "inline-flex", alignItems: "center", gap: 7,
+                        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
+                        transition: "all 0.15s ease"
+                      }}
+                    >
+                      <Save size={15} strokeWidth={2.2} />
+                      <span>{editSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
+                    </button>
+                  </div>
+                </form>
               </div>
-              {editPdfLoading ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>Đang tải bản xem trước...</div>
-              ) : editPdfUrl ? (
-                <iframe src={editPdfUrl} style={{ width: "100%", height: "100%", border: "none" }} />
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, color: "#94a3b8" }}>Không thể tải bản xem trước.</div>
+
+              {/* Draggable Resizer Bar */}
+              {!editPdfOnly && (
+                <div
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setEditIsDraggingSplit(true);
+                  }}
+                  title="Kéo chuột sang trái/phải để điều chỉnh độ rộng tài liệu PDF"
+                  style={{
+                    width: 7,
+                    cursor: "col-resize",
+                    background: editIsDraggingSplit ? "#6366f1" : "#cbd5e1",
+                    position: "relative",
+                    flexShrink: 0,
+                    transition: "background 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 15,
+                    userSelect: "none"
+                  }}
+                  onMouseOver={(e) => { if (!editIsDraggingSplit) e.currentTarget.style.background = "#94a3b8"; }}
+                  onMouseOut={(e) => { if (!editIsDraggingSplit) e.currentTarget.style.background = "#cbd5e1"; }}
+                >
+                  <div style={{ width: 1.5, height: 28, borderRadius: 1, background: editIsDraggingSplit ? "#ffffff" : "#64748b" }} />
+                </div>
               )}
-            </div>
-          </form>
-        </div>
-      )}
 
-      
+              {/* Right Document Preview Section */}
+              <div className="doc-preview-shell" style={{
+                flex: 1,
+                minWidth: 320,
+                position: "relative",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                background: "#0f172a"
+              }}>
+                <div style={{
+                  padding: "10px 16px",
+                  background: "#1e293b",
+                  color: "#f8fafc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexShrink: 0,
+                  borderBottom: "1px solid #334155",
+                  flexWrap: "wrap",
+                  gap: 8
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <FileText size={16} style={{ color: "#38bdf8" }} />
+                    <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>Tài liệu xem trước</span>
+                    
+                    {/* View format switcher (Images vs PDF Reader) */}
+                    {editPdfUrl && (
+                      <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255, 255, 255, 0.08)", borderRadius: 6, padding: 2, marginLeft: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditViewFormat("images")}
+                          style={{
+                            padding: "3px 8px", fontSize: "0.68rem", borderRadius: 4, border: 0,
+                            background: editViewFormat === "images" ? "#38bdf8" : "transparent",
+                            color: editViewFormat === "images" ? "#0f172a" : "#94a3b8",
+                            fontWeight: editViewFormat === "images" ? 700 : 500, cursor: "pointer"
+                          }}
+                          title="Hiển thị dạng các trang A4 trực quan"
+                        >
+                          Trang A4
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditViewFormat("pdf")}
+                          style={{
+                            padding: "3px 8px", fontSize: "0.68rem", borderRadius: 4, border: 0,
+                            background: editViewFormat === "pdf" ? "#38bdf8" : "transparent",
+                            color: editViewFormat === "pdf" ? "#0f172a" : "#94a3b8",
+                            fontWeight: editViewFormat === "pdf" ? 700 : 500, cursor: "pointer"
+                          }}
+                          title="Xem bằng trình đọc PDF gốc (hỗ trợ in, tìm kiếm văn bản)"
+                        >
+                          Trình xem PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {/* Zoom controls for A4 image mode */}
+                    {editViewFormat === "images" && editPageImages.length > 0 && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(255, 255, 255, 0.1)", borderRadius: 6, padding: "2px 4px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditZoomMode("a4");
+                            setEditZoom(z => Math.max(0.5, Math.round((z - 0.1) * 10) / 10));
+                          }}
+                          title="Thu nhỏ"
+                          style={{ border: 0, background: "transparent", color: "#cbd5e1", cursor: "pointer", padding: "2px 6px", fontSize: "0.85rem", fontWeight: 700 }}
+                        >
+                          -
+                        </button>
+                        <span style={{ fontSize: "0.72rem", color: "#f8fafc", fontWeight: 600, minWidth: 38, textAlign: "center" }}>
+                          {editZoomMode === "fit" ? "Vừa" : `${Math.round(editZoom * 100)}%`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditZoomMode("a4");
+                            setEditZoom(z => Math.min(2.0, Math.round((z + 0.1) * 10) / 10));
+                          }}
+                          title="Phóng to"
+                          style={{ border: 0, background: "transparent", color: "#cbd5e1", cursor: "pointer", padding: "2px 6px", fontSize: "0.85rem", fontWeight: 700 }}
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditZoomMode("a4");
+                            setEditZoom(1);
+                          }}
+                          title="Đặt kích thước trang chuẩn A4 (100%)"
+                          style={{
+                            border: 0,
+                            background: editZoomMode === "a4" && editZoom === 1 ? "rgba(56, 189, 248, 0.25)" : "transparent",
+                            color: editZoomMode === "a4" && editZoom === 1 ? "#38bdf8" : "#cbd5e1",
+                            cursor: "pointer", padding: "2px 6px", fontSize: "0.68rem", fontWeight: 600, borderRadius: 4
+                          }}
+                        >
+                          100% A4
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditZoomMode(m => m === "fit" ? "a4" : "fit");
+                          }}
+                          title="Căn vừa vặn khung xem"
+                          style={{
+                            border: 0,
+                            background: editZoomMode === "fit" ? "rgba(56, 189, 248, 0.25)" : "transparent",
+                            color: editZoomMode === "fit" ? "#38bdf8" : "#cbd5e1",
+                            cursor: "pointer", padding: "2px 6px", fontSize: "0.68rem", fontWeight: 600, borderRadius: 4
+                          }}
+                        >
+                          Vừa khung
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setEditPdfOnly(!editPdfOnly)}
+                      title={editPdfOnly ? "Hiện lại bảng cấu hình (chia đôi màn hình)" : "Phóng to toàn bộ màn hình cho tài liệu PDF"}
+                      style={{
+                        padding: "5px 11px",
+                        fontSize: "0.74rem",
+                        fontWeight: 600,
+                        color: editPdfOnly ? "#38bdf8" : "#f1f5f9",
+                        background: editPdfOnly ? "rgba(56, 189, 248, 0.2)" : "rgba(255, 255, 255, 0.1)",
+                        border: `1px solid ${editPdfOnly ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}`,
+                        borderRadius: 6,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease"
+                      }}
+                    >
+                      {editPdfOnly ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      <span>{editPdfOnly ? "Hiện bảng cấu hình" : "Toàn màn hình"}</span>
+                    </button>
+
+                    {editPdfUrl && (
+                      <button
+                        type="button"
+                        onClick={() => window.open(editPdfUrl, "_blank")}
+                        title="Mở bản xem trước PDF trong tab mới của trình duyệt để soi chi tiết"
+                        style={{
+                          padding: "5px 11px",
+                          fontSize: "0.74rem",
+                          fontWeight: 600,
+                          color: "#f1f5f9",
+                          background: "rgba(255, 255, 255, 0.1)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: 6,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          cursor: "pointer",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <ExternalLink size={14} />
+                        <span>Mở tab mới</span>
+                      </button>
+                    )}
+
+                    <button type="button" className="icon-button" onClick={closeEdit} title="Đóng" style={{ color: "#cbd5e1", marginLeft: 4 }}>
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {editPdfLoading ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 10, color: "#94a3b8" }}>
+                    <div style={{ width: 28, height: 28, border: "2.5px solid #475569", borderTopColor: "#38bdf8", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontSize: "0.82rem" }}>Đang kết xuất bản xem trước PDF...</span>
+                  </div>
+                ) : editViewFormat === "pdf" && editPdfUrl ? (
+                  <iframe
+                    src={`${editPdfUrl}#toolbar=1&navpanes=0&view=FitH`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      flex: 1,
+                      pointerEvents: editIsDraggingSplit ? "none" : "auto",
+                      background: "#525659"
+                    }}
+                  />
+                ) : editPageImages.length > 0 ? (
+                  <div style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    overflowX: "auto",
+                    padding: "24px 20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 24,
+                    background: "#1e293b"
+                  }}>
+                    {editPageImages.map((src, i) => {
+                      const a4BaseWidth = 740;
+                      const cardWidth = editZoomMode === "fit" ? "100%" : `${Math.round(editZoom * a4BaseWidth)}px`;
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            position: "relative",
+                            boxShadow: "0 12px 36px rgba(0,0,0,0.5)",
+                            borderRadius: 4,
+                            overflow: "hidden",
+                            background: "#ffffff",
+                            width: cardWidth,
+                            maxWidth: editZoomMode === "fit" ? "920px" : "100%",
+                            transition: "width 0.15s ease",
+                            flexShrink: 0
+                          }}
+                        >
+                          <img
+                            src={src}
+                            alt={`Trang ${i + 1}`}
+                            style={{ display: "block", width: "100%", height: "auto" }}
+                          />
+                          <div style={{
+                            position: "absolute",
+                            bottom: 12,
+                            right: 14,
+                            background: "rgba(15, 23, 42, 0.8)",
+                            color: "#f8fafc",
+                            padding: "3px 9px",
+                            borderRadius: 4,
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            backdropFilter: "blur(4px)",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+                          }}>
+                            Trang {i + 1} / {editPageImages.length}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : editPdfUrl ? (
+                  <iframe
+                    src={`${editPdfUrl}#toolbar=1&navpanes=0&view=FitH`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      flex: 1,
+                      pointerEvents: editIsDraggingSplit ? "none" : "auto",
+                      background: "#525659"
+                    }}
+                  />
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, color: "#94a3b8", fontSize: "0.85rem" }}>
+                    Không thể tải bản xem trước.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Mode Selector Dialog */}
       {showModeSelector && (
         <div className="dialog-backdrop" onClick={resetModal}>

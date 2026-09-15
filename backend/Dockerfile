@@ -44,7 +44,7 @@ COPY scripts/ ./scripts/
 COPY .env.example .env.example
 
 # Tạo thư mục data
-RUN mkdir -p data/raw data/processed data/uploaded data/test_cases
+RUN mkdir -p data/raw data/processed data/uploaded data/test_cases data/templates
 
 # Non-root user cho security
 RUN useradd -m -u 1000 terralegal && \

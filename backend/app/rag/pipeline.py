@@ -18,7 +18,7 @@ import re
 import time
 import unicodedata
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Callable, Optional
 from google import genai
 from google.genai import types
 
@@ -147,6 +147,7 @@ class RAGPipeline:
         question: str,
         procedure_filter: Optional[str] = None,
         chat_history: Optional[list[dict]] = None,
+        on_token: Optional[Callable[[str], None]] = None,
     ) -> RAGResponse:
         """
         Thực hiện toàn bộ RAG pipeline cho một câu hỏi.
@@ -229,7 +230,7 @@ class RAGPipeline:
         )
 
         # ── Step 7: Call LLM ──────────────────────────────────────────
-        llm_response = self._call_llm(messages)
+        llm_response = self._call_llm(messages, on_token=on_token)
 
         # ── Step 8: Parse citations ───────────────────────────────────
         citations = self._extract_citations(top_chunks, llm_response)
@@ -321,7 +322,10 @@ class RAGPipeline:
         cache_key = ",".join(procedure_type) if isinstance(procedure_type, list) else (procedure_type or "all")
         now = time.time()
         cached = self._lexical_cache.get(cache_key)
-        if not cached or now - cached[0] > 300:
+        # Building BM25 requires scrolling every indexed chunk from Qdrant.
+        # Keep it hot for an hour; application restart/re-index naturally
+        # refreshes it, while avoiding a rebuild every few chat requests.
+        if not cached or now - cached[0] > 3600:
             try:
                 from rank_bm25 import BM25Okapi
                 documents = self.vector_store.scroll_chunks(procedure_type=procedure_type)
@@ -402,7 +406,11 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
         messages.append({"role": "user", "content": user_content})
         return messages
 
-    def _call_llm(self, messages: list[dict]) -> str:
+    def _call_llm(
+        self,
+        messages: list[dict],
+        on_token: Optional[Callable[[str], None]] = None,
+    ) -> str:
         """Gọi Gemini API và trả về text response."""
         system_instruction = ""
         gemini_contents = []
@@ -422,6 +430,24 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
             thinking_config=types.ThinkingConfig(thinking_budget=0),
         )
         
+        if on_token is not None:
+            pieces: list[str] = []
+            finish_reason = None
+            for chunk in self.gemini_client.models.generate_content_stream(
+                model=self.gemini_model,
+                contents=gemini_contents,
+                config=config,
+            ):
+                piece = chunk.text or ""
+                if piece:
+                    pieces.append(piece)
+                    on_token(piece)
+                if getattr(chunk, "candidates", None):
+                    finish_reason = getattr(chunk.candidates[0], "finish_reason", finish_reason)
+            answer = "".join(pieces)
+            logger.info("Gemini finish_reason=%s | response_chars=%s", finish_reason, len(answer))
+            return answer
+
         response = self.gemini_client.models.generate_content(
             model=self.gemini_model,
             contents=gemini_contents,
@@ -450,7 +476,10 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
                 source_name=c.source_name,
                 article=c.article,
                 clause=c.clause,
-                text_snippet=c.text[:200],
+                # A citation is already a bounded document chunk. Keep the
+                # complete chunk so the expandable source does not end in the
+                # middle of a sentence (the old 200-character slice did).
+                text_snippet=c.text.strip(),
                 relevance_score=round(0.7 * c.score + 0.3 * support, 3),
             )
             for c, support in supported

@@ -59,7 +59,14 @@ export default function PdfFormPreview({
   textBlocks = [],
   pageDimensions,
 }: PdfFormPreviewProps) {
-  const [pageWidth, setPageWidth] = useState<number>(800);
+  // Keep a stable design scale. The old ResizeObserver squeezed the document to
+  // the panel width, which made small fields difficult to select. Overflow now
+  // scrolls horizontally instead of changing the document coordinates/scale.
+  const [zoom, setZoom] = useState(1);
+  // DOCX preview pages are rendered at roughly 150 DPI (A4 ≈ 1,200 px wide).
+  // Using 800 px as "100%" still visually compressed the original document.
+  const DESIGN_PAGE_WIDTH = 1200;
+  const pageWidth = Math.round(DESIGN_PAGE_WIDTH * zoom);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTopRef = useRef<number>(0);
 
@@ -79,22 +86,6 @@ export default function PdfFormPreview({
     }
   }, [zones]);
 
-  useEffect(() => {
-    let observer: ResizeObserver | null = null;
-    if (containerRef.current) {
-      observer = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-          const cw = entry.contentRect.width;
-          if (cw > 100) setPageWidth(Math.min(cw - 40, 800));
-        }
-      });
-      observer.observe(containerRef.current);
-    }
-    return () => {
-      if (observer) observer.disconnect();
-    };
-  }, []);
-
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem("terralegal_access_token") ?? sessionStorage.getItem("terralegal_access_token"))
     : null;
@@ -103,13 +94,47 @@ export default function PdfFormPreview({
     <div
       ref={containerRef}
       style={{
-        width: "100%", height: "100%", overflowY: "auto",
-        background: "#e2e8f0", display: "flex", flexDirection: "column",
-        alignItems: "center", padding: "20px 0",
+        width: "100%", height: "100%", overflow: "auto",
+        background: "#e2e8f0",
         position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
         overflowAnchor: "none" // Prevent browser scroll jumps
       }}
     >
+      <div style={{
+        position: "sticky", top: 10, left: 0, zIndex: 30,
+        width: "fit-content", margin: "0 auto -38px", height: 38,
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "4px 6px", borderRadius: 8,
+        background: "rgba(15, 23, 42, 0.88)", color: "#fff",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.22)", backdropFilter: "blur(4px)"
+      }}>
+        <button
+          type="button"
+          onClick={() => setZoom(value => Math.max(0.5, Number((value - 0.25).toFixed(2))))}
+          disabled={zoom <= 0.5}
+          title="Thu nhỏ"
+          style={{ width: 28, height: 28, border: 0, borderRadius: 5, background: "rgba(255,255,255,0.12)", color: "#fff", cursor: zoom <= 0.5 ? "not-allowed" : "pointer", fontSize: 18 }}
+        >−</button>
+        <button
+          type="button"
+          onClick={() => setZoom(1)}
+          title="Về kích thước tài liệu 100% (1.200 px)"
+          style={{ minWidth: 58, height: 28, border: 0, borderRadius: 5, background: zoom === 1 ? "#2563eb" : "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+        >{Math.round(zoom * 100)}%</button>
+        <button
+          type="button"
+          onClick={() => setZoom(value => Math.min(2, Number((value + 0.25).toFixed(2))))}
+          disabled={zoom >= 2}
+          title="Phóng to"
+          style={{ width: 28, height: 28, border: 0, borderRadius: 5, background: "rgba(255,255,255,0.12)", color: "#fff", cursor: zoom >= 2 ? "not-allowed" : "pointer", fontSize: 18 }}
+        >+</button>
+      </div>
+
+      <div style={{
+        minWidth: "100%", width: "max-content", boxSizing: "border-box",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        padding: "58px 20px 20px"
+      }}>
       {pageImages && pageImages.map((imgUrl, index) => {
         const pageNumber = index + 1;
         const pageZones = zones.filter(z => z.page === pageNumber);
@@ -142,6 +167,7 @@ export default function PdfFormPreview({
           />
         );
       })}
+      </div>
     </div>
   );
 }

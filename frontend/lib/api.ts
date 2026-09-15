@@ -389,6 +389,11 @@ export const formsApi = {
     });
     return response.data;
   },
+  async previewImages(formId: string, data: Record<string, any> = {}, mode?: string): Promise<string[]> {
+    const url = mode ? `/forms/preview-pdf/${formId}?format=images&mode=${mode}` : `/forms/preview-pdf/${formId}?format=images`;
+    const response = await client.post(url, data);
+    return response.data.page_images || [];
+  },
   async generateFormDocument(id: string, data: any, format: "docx" | "pdf" = "docx"): Promise<Blob> {
     if (format === "pdf") {
       return this.previewPdf(id, data);

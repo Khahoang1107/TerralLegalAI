@@ -318,6 +318,7 @@ Yêu cầu:
                 rag_context=rag_context,
                 last_asked_field=last_asked_field,
                 invalid_fields=invalid_fields,
+                rag_pipeline=pipeline,
             )
             
             # ── UPDATE collected_data + DATA QUALITY VALIDATION ────────────────

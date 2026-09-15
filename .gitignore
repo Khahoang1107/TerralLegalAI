@@ -17,7 +17,7 @@ data/exports/
 backend/data/exports/
 
 # Test & debug scripts (root level)
-test*.py
+/test*.py
 debug_*.py
 check_*.py
 capture_*.py

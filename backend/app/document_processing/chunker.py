@@ -48,6 +48,8 @@ from typing import Optional
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from backend.app.document_processing.text_cleaner import TextCleaner
+
 logger = logging.getLogger(__name__)
 
 
@@ -188,6 +190,7 @@ class DocumentChunker:
     # ─────────────────────────────────────────────────────────────────────────
     def __init__(self, config: ChunkingConfig = None):
         self.config = config or ChunkingConfig()
+        self._cleaner = TextCleaner()
         self._fallback_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.config.chunk_size,
             chunk_overlap=self.config.chunk_overlap,
@@ -207,9 +210,17 @@ class DocumentChunker:
         group_type: str,
         procedure_type: str = "all",
     ) -> list[DocumentChunk]:
-        """Entry point: nhận dạng cấu trúc → chọn chiến lược → chunk."""
+        """Entry point: làm sạch text → nhận dạng cấu trúc → chọn chiến lược → chunk."""
         if not text or len(text.strip()) < self.config.min_chunk_size:
             logger.warning(f"Text quá ngắn để chunk: {source_file}")
+            return []
+
+        # ── Bước 0: Làm sạch text trước khi chunk ────────────────────────────
+        # TextCleaner xử lý: NFC normalization, garbage chars, header/footer,
+        # corrections domain đất đai, số trang, whitespace.
+        text = self._cleaner.clean(text)
+        if len(text.strip()) < self.config.min_chunk_size:
+            logger.warning(f"Text quá ngắn sau khi clean: {source_file}")
             return []
 
         doc_type = self._detect_doc_type(text, source_name)
@@ -668,10 +679,17 @@ class DocumentChunker:
                 sub = sub.strip()
                 if len(sub) < self.config.min_chunk_size:
                     continue
+
+                # Thêm prefix [Văn bản] + [Điều] để LLM biết chunk từ luật nào
+                full_text = (
+                    f"[Văn bản: {source_name}]\n"
+                    f"[{art_label}]\n"
+                    f"{sub}"
+                )
                 chunks.append(DocumentChunk(
                     chunk_id       = str(uuid.uuid4()),
-                    text           = sub,
-                    token_estimate = self._estimate_tokens(sub),
+                    text           = full_text,
+                    token_estimate = self._estimate_tokens(full_text),
                     source_file    = source_file,
                     source_name    = source_name,
                     group_type     = group_type,

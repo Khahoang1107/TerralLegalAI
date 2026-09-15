@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { formsApi } from "@/lib/api";
-import { X, Download, FileText, RefreshCw } from "lucide-react";
+import { X, Download, FileText, RefreshCw, ExternalLink } from "lucide-react";
 
 interface FormReviewModalProps {
   formId: string;
@@ -21,12 +21,10 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
   };
   const [formData, setFormData] = useState<Record<string, string>>(() => normalizeData(initialData));
   const [formSchema, setFormSchema] = useState<any>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [downloadingWord, setDownloadingWord] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  // dùng ref để tránh dependency loop (previewUrl → loadPreview → effect → previewUrl...)
-  const previewUrlRef = useRef<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -38,15 +36,21 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
   // Load preview với data bất kỳ (không phụ thuộc state previewUrl)
   const loadPreview = (data: Record<string, string>) => {
     setLoadingPreview(true);
-    formsApi.previewPdf(formId, data)
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = url;
-        setPreviewUrl(url);
-      })
+    formsApi.previewImages(formId, data)
+      .then(images => setPreviewImages(images))
       .catch(err => console.error("Lỗi tải bản xem trước", err))
       .finally(() => setLoadingPreview(false));
+  };
+
+  const openPdfInNewTab = async () => {
+    try {
+      const blob = await formsApi.previewPdf(formId, formData);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      console.error("Lỗi mở PDF", err);
+    }
   };
 
   // Tải preview ngay khi mở modal (1 lần duy nhất)
@@ -141,26 +145,51 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
       onClick={onClose}
     >
       <div
-        style={{ background: "white", width: "90%", maxWidth: 1200, height: "85vh", borderRadius: 12, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)", position: "relative", isolation: "isolate" }}
+        style={{ background: "white", width: "95vw", maxWidth: 1550, height: "92vh", borderRadius: 12, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)", position: "relative", isolation: "isolate" }}
         onClick={(e) => e.stopPropagation()}
       >
         
-        <div style={{ padding: "16px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
-          <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
-            <FileText size={22} color="#4f46e5" />
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
+          <h2 style={{ margin: 0, fontSize: "1.15rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+            <FileText size={20} color="#4f46e5" />
             Kiểm tra dữ liệu: {formSchema.name}
           </h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}>
-            <X size={24} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {previewImages.length > 0 && (
+              <button
+                type="button"
+                onClick={openPdfInNewTab}
+                title="Mở PDF trong tab mới của trình duyệt để xem rõ nét hơn"
+                style={{
+                  padding: "5px 10px",
+                  fontSize: "0.78rem",
+                  color: "#475569",
+                  background: "#fff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  cursor: "pointer",
+                  fontWeight: 600
+                }}
+              >
+                <ExternalLink size={14} />
+                <span>Mở tab mới</span>
+              </button>
+            )}
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}>
+              <X size={22} />
+            </button>
+          </div>
         </div>
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
           {/* LEFT PANEL - form fields */}
-          <div style={{ flex: "0 0 40%", width: "40%", minWidth: 0, borderRight: "1px solid #e5e7eb", padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, position: "relative", zIndex: 2 }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", color: "#334155" }}>Thông tin đã thu thập</h3>
+          <div style={{ flex: "0 0 38%", width: "38%", minWidth: 320, borderRight: "1px solid #e5e7eb", padding: 20, overflowY: "auto", display: "flex", flexDirection: "column", gap: 14, position: "relative", zIndex: 2 }}>
+            <h3 style={{ margin: 0, fontSize: "0.95rem", color: "#334155" }}>Thông tin đã thu thập</h3>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 4 }}>
               {displayFields.map((field: any, idx: number) => {
                 const val = getFieldValue(field);
                 const labelText = (field.name && field.name.includes('_') && field.description && !field.description.startsWith('Nhập')) ? field.description : (field.name || field.key);
@@ -226,31 +255,39 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
           </div>
           
           {/* RIGHT PANEL - PDF preview, fully contained */}
-          <div style={{ flex: "0 0 60%", width: "60%", minWidth: 0, background: "#f1f5f9", display: "flex", flexDirection: "column", padding: 16, overflow: "hidden", position: "relative", zIndex: 1 }}>
-            <div style={{ flex: 1, background: "white", borderRadius: 8, overflow: "hidden", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <div style={{ flex: 1, minWidth: 400, background: "#1e293b", display: "flex", flexDirection: "column", padding: 0, overflow: "hidden", position: "relative", zIndex: 1 }}>
+            <div style={{ flex: 1, background: "#334155", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
               {loadingPreview ? (
-                <div style={{ color: "#64748b", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <div style={{ color: "#cbd5e1", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   <RefreshCw size={24} className="animate-spin" />
                   <span>Đang cập nhật...</span>
                 </div>
-              ) : previewUrl ? (
-                <iframe
-                  src={`${previewUrl}#toolbar=0`}
-                  style={{ width: "100%", height: "100%", border: "none", display: "block", maxWidth: "100%", maxHeight: "100%" }}
-                />
-              ) : null}
+              ) : previewImages.length > 0 ? (
+                <div style={{ width: "100%", height: "100%", overflow: "auto", padding: 16, boxSizing: "border-box" }}>
+                  {previewImages.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Trang ${index + 1}`}
+                      style={{ width: "100%", height: "auto", display: "block", marginBottom: 16, background: "white", boxShadow: "0 2px 8px rgba(0,0,0,.25)" }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: "#cbd5e1" }}>Không thể tạo bản xem trước.</div>
+              )}
             </div>
           </div>
         </div>
 
-        <div style={{ padding: "16px 24px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end", gap: 12, background: "#f8fafc" }}>
-          <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", color: "#475569", fontWeight: 500, cursor: "pointer" }}>
+        <div style={{ padding: "14px 20px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end", gap: 12, background: "#f8fafc" }}>
+          <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", color: "#475569", fontWeight: 500, cursor: "pointer" }}>
             Đóng
           </button>
           <button 
             onClick={() => handleDownload("pdf")} 
             disabled={downloadingPdf}
-            style={{ padding: "10px 20px", borderRadius: 6, border: "none", background: "#f43f5e", color: "white", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#f43f5e", color: "white", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
           >
             <Download size={18} />
             {downloadingPdf ? "Đang tạo..." : "Tải xuống PDF"}
@@ -258,7 +295,7 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
           <button 
             onClick={() => handleDownload("docx")} 
             disabled={downloadingWord}
-            style={{ padding: "10px 20px", borderRadius: 6, border: "none", background: "#4f46e5", color: "white", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            style={{ padding: "9px 18px", borderRadius: 6, border: "none", background: "#4f46e5", color: "white", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
           >
             <Download size={18} />
             {downloadingWord ? "Đang tạo..." : "Tải xuống Word"}

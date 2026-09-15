@@ -390,21 +390,42 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                 ch = digits[visual_index] if visual_index < len(digits) else " "
                 normalized[f"mst_{g}_{template_index}"] = ch.strip()
 
-    # Source 1: ma_so_thue (NNT) → groups 1, 3, 5
-    mst_nnt = mst_nnt_value or normalized.get("ma_so_thue") or normalized.get("mst_nnt") or ""
-    if mst_nnt and isinstance(mst_nnt, str):
-        _fill_mst_groups(mst_nnt, 1, 3, 5)
-        normalized["ma_so_thue"] = ""  # hide raw string from template
+    def _field_value_by_name(*needles: str) -> str:
+        """Resolve a value even when the admin-labelled field is type string.
 
-    # Source 2: mst_dai_ly / ma_so_thue_dai_ly_thue → groups 2, 4, 6
-    mst_dl = (mst_agent_value or normalized.get("mst_dai_ly") or
-              normalized.get("ma_so_thue_dai_ly_thue") or
-              normalized.get("mst_dl") or "")
-    if mst_dl and isinstance(mst_dl, str):
-        _fill_mst_groups(mst_dl, 2, 4, 6)
-        for k in ("mst_dai_ly", "ma_so_thue_dai_ly_thue", "mst_dl"):
-            if k in normalized:
-                normalized[k] = ""
+        Older labelled forms store digit-box values as a normal text field
+        (for example field_9065), so relying on ``type == digit_group`` loses
+        the value during Word/PDF rendering.
+        """
+        for field in form.fields or []:
+            if not isinstance(field, dict):
+                continue
+            label = str(field.get("name") or "").casefold()
+            if all(needle.casefold() in label for needle in needles):
+                value = normalized.get(field.get("key"))
+                if value not in (None, "", "__SKIPPED__"):
+                    return str(value)
+        return ""
+
+    # In 01/LPTB each visual row is split across two sets of Word textboxes:
+    # groups 1+3 are the taxpayer MST, groups 2+4 are the agent MST.
+    mst_nnt = (mst_nnt_value or normalized.get("ma_so_thue") or
+               normalized.get("mst_nnt") or
+               _field_value_by_name("mã số thuế", "người nộp thuế"))
+    mst_agent = (mst_agent_value or normalized.get("mst_dai_ly") or
+                 normalized.get("ma_so_thue_dai_ly_thue") or
+                 normalized.get("mst_dl") or
+                 _field_value_by_name("mã số thuế", "đại lý"))
+    if mst_nnt:
+        _fill_mst_groups(mst_nnt, 1, 3)
+    if mst_agent:
+        _fill_mst_groups(mst_agent, 2, 4)
+
+    # These aliases are only data sources; the visible output is the digit row.
+    for k in ("ma_so_thue", "mst_nnt", "mst_dai_ly",
+              "ma_so_thue_dai_ly_thue", "mst_dl"):
+        if k in normalized:
+            normalized[k] = ""
 
     print("DEBUG NORMALIZED:", normalized)
     return normalized
@@ -461,10 +482,54 @@ def _collect_digit_group_values(form: FormSchema, payload: dict) -> list[str]:
             continue
         value = payload.get(field.get("key")) or payload.get(field.get("name")) or ""
         values.append(re.sub(r"\D", "", str(value)))
+
+    if values:
+        return values
+
+    # Backward compatibility: early labelled forms kept visual digit boxes as
+    # ordinary string fields.  The PDF overlay still needs those values in the
+    # same top-to-bottom order as the two MST rows in mẫu 01/LPTB.
+    semantic_rows = (
+        ("mã số thuế", "người nộp thuế"),
+        ("mã số thuế", "đại lý"),
+    )
+    for needles in semantic_rows:
+        for field in form.fields or []:
+            if not isinstance(field, dict):
+                continue
+            label = str(field.get("name") or "").casefold()
+            if not all(needle in label for needle in needles):
+                continue
+            value = payload.get(field.get("key")) or payload.get(field.get("name")) or ""
+            values.append(re.sub(r"\D", "", str(value)))
+            break
     return values
 
 
-def _overlay_form_controls(pdf_path: str, digit_values: list[str], boolean_values: list[bool]) -> None:
+def _collect_boolean_control_values(form: FormSchema, payload: dict) -> list[bool]:
+    """Return only checkboxes physically present on the Word/PDF template."""
+    true_values = {"có", "co", "yes", "true", "1", "x", "☑", "rồi", "đúng"}
+    values: list[bool] = []
+    for field in form.fields or []:
+        if not isinstance(field, dict) or field.get("type") != "boolean":
+            continue
+        # section_condition_* controls the interview flow; it is not a box on
+        # the original government form and must not shift the PDF box order.
+        if str(field.get("key") or "").startswith("section_condition_"):
+            continue
+        value = payload.get(field.get("key"), payload.get(field.get("name"), False))
+        if isinstance(value, str):
+            values.append(value.strip().casefold() in true_values)
+        else:
+            values.append(bool(value))
+    return values
+
+
+def _overlay_form_controls(
+    pdf_path: str,
+    digit_values: list[str],
+    boolean_values: list[bool],
+) -> None:
     """Điền control vẽ nổi theo type admin: digit_group và boolean.
 
     Không dùng tên nhãn nghiệp vụ (MST, giấy chứng nhận, ...). Các cụm ô số và
@@ -474,26 +539,79 @@ def _overlay_form_controls(pdf_path: str, digit_values: list[str], boolean_value
     import fitz
 
     pdf = fitz.open(pdf_path)
-    checkbox_boxes: list[tuple[Any, Any]] = []
+    checkbox_targets: list[tuple[int, Any, Any, str]] = []
     digit_rows: list[tuple[Any, list[Any]]] = []
-    for control_page in pdf:
+    for page_index, control_page in enumerate(pdf):
         rectangles = [drawing["rect"] for drawing in control_page.get_drawings()]
-        checkbox_boxes.extend((control_page, rect) for rect in sorted(
-            (rect for rect in rectangles if 7 <= rect.width <= 12 and 7 <= rect.height <= 12),
+        square_rows: list[list[Any]] = []
+        squares = sorted(
+            (rect for rect in rectangles if 12 <= rect.width <= 20 and 12 <= rect.height <= 20),
             key=lambda rect: (rect.y0, rect.x0),
-        ))
-        digit_cells = sorted((rect for rect in rectangles if 14 <= rect.width <= 20 and 14 <= rect.height <= 20), key=lambda rect: (rect.y0, rect.x0))
-        for cell in digit_cells:
-            if not digit_rows or digit_rows[-1][0] is not control_page or abs(digit_rows[-1][1][0].y0 - cell.y0) > 2:
-                digit_rows.append((control_page, [cell]))
+        )
+        for square in squares:
+            if not square_rows or abs(square_rows[-1][0].y0 - square.y0) > 2:
+                square_rows.append([square])
             else:
-                digit_rows[-1][1].append(cell)
+                square_rows[-1].append(square)
 
-    for (checkbox_page, box), is_checked in zip(checkbox_boxes, boolean_values):
+        for row in square_rows:
+            # MST rows contain many adjacent cells. Checkbox/choice rows contain
+            # only a handful of isolated squares.
+            if len(row) >= 5:
+                # Word may expose both an outer and inner border; keep one box
+                # per x position so digits are not painted twice.
+                unique: list[Any] = []
+                for rect in sorted(row, key=lambda item: item.x0):
+                    if not unique or abs(unique[-1].x0 - rect.x0) > 3:
+                        unique.append(rect)
+                digit_rows.append((control_page, unique))
+            else:
+                checkbox_targets.extend(
+                    (page_index, control_page, rect, "rectangle")
+                    for rect in sorted(row, key=lambda item: item.x0)
+                )
+
+        # Word checkboxes may be exported as Wingdings/private-use glyphs
+        # instead of vector rectangles. Treat every small checkbox glyph as a
+        # control and merge it with vector boxes by visual position.
+        for word in control_page.get_text("words"):
+            text = str(word[4])
+            bounds = fitz.Rect(word[:4])
+            is_checkbox_glyph = text in {"☐", "☑", "□", "■"} or any(
+                0xE000 <= ord(char) <= 0xF8FF for char in text
+            )
+            if is_checkbox_glyph and bounds.width <= 22 and bounds.height <= 25:
+                checkbox_targets.append((page_index, control_page, bounds, "glyph"))
+
+    checkbox_targets.sort(key=lambda item: (item[0], item[2].y0, item[2].x0))
+    deduplicated_targets: list[tuple[int, Any, Any, str]] = []
+    for target in checkbox_targets:
+        if deduplicated_targets:
+            previous = deduplicated_targets[-1]
+            if (target[0] == previous[0] and
+                    abs(target[2].x0 - previous[2].x0) < 3 and
+                    abs(target[2].y0 - previous[2].y0) < 3):
+                continue
+        deduplicated_targets.append(target)
+
+    for (_, checkbox_page, box, target_type), is_checked in zip(deduplicated_targets, boolean_values):
         if is_checked:
-            checkbox_page.draw_rect(box, color=None, fill=(1, 1, 1), overlay=True)
-            checkbox_page.draw_rect(box, color=(0, 0, 0), width=0.8, overlay=True)
-            checkbox_page.insert_text(fitz.Point(box.x0 + 2, box.y1 - 1.5), "X", fontname="hebo", fontsize=8, color=(0, 0, 0), overlay=True)
+            if target_type == "rectangle":
+                checkbox_page.draw_rect(box, color=None, fill=(1, 1, 1), overlay=True)
+                checkbox_page.draw_rect(box, color=(0, 0, 0), width=0.8, overlay=True)
+                checkbox_page.insert_text(
+                    fitz.Point(box.x0 + 2, box.y1 - 1.5), "X",
+                    fontname="hebo", fontsize=min(8, box.height * 0.55),
+                    color=(0, 0, 0), overlay=True,
+                )
+            else:
+                # Paint inside the existing glyph only; never resize/reflow it.
+                mark = fitz.Rect(box.x0 - 0.5, box.y0 + 4, box.x1 + 0.5, box.y1 - 3)
+                checkbox_page.insert_textbox(
+                    mark, "X", fontname="hebo",
+                    fontsize=max(4.5, min(6, mark.height * 0.8)), align=1,
+                    color=(0, 0, 0), overlay=True,
+                )
 
     for (digit_page, cells), digits in zip((row for row in digit_rows if len(row[1]) >= 2), digit_values):
         cells.sort(key=lambda rect: rect.x0)
@@ -798,6 +916,7 @@ async def preview_pdf_form(
     form_id: str,
     payload: dict,
     mode: str = Query("user"),
+    format: str = Query("pdf"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -891,11 +1010,6 @@ async def preview_pdf_form(
         output_docx = os.path.join(temp_dir, f"{temp_id}.docx")
         output_pdf  = os.path.join(temp_dir, f"{temp_id}.pdf")
         doc.save(output_docx)
-        _render_checkbox_inside_first_visual_box(
-            output_docx,
-            bool(normalized.get("field_9002") or normalized.get("Lần đầu")),
-        )
-
         # Convert sang PDF bằng LibreOffice
         try:
             subprocess.run([
@@ -919,11 +1033,7 @@ async def preview_pdf_form(
         _overlay_form_controls(
             output_pdf,
             _collect_digit_group_values(form, payload),
-            [
-                bool(normalized.get(field.get("key")) or normalized.get(field.get("name")))
-                for field in (form.fields or [])
-                if isinstance(field, dict) and field.get("type") == "boolean"
-            ],
+            _collect_boolean_control_values(form, payload),
         )
 
         with open(output_pdf, "rb") as f:
@@ -936,6 +1046,19 @@ async def preview_pdf_form(
                     os.remove(p)
                 except Exception:
                     pass
+
+        if format == "images":
+            import fitz
+            import base64
+            from fastapi.responses import JSONResponse
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            page_images = []
+            for page in doc:
+                pix = page.get_pixmap(dpi=150)
+                b64 = base64.b64encode(pix.tobytes("png")).decode("utf-8")
+                page_images.append(f"data:image/png;base64,{b64}")
+            doc.close()
+            return JSONResponse(content={"page_images": page_images, "total_pages": len(page_images)})
 
         return Response(
             content=pdf_bytes,
