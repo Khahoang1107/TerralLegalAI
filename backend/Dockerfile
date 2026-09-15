@@ -3,19 +3,22 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Cài dependencies
-RUN apt-get update && apt-get install -y \
+# Cài build tools tối thiểu
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     libpq-dev \
-    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy và install requirements
-COPY requirements.txt .
+# Cài torch CPU-only trước (tránh tải CUDA ~2GB)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r requirements.txt google-genai mammoth langchain-google-genai
+    pip install --no-cache-dir \
+        torch==2.5.1 \
+        --index-url https://download.pytorch.org/whl/cpu
+
+# Copy và install requirements nhẹ cho production
+COPY requirements-prod.txt .
+RUN pip install --no-cache-dir -r requirements-prod.txt
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -37,6 +40,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY backend/ ./backend/
 COPY scripts/ ./scripts/
+COPY requirements-prod.txt .
 COPY .env.example .env.example
 
 # Tạo thư mục data
@@ -51,7 +55,7 @@ USER terralegal
 EXPOSE 8000
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
 # Start server
