@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { useEffect, useState, useRef, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
@@ -807,7 +808,13 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
                   </div>
                   <div className={msg.role === "user" ? "bubble" : "answer-block"}>
                     {msg.role === "ai" && <div className="answer-label"><Sparkles size={15} /> TerraLegalAI</div>}
-                    <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
+                    {msg.role === "user" ? (
+                      <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
+                    ) : (
+                      <div className="markdown-content">
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      </div>
+                    )}
                     
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="citations-list" style={{ marginTop: "1rem" }}>
