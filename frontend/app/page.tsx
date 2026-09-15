@@ -4049,10 +4049,12 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    authApi.me().then((u) => {
-      if (u) setUser({ role: u.role, full_name: u.full_name });
-      setAuthLoading(false);
-    });
+    authApi.me()
+      .then((u) => {
+        if (u) setUser({ role: u.role, full_name: u.full_name });
+      })
+      .catch(() => {})
+      .finally(() => setAuthLoading(false));
   }, []);
 
   const logout = () => {
