@@ -14,10 +14,8 @@ RUN apt-get update && apt-get install -y \
 # Copy và install requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir google-genai
-RUN pip install --no-cache-dir mammoth
-RUN pip install --no-cache-dir langchain-google-genai
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt google-genai mammoth langchain-google-genai
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
@@ -28,9 +26,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     poppler-utils \
-    libreoffice-writer \
-    libreoffice-java-common \
-    default-jre-headless \
+    libreoffice-writer-nogui \
     fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
