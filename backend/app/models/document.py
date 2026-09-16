@@ -18,10 +18,12 @@ class Document(Base):
     status = Column(String(20), default="indexed")
     
     # Metadata hiệu lực văn bản
+    document_number = Column(String(100), nullable=True)  # Số/ký hiệu: "1085/QĐ-UBND"
     validity_status = Column(String(50), default="Còn hiệu lực")
     promulgation_date = Column(Date, nullable=True)
     effective_date = Column(Date, nullable=True)
     issuing_agency = Column(String(255), nullable=True)
+    # Quan hệ văn bản: [{"document_id": "...", "relation": "amends"|"amended_by"|"replaces"|"replaced_by", "effective_date": "..."}]
     related_documents = Column(JSONB, nullable=True, default=list)
 
     created_at = Column(DateTime, default=datetime.utcnow)

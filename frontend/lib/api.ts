@@ -64,6 +64,13 @@ export interface Document {
   status: "pending" | "indexing" | "indexed" | "error";
   chunk_count: number;
   created_at: string;
+  // Metadata hiệu lực
+  document_number?: string;
+  validity_status: string;
+  promulgation_date?: string;
+  effective_date?: string;
+  issuing_agency?: string;
+  related_documents?: { document_id: string; source_name: string; relation: string; effective_date?: string }[];
 }
 
 export interface DocumentStats {
@@ -288,13 +295,27 @@ export const documentsApi = {
     file: File,
     sourceName: string,
     groupType: string,
-    procedureType: string
+    procedureType: string,
+    opts?: {
+      documentAction?: string;
+      documentNumber?: string;
+      promulgationDate?: string;
+      effectiveDate?: string;
+      issuingAgency?: string;
+      parentDocumentId?: string;
+    }
   ): Promise<UploadDocumentResponse> {
     const form = new FormData();
     form.append("file", file);
     form.append("source_name", sourceName);
     form.append("group_type", groupType);
     form.append("procedure_type", procedureType);
+    if (opts?.documentAction) form.append("document_action", opts.documentAction);
+    if (opts?.documentNumber) form.append("document_number", opts.documentNumber);
+    if (opts?.promulgationDate) form.append("promulgation_date", opts.promulgationDate);
+    if (opts?.effectiveDate) form.append("effective_date", opts.effectiveDate);
+    if (opts?.issuingAgency) form.append("issuing_agency", opts.issuingAgency);
+    if (opts?.parentDocumentId) form.append("parent_document_id", opts.parentDocumentId);
     const { data } = await client.post<UploadDocumentResponse>("/documents/upload", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });

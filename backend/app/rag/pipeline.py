@@ -46,6 +46,7 @@ class RetrievedChunk:
     clause: str = ""
     field_type: str = ""
     procedure_type: str = ""
+    validity_status: str = "Còn hiệu lực"
 
 
 @dataclass
@@ -200,6 +201,7 @@ class RAGPipeline:
                 clause=r["clause"],
                 field_type=r["field_type"],
                 procedure_type=r["procedure_type"],
+                validity_status=r.get("validity_status", "Còn hiệu lực"),
             )
             for r in raw_results
         ]
@@ -375,7 +377,7 @@ class RAGPipeline:
                 source_ref += f", {chunk.article}"
             if chunk.clause:
                 source_ref += f", {chunk.clause}"
-            source_ref += "]"
+            source_ref += f" — {chunk.validity_status or 'Còn hiệu lực'}]"
             parts.append(f"--- Tài liệu {i} {source_ref} ---\n{chunk.text}")
         return "\n\n".join(parts)
 
@@ -400,6 +402,9 @@ class RAGPipeline:
 {question}
 
 Hãy trả lời câu hỏi trên dựa vào tài liệu tham khảo.
+Nếu một nguồn được đánh dấu “Đã sửa đổi bổ sung”, không được khẳng định riêng
+nội dung của nguồn đó còn nguyên hiệu lực; phải ưu tiên văn bản mới hơn trong
+context và nêu rõ cần đối chiếu văn bản sửa đổi khi phạm vi sửa đổi chưa rõ.
 Yêu cầu quan trọng: viết đầy đủ nội dung trả lời trong phần chính, không ghi nguồn chen giữa câu trả lời, không yêu cầu người dùng bấm mở trích dẫn để xem tiếp nội dung.
 Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ hiểu, tránh chép nguyên văn các đoạn dài trong tài liệu."""
 

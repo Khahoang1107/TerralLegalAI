@@ -13,6 +13,7 @@ Endpoints:
 import logging
 import shutil
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -49,6 +50,13 @@ class DocumentResponse(BaseModel):
     status: str
     chunk_count: Optional[int] = 0
     created_at: str
+    # Metadata hiệu lực
+    document_number: Optional[str] = None
+    validity_status: str = "Còn hiệu lực"
+    promulgation_date: Optional[str] = None
+    effective_date: Optional[str] = None
+    issuing_agency: Optional[str] = None
+    related_documents: Optional[list] = None
 
     model_config = {"from_attributes": True}
 
@@ -65,6 +73,29 @@ class ChunkResponse(BaseModel):
     article: Optional[str] = None
     clause: Optional[str] = None
     field_type: Optional[str] = None
+
+
+VALID_DOCUMENT_ACTIONS = {"new", "amend", "replace"}
+
+
+def _build_doc_response(doc: Document, chunk_count: int = 0) -> DocumentResponse:
+    """Helper: tạo DocumentResponse nhất quán từ Document ORM object."""
+    return DocumentResponse(
+        id=str(doc.id),
+        source_name=doc.source_name,
+        file_path=doc.file_path,
+        group_type=doc.group_type,
+        procedure_type=doc.procedure_type,
+        status=doc.status,
+        chunk_count=chunk_count,
+        created_at=doc.created_at.isoformat(),
+        document_number=doc.document_number,
+        validity_status=doc.validity_status or "Còn hiệu lực",
+        promulgation_date=doc.promulgation_date.isoformat() if doc.promulgation_date else None,
+        effective_date=doc.effective_date.isoformat() if doc.effective_date else None,
+        issuing_agency=doc.issuing_agency,
+        related_documents=doc.related_documents,
+    )
 
 
 # ─── Background Task: Index Document ─────────────────────────────
@@ -185,20 +216,36 @@ async def upload_document(
     source_name: str = Form(..., description="Tên nguồn tài liệu, VD: QĐ 1085/QĐ-UBND"),
     group_type: str = Form(..., description="Nhóm: quyet_dinh | luat | bieu_mau | faq"),
     procedure_type: str = Form(..., description="Thủ tục: chuyen_nhuong | cap_doi | all"),
+    # ── Metadata hiệu lực (Đợt 1) ──
+    document_action: str = Form("new", description="Hành động: new | amend | replace"),
+    document_number: Optional[str] = Form(None, description="Số/ký hiệu VB, VD: 1085/QĐ-UBND"),
+    promulgation_date: Optional[str] = Form(None, description="Ngày ban hành (YYYY-MM-DD)"),
+    effective_date: Optional[str] = Form(None, description="Ngày hiệu lực (YYYY-MM-DD)"),
+    issuing_agency: Optional[str] = Form(None, description="Cơ quan ban hành"),
+    parent_document_id: Optional[str] = Form(None, description="ID văn bản gốc (khi amend/replace)"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Upload tài liệu mới và tự động index vào Qdrant.
+    Upload tài liệu mới / sửa đổi bổ sung / thay thế toàn bộ.
 
-    - File được lưu vào `data/uploaded/`
-    - Indexing chạy nền (async background task)
-    - Trả về ngay `document_id` + `status: indexing`
-    - Kiểm tra trạng thái qua `GET /documents/{id}`
+    document_action:
+      - "new":     Văn bản hoàn toàn mới, validity = "Còn hiệu lực"
+      - "amend":   Sửa đổi bổ sung — bản gốc chuyển "Đã sửa đổi bổ sung", bản mới "Còn hiệu lực"
+      - "replace": Thay thế toàn bộ — bản cũ chuyển "Hết hiệu lực", bản mới "Còn hiệu lực"
+
+    Khi amend/replace, parent_document_id bắt buộc. Hệ thống tự động:
+      1. Cập nhật validity_status của bản gốc
+      2. Lưu quan hệ hai chiều vào related_documents (amends ↔ amended_by, replaces ↔ replaced_by)
+      3. Cập nhật payload trong Qdrant (khi replace)
     """
     # Chỉ admin mới được upload
     if current_user.role not in ("admin",):
         raise HTTPException(status_code=403, detail="Chỉ admin mới được upload tài liệu")
+
+    # Validate document_action
+    if document_action not in VALID_DOCUMENT_ACTIONS:
+        raise HTTPException(status_code=400, detail=f"document_action không hợp lệ: {document_action}. Chấp nhận: {', '.join(VALID_DOCUMENT_ACTIONS)}")
 
     # Validate file extension
     suffix = Path(file.filename or "").suffix.lower()
@@ -215,6 +262,30 @@ async def upload_document(
         raise HTTPException(status_code=400, detail=f"group_type không hợp lệ: {group_type}")
     if procedure_type not in valid_procedures:
         raise HTTPException(status_code=400, detail=f"procedure_type không hợp lệ: {procedure_type}")
+
+    # Validate parent_document_id khi amend/replace
+    parent_doc = None
+    if document_action in ("amend", "replace"):
+        if not parent_document_id:
+            raise HTTPException(status_code=400, detail="Phải chọn văn bản gốc khi sửa đổi/thay thế.")
+        try:
+            parent_uuid = uuid.UUID(parent_document_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="parent_document_id không hợp lệ")
+        parent_doc = await db.scalar(select(Document).where(Document.id == parent_uuid))
+        if not parent_doc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy văn bản gốc")
+
+    # Parse dates
+    parsed_promulgation = None
+    parsed_effective = None
+    try:
+        if promulgation_date:
+            parsed_promulgation = date.fromisoformat(promulgation_date)
+        if effective_date:
+            parsed_effective = date.fromisoformat(effective_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Ngày không hợp lệ (định dạng: YYYY-MM-DD)")
 
     # Kiểm tra duplicate source_name
     existing = await db.scalar(select(Document).where(Document.source_name == source_name))
@@ -236,7 +307,91 @@ async def upload_document(
     save_path.write_bytes(content)
     logger.info(f"Saved upload: {save_path} ({len(content) / 1024:.1f} KB)")
 
-    # Tạo record Document trong PostgreSQL
+    # ── Xử lý quan hệ văn bản ────────────────────────────────────
+    new_related: list[dict] = []
+    effective_date_str = parsed_effective.isoformat() if parsed_effective else None
+
+    if document_action == "amend" and parent_doc:
+        # Bản gốc → "Đã sửa đổi bổ sung"
+        parent_doc.validity_status = "Đã sửa đổi bổ sung"
+
+        # Liên kết bản gốc → bản mới (amended_by)
+        parent_related = list(parent_doc.related_documents or [])
+        parent_related.append({
+            "document_id": doc_id,
+            "source_name": source_name,
+            "relation": "amended_by",
+            "effective_date": effective_date_str,
+        })
+        parent_doc.related_documents = parent_related
+
+        # Liên kết bản mới → bản gốc (amends)
+        new_related.append({
+            "document_id": str(parent_doc.id),
+            "source_name": parent_doc.source_name,
+            "relation": "amends",
+            "effective_date": effective_date_str,
+        })
+
+        # Đồng bộ payload để RAG biết bản gốc đã có văn bản sửa đổi.
+        # Không loại bản gốc khỏi kết quả vì các phần không bị sửa vẫn có thể
+        # còn áp dụng, nhưng pipeline sẽ gắn cảnh báo hiệu lực vào context.
+        try:
+            from backend.app.embedding.vector_store import VectorStore
+            vs = VectorStore(
+                host=settings.qdrant_host,
+                port=settings.qdrant_port,
+                collection_name=settings.qdrant_collection_name,
+            )
+            vs.update_validity_status(
+                source_name=parent_doc.source_name,
+                new_status="Đã sửa đổi bổ sung",
+            )
+        except Exception as e:
+            logger.warning(f"Không thể cập nhật Qdrant payload cho văn bản đã sửa đổi: {e}")
+
+        logger.info(f"Amend: {parent_doc.source_name} → Đã sửa đổi bổ sung bởi {source_name}")
+
+    elif document_action == "replace" and parent_doc:
+        # Bản gốc → "Hết hiệu lực"
+        parent_doc.validity_status = "Hết hiệu lực"
+
+        # Liên kết bản gốc → bản mới (replaced_by)
+        parent_related = list(parent_doc.related_documents or [])
+        parent_related.append({
+            "document_id": doc_id,
+            "source_name": source_name,
+            "relation": "replaced_by",
+            "effective_date": effective_date_str,
+        })
+        parent_doc.related_documents = parent_related
+
+        # Liên kết bản mới → bản gốc (replaces)
+        new_related.append({
+            "document_id": str(parent_doc.id),
+            "source_name": parent_doc.source_name,
+            "relation": "replaces",
+            "effective_date": effective_date_str,
+        })
+
+        # Cập nhật Qdrant payload của bản cũ
+        try:
+            from backend.app.embedding.vector_store import VectorStore
+            vs = VectorStore(
+                host=settings.qdrant_host,
+                port=settings.qdrant_port,
+                collection_name=settings.qdrant_collection_name,
+            )
+            vs.update_validity_status(
+                source_name=parent_doc.source_name,
+                new_status="Hết hiệu lực",
+            )
+        except Exception as e:
+            logger.warning(f"Không thể cập nhật Qdrant payload cho văn bản cũ: {e}")
+
+        logger.info(f"Replace: {parent_doc.source_name} → Hết hiệu lực, thay bởi {source_name}")
+
+    # ── Tạo record Document mới ──────────────────────────────────
     doc = Document(
         id=uuid.UUID(doc_id),
         source_name=source_name,
@@ -244,6 +399,12 @@ async def upload_document(
         group_type=group_type,
         procedure_type=procedure_type,
         status="pending",
+        document_number=document_number.strip() if document_number else None,
+        validity_status="Còn hiệu lực",
+        promulgation_date=parsed_promulgation,
+        effective_date=parsed_effective,
+        issuing_agency=issuing_agency.strip() if issuing_agency else None,
+        related_documents=new_related if new_related else None,
     )
     db.add(doc)
     await db.commit()
@@ -263,6 +424,8 @@ async def upload_document(
         "document_id": doc_id,
         "source_name": source_name,
         "status": "indexing",
+        "document_action": document_action,
+        "parent_document_id": parent_document_id,
         "message": "Tài liệu đã được nhận và đang được xử lý. Kiểm tra trạng thái qua GET /documents/{id}",
     }
 
@@ -272,10 +435,11 @@ async def list_documents(
     group_type: Optional[str] = None,
     procedure_type: Optional[str] = None,
     status: Optional[str] = None,
+    validity_status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Danh sách tài liệu đã được index, có thể filter theo nhóm/thủ tục/trạng thái."""
+    """Danh sách tài liệu, có thể filter theo nhóm/thủ tục/trạng thái/hiệu lực."""
     stmt = select(Document)
     if group_type:
         stmt = stmt.where(Document.group_type == group_type)
@@ -283,6 +447,8 @@ async def list_documents(
         stmt = stmt.where(Document.procedure_type == procedure_type)
     if status:
         stmt = stmt.where(Document.status == status)
+    if validity_status:
+        stmt = stmt.where(Document.validity_status == validity_status)
     stmt = stmt.order_by(Document.created_at.desc())
 
     result = await db.execute(stmt)
@@ -290,22 +456,10 @@ async def list_documents(
 
     response = []
     for doc in docs:
-        # Đếm số chunks
         chunk_count = await db.scalar(
             select(func.count(DocumentChunk.id)).where(DocumentChunk.document_id == doc.id)
         )
-        response.append(
-            DocumentResponse(
-                id=str(doc.id),
-                source_name=doc.source_name,
-                file_path=doc.file_path,
-                group_type=doc.group_type,
-                procedure_type=doc.procedure_type,
-                status=doc.status,
-                chunk_count=chunk_count or 0,
-                created_at=doc.created_at.isoformat(),
-            )
-        )
+        response.append(_build_doc_response(doc, chunk_count or 0))
     return response
 
 
@@ -359,16 +513,7 @@ async def get_document(
     chunk_count = await db.scalar(
         select(func.count(DocumentChunk.id)).where(DocumentChunk.document_id == doc.id)
     )
-    return DocumentResponse(
-        id=str(doc.id),
-        source_name=doc.source_name,
-        file_path=doc.file_path,
-        group_type=doc.group_type,
-        procedure_type=doc.procedure_type,
-        status=doc.status,
-        chunk_count=chunk_count or 0,
-        created_at=doc.created_at.isoformat(),
-    )
+    return _build_doc_response(doc, chunk_count or 0)
 
 
 @router.get("/documents/{document_id}/chunks", response_model=list[ChunkResponse])

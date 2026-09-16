@@ -47,6 +47,13 @@ function statusLabel(s: string) {
   return { label: "Chờ xử lý", cls: "processing", icon: <Clock3 size={13} /> };
 }
 
+function validityBadge(v?: string) {
+  if (v === "Đã sửa đổi bổ sung") return { label: "Đã sửa đổi bổ sung", bg: "#fffbeb", color: "#b45309", border: "#fde68a" };
+  if (v === "Hết hiệu lực") return { label: "Hết hiệu lực", bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" };
+  return { label: "Còn hiệu lực", bg: "#ecfdf5", color: "#047857", border: "#a7f3d0" };
+}
+
+
 // ─── Toast ────────────────────────────────────────────────────────
 function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error"; onClose: () => void }) {
   useEffect(() => {
@@ -86,6 +93,24 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Metadata hiệu lực (Đợt 1) ──
+  const [documentAction, setDocumentAction] = useState<"new" | "amend" | "replace">("new");
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [promulgationDate, setPromulgationDate] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [issuingAgency, setIssuingAgency] = useState("");
+  const [parentDocumentId, setParentDocumentId] = useState("");
+  const [existingDocs, setExistingDocs] = useState<{ id: string; source_name: string; validity_status: string }[]>([]);
+
+  // Load danh sách VB hiện có khi mở modal
+  useEffect(() => {
+    documentsApi.getDocuments().then(docs => {
+      setExistingDocs(docs.filter(d => d.status === "indexed").map(d => ({
+        id: d.id, source_name: d.source_name, validity_status: d.validity_status || "Còn hiệu lực",
+      })));
+    }).catch(() => {});
+  }, []);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
@@ -95,9 +120,17 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !sourceName.trim()) { setError("Vui lòng chọn file và nhập tên nguồn."); return; }
+    if (documentAction !== "new" && !parentDocumentId) { setError("Vui lòng chọn văn bản gốc."); return; }
     setLoading(true); setError("");
     try {
-      await documentsApi.uploadDocument(file, sourceName.trim(), groupType, procedureType);
+      await documentsApi.uploadDocument(file, sourceName.trim(), groupType, procedureType, {
+        documentAction,
+        documentNumber: documentNumber.trim() || undefined,
+        promulgationDate: promulgationDate || undefined,
+        effectiveDate: effectiveDate || undefined,
+        issuingAgency: issuingAgency.trim() || undefined,
+        parentDocumentId: parentDocumentId || undefined,
+      });
       onSuccess(); onClose();
     } catch (err) {
       const detail = axios.isAxiosError(err) ? err.response?.data?.detail : null;
@@ -105,13 +138,62 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
     } finally { setLoading(false); }
   };
 
+  const inputStyle: React.CSSProperties = { border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 };
+  const labelStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600 };
+
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <form className="rename-dialog" style={{ maxWidth: 480, width: "95%" }} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
+      <form className="rename-dialog" style={{ maxWidth: 560, width: "95%", maxHeight: "90vh", overflowY: "auto" }} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
         <div className="dialog-head">
           <h2>Tải tài liệu lên</h2>
           <button type="button" className="icon-button" onClick={onClose}><X size={18} /></button>
         </div>
+
+        {/* Loại hành động */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Loại cập nhật</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {([
+              { value: "new", label: "📄 Văn bản mới", color: "#059669" },
+              { value: "amend", label: "✏️ Sửa đổi, bổ sung", color: "#d97706" },
+              { value: "replace", label: "🔄 Thay thế toàn bộ", color: "#dc2626" },
+            ] as const).map(opt => (
+              <label key={opt.value} style={{
+                flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "8px 10px",
+                border: `2px solid ${documentAction === opt.value ? opt.color : "#e2e8f0"}`,
+                borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                background: documentAction === opt.value ? `${opt.color}08` : "transparent",
+                transition: "all 0.15s",
+              }}>
+                <input type="radio" name="docAction" value={opt.value} checked={documentAction === opt.value}
+                  onChange={() => { setDocumentAction(opt.value); if (opt.value === "new") setParentDocumentId(""); }}
+                  style={{ accentColor: opt.color }} />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Chọn VB gốc (khi amend/replace) */}
+        {documentAction !== "new" && (
+          <label style={{ ...labelStyle, marginBottom: 12 }}>
+            Văn bản gốc bị tác động *
+            <select value={parentDocumentId} onChange={e => setParentDocumentId(e.target.value)}
+              className="compact-select" style={{ height: 40 }} required>
+              <option value="">— Chọn văn bản gốc —</option>
+              {existingDocs.map(d => (
+                <option key={d.id} value={d.id}>{d.source_name} ({d.validity_status})</option>
+              ))}
+            </select>
+            <small style={{ color: "#64748b", fontWeight: 400 }}>
+              {documentAction === "amend"
+                ? "Văn bản gốc sẽ chuyển sang trạng thái \"Đã sửa đổi bổ sung\""
+                : "Văn bản cũ sẽ chuyển sang trạng thái \"Hết hiệu lực\""}
+            </small>
+          </label>
+        )}
+
+        {/* File upload zone */}
         <div className="upload-zone" style={{ padding: "1.5rem", marginBottom: "1rem", cursor: "pointer" }}
           onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}>
           <UploadCloud size={24} />
@@ -121,12 +203,22 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
           </div>
           <input ref={fileInputRef} type="file" accept=".pdf,.docx,.doc" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </div>
-        <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
-          Tên nguồn tài liệu *
-          <input value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder="VD: QĐ 1085/QĐ-UBND" required style={{ border: "1px solid #cfd7d1", padding: "10px 12px", borderRadius: 6, fontSize: 14 }} />
-        </label>
+
+        {/* Tên nguồn + Số/ký hiệu */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600 }}>
+          <label style={labelStyle}>
+            Tên nguồn tài liệu *
+            <input value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder="VD: QĐ 1085/QĐ-UBND" required style={inputStyle} />
+          </label>
+          <label style={labelStyle}>
+            Số / ký hiệu văn bản
+            <input value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="VD: 1085/QĐ-UBND" style={inputStyle} />
+          </label>
+        </div>
+
+        {/* Nhóm + Thủ tục */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <label style={labelStyle}>
             Nhóm tài liệu
             <select value={groupType} onChange={(e) => setGroupType(e.target.value)} className="compact-select" style={{ height: 40 }}>
               <option value="quyet_dinh">Quyết định</option>
@@ -135,7 +227,7 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
               <option value="faq">FAQ</option>
             </select>
           </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600 }}>
+          <label style={labelStyle}>
             Thủ tục áp dụng
             <select value={procedureType} onChange={(e) => setProcedureType(e.target.value)} className="compact-select" style={{ height: 40 }}>
               <option value="all">Tất cả</option>
@@ -145,6 +237,23 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
             </select>
           </label>
         </div>
+
+        {/* Ngày ban hành + Ngày hiệu lực + Cơ quan */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <label style={labelStyle}>
+            Ngày ban hành
+            <input type="date" value={promulgationDate} onChange={(e) => setPromulgationDate(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={labelStyle}>
+            Ngày hiệu lực
+            <input type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={labelStyle}>
+            Cơ quan ban hành
+            <input value={issuingAgency} onChange={(e) => setIssuingAgency(e.target.value)} placeholder="VD: UBND tỉnh VL" style={inputStyle} />
+          </label>
+        </div>
+
         {error && <div className="login-error" style={{ marginBottom: 12 }}><AlertCircle size={15} /> {error}</div>}
         <div className="dialog-actions">
           <button type="button" className="secondary-button" onClick={onClose}>Hủy</button>
@@ -1271,10 +1380,72 @@ function DocumentsView() {
   const reindex = async (doc: Document) => { if (!window.confirm(`Lập chỉ mục lại “${doc.source_name}”? Chunks cũ sẽ được thay bằng chunks mới từ file gốc.`)) return; try { const out = await documentsApi.reindexDocument(doc.id); showToast(out.message, "success"); setDocs(prev => prev.map(item => item.id === doc.id ? {...item, status: "indexing"} : item)); } catch { showToast("Không thể lập chỉ mục lại tài liệu.", "error"); } };
 
   return <><div className="page-heading"><div><span className="eyebrow">Kho tri thức</span><h1>Quản lý tài liệu</h1><p>Cập nhật, kiểm duyệt và theo dõi quá trình lập chỉ mục.</p></div><button className="primary-button fit" onClick={() => setShowUpload(true)}><UploadCloud size={17} /> Tải tài liệu lên</button></div>
-    <section className="panel table-panel"><div className="table-wrap"><table><thead><tr><th>Tài liệu</th><th>Ngày cập nhật</th><th>Chunks</th><th>Trạng thái</th><th /></tr></thead><tbody>
-      {loading ? <tr><td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>Đang tải...</td></tr>
-      : docs.length === 0 ? <tr><td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>Chưa có tài liệu nào.</td></tr>
-      : docs.map(doc => { const sl = statusLabel(doc.status); return <tr key={doc.id}><td><div className="document-name"><FileText size={19} /><span><strong>{doc.source_name}</strong><small>{doc.group_type} · {doc.procedure_type}</small></span></div></td><td>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</td><td>{doc.chunk_count || "—"}</td><td><span className={`status ${sl.cls}`}>{sl.icon}{sl.label}</span></td><td style={{display:"flex",gap:4}}><button className="secondary-button" onClick={() => viewChunks(doc)}>Xem chunks</button><button className="secondary-button" onClick={() => reindex(doc)}>Re-index</button><button className="icon-button" style={{ color: "red" }} onClick={() => handleDelete(doc.id)} title="Xóa"><Trash2 size={17} /></button></td></tr>; })
+    <section className="panel table-panel"><div className="table-wrap"><table><thead><tr><th>Tài liệu</th><th>Số / Ký hiệu</th><th>Hiệu lực</th><th>Ngày tạo</th><th>Chunks</th><th>Trạng thái</th><th /></tr></thead><tbody>
+      {loading ? <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>Đang tải...</td></tr>
+      : docs.length === 0 ? <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>Chưa có tài liệu nào.</td></tr>
+      : docs.map(doc => {
+          const sl = statusLabel(doc.status);
+          const vb = validityBadge(doc.validity_status);
+          return (
+            <tr key={doc.id}>
+              <td>
+                <div className="document-name">
+                  <FileText size={19} />
+                  <span>
+                    <strong>{doc.source_name}</strong>
+                    <small>{doc.group_type} · {doc.procedure_type}{doc.issuing_agency ? ` · ${doc.issuing_agency}` : ""}</small>
+                    {doc.related_documents && doc.related_documents.length > 0 && (
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                        {doc.related_documents.map((rel, idx) => (
+                          <span key={idx} style={{
+                            fontSize: 11, padding: "2px 6px", borderRadius: 4,
+                            background: rel.relation.includes("replace") ? "#fef2f2" : "#fffbeb",
+                            color: rel.relation.includes("replace") ? "#dc2626" : "#b45309",
+                            border: `1px solid ${rel.relation.includes("replace") ? "#fecaca" : "#fde68a"}`,
+                          }}>
+                            {rel.relation === "amends" && "✏️ Sửa đổi: "}
+                            {rel.relation === "amended_by" && "✏️ Sửa bởi: "}
+                            {rel.relation === "replaces" && "🔄 Thay thế: "}
+                            {rel.relation === "replaced_by" && "🔄 Thay bởi: "}
+                            {rel.source_name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span style={{ fontSize: 13, fontWeight: 500, color: doc.document_number ? "#1e293b" : "#94a3b8" }}>
+                  {doc.document_number || "—"}
+                </span>
+              </td>
+              <td>
+                <div>
+                  <span style={{
+                    display: "inline-block", fontSize: 12, fontWeight: 600, padding: "3px 8px",
+                    borderRadius: 6, background: vb.bg, color: vb.color, border: `1px solid ${vb.border}`
+                  }}>
+                    {vb.label}
+                  </span>
+                  {doc.effective_date && (
+                    <small style={{ display: "block", color: "#64748b", marginTop: 2, fontSize: 11 }}>
+                      HL: {new Date(doc.effective_date).toLocaleDateString("vi-VN")}
+                    </small>
+                  )}
+                </div>
+              </td>
+              <td>{new Date(doc.created_at).toLocaleDateString("vi-VN")}</td>
+              <td>{doc.chunk_count || "—"}</td>
+              <td><span className={`status ${sl.cls}`}>{sl.icon}{sl.label}</span></td>
+              <td style={{display:"flex",gap:4}}>
+                <button className="secondary-button" onClick={() => viewChunks(doc)}>Xem chunks</button>
+                <button className="secondary-button" onClick={() => reindex(doc)}>Re-index</button>
+                <button className="icon-button" style={{ color: "red" }} onClick={() => handleDelete(doc.id)} title="Xóa"><Trash2 size={17} /></button>
+              </td>
+            </tr>
+          );
+        })
       }
     </tbody></table></div></section>
     {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => { documentsApi.getDocuments().then(setDocs).catch(console.error); showToast("Tải lên thành công!", "success"); }} />}
@@ -1342,6 +1513,7 @@ function FormsView() {
   const [editSplitPercent, setEditSplitPercent] = useState<number>(50);
   const [editIsDraggingSplit, setEditIsDraggingSplit] = useState(false);
   const [editPdfOnly, setEditPdfOnly] = useState(false);
+  const [editZoneMode, setEditZoneMode] = useState<"view" | "adjust">("view");
   const editContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1594,6 +1766,8 @@ function FormsView() {
       const zones = res.zones || [];
       setPreviewData(res);
       setEditableZones(zones);
+      setFormName(docxFile.name.replace(/\.[^.]+$/, "") || "Biểu mẫu mới");
+      setProcedureType("khac");
       
       const initialLabeledZones: Record<string, string> = {};
       const initialFieldOrder: string[] = [];
@@ -1627,6 +1801,60 @@ function FormsView() {
     } catch (err) {
       const detail = axios.isAxiosError(err) ? err.response?.data?.detail : null;
       showToast(typeof detail === "string" ? detail : "Lỗi phân tích file Word", "error");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Sau bước dán nhãn, tạo bản nháp tối thiểu rồi chuyển thẳng sang trình
+  // biên tập mới.  Mọi cấu hình nhóm/luồng AI chỉ được làm ở một nơi duy nhất.
+  const createDraftAndOpenEditor = async () => {
+    if (labeledCount === 0) {
+      showToast("Vui lòng dán nhãn ít nhất 1 vùng", "error");
+      return;
+    }
+
+    const mapping = { ...labeledZonesRef.current };
+    const orderedIds = fieldOrderRef.current.filter(id => Object.values(mapping).includes(id));
+    const uniqueIds = Array.from(new Set(orderedIds));
+    const fields = uniqueIds.map((id, index) => {
+      const zones = editableZones
+        .filter((zone: any) => mapping[String(zone.idx)] === id)
+        .map((zone: any) => ({ ...zone, field_key: id }));
+      const firstZone = zones[0];
+      const suggested = firstZone?.suggested_label || firstZone?.ai_label || firstZone?.fallback_name || "";
+      const name = (fieldData[id] || suggested || `Trường ${index + 1}`).trim();
+      const isCheckbox = firstZone?.field_type === "checkbox";
+      return {
+        key: id,
+        name,
+        description: isCheckbox ? `Có hay không: ${name}?` : `Nhập thông tin cho ${name}`,
+        required: true,
+        type: isCheckbox ? "boolean" : "string",
+        value_source: "user_input",
+        display_order: (index + 1) * 100,
+        visual_zones: zones,
+      };
+    });
+
+    setUploading(true);
+    try {
+      const created = await formsApi.createVisualForm({
+        name: formName.trim() || docxFile?.name.replace(/\.[^.]+$/, "") || "Biểu mẫu mới",
+        procedure_type: procedureType.trim() || "khac",
+        description: formDesc.trim(),
+        temp_id: previewData?.temp_id || "",
+        mapping,
+        fields,
+      });
+      const form = await formsApi.getForm(created.id || created.form_id);
+      resetModal();
+      await openEdit(form);
+      setEditTab("fields");
+      showToast("Đã tạo bản nháp. Hãy hoàn thiện Nhóm logic và Luồng AI trong trình biên tập mới.", "success");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      showToast(typeof detail === "string" ? detail : "Không thể tạo bản nháp biểu mẫu", "error");
     } finally {
       setUploading(false);
     }
@@ -1808,6 +2036,7 @@ function FormsView() {
     setEditAdvancedOpen({});
     setEditCollapsedSections({});
     setEditGroupMenuOpen(false);
+    setEditZoneMode("view");
 
     // Parse sections from fields
     const physical = rawFields.filter((f: any) => !f.is_virtual);
@@ -2218,6 +2447,11 @@ function FormsView() {
           return Boolean(f.section_id || f.condition_group_id || f.alternative_group_id || isOneOfBranch || isTickPdf);
         }).length;
         const unassignedCount = physicalFields.length - assignedCount;
+        const editVisualZones = physicalFields.flatMap((field) =>
+          (Array.isArray(field.visual_zones) ? field.visual_zones : []).map((zone: any) => ({ ...zone, field_key: field.key }))
+        );
+        const editLabeledZones = Object.fromEntries(editVisualZones.map((zone: any) => [String(zone.idx), zone.field_key]));
+        const editFieldDetails = Object.fromEntries(physicalFields.map((field, index) => [field.key, { num: index + 1, label: field.name || field.key }]));
 
         const filteredFields = physicalFields.filter((field, idx) => {
           const q = editSearchQuery.toLowerCase().trim();
@@ -3592,6 +3826,23 @@ function FormsView() {
                       </div>
                     )}
 
+                    {editViewFormat === "images" && editVisualZones.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setEditZoneMode(mode => mode === "adjust" ? "view" : "adjust")}
+                        title="Chỉnh kích thước và vị trí vùng điền trực tiếp trên mẫu"
+                        style={{
+                          padding: "5px 11px", fontSize: "0.74rem", fontWeight: 700,
+                          color: editZoneMode === "adjust" ? "#0f172a" : "#f1f5f9",
+                          background: editZoneMode === "adjust" ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
+                          border: `1px solid ${editZoneMode === "adjust" ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}`,
+                          borderRadius: 6, cursor: "pointer"
+                        }}
+                      >
+                        ↔ {editZoneMode === "adjust" ? "Đang chỉnh vùng" : "Chỉnh vùng"}
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setEditPdfOnly(!editPdfOnly)}
@@ -3661,6 +3912,24 @@ function FormsView() {
                       flex: 1,
                       pointerEvents: editIsDraggingSplit ? "none" : "auto",
                       background: "#525659"
+                    }}
+                  />
+                ) : editZoneMode === "adjust" && editPageImages.length > 0 ? (
+                  <PdfFormPreview
+                    pageImages={editPageImages}
+                    zones={editVisualZones}
+                    mode="adjust"
+                    labeledZones={editLabeledZones}
+                    mergeSelection={new Set<string>()}
+                    fieldDetails={editFieldDetails}
+                    onZoneClick={() => {}}
+                    onZonesChange={(newZones) => {
+                      setEditFields((previous) => previous.map((field) => ({
+                        ...field,
+                        visual_zones: newZones
+                          .filter((zone: any) => zone.field_key === field.key)
+                          .map((zone: any) => ({ ...zone, field_key: undefined })),
+                      })));
                     }}
                   />
                 ) : editPageImages.length > 0 ? (
@@ -3840,7 +4109,7 @@ function FormsView() {
               background: step === 2 || step === 3 ? "#1e3a5f" : "#fff"
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                {[1, 2, 3].map(s => (
+                {[1, 2].map(s => (
                   <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center",
@@ -3849,9 +4118,9 @@ function FormsView() {
                       color: step === 2 || step === 3 ? "#fff" : (step >= s ? "#fff" : "#6366f1"),
                     }}>{s}</div>
                     <span style={{ fontSize: "0.8rem", color: step === 2 || step === 3 ? "#94a3b8" : "#6b7280", fontWeight: step === s ? 600 : 400 }}>
-                      {s === 1 ? "Tải tệp" : s === 2 ? "Dán nhãn" : "Đặt tên"}
+                      {s === 1 ? "Tải tệp" : "Dán nhãn & chỉnh vùng"}
                     </span>
-                    {s < 3 && <span style={{ color: step === 2 || step === 3 ? "#475569" : "#d1d5db", marginLeft: 8 }}>›</span>}
+                    {s < 2 && <span style={{ color: step >= 2 ? "#475569" : "#d1d5db", marginLeft: 8 }}>›</span>}
                   </div>
                 ))}
               </div>
@@ -4143,7 +4412,7 @@ function FormsView() {
                               ✓ Đã chọn {labeledCount} vùng để dán nhãn
                             </div>
                             <div style={{ fontSize: "0.8rem", color: "#4b5563", background: "#f3f4f6", padding: "8px 12px", borderRadius: 6 }}>
-                              <strong>Lưu ý:</strong> Bạn có thể xem và chỉnh sửa tên chi tiết của các nhãn này ở <strong>Bước 3 (Tiếp theo)</strong>.
+                              <strong>Lưu ý:</strong> Sau khi xác nhận, bạn sẽ đặt tên trường, nhóm logic và luồng AI trong <strong>trình biên tập mới</strong>.
                             </div>
                           </>
                         )}
@@ -4178,12 +4447,8 @@ function FormsView() {
                     )}
                     <div style={{ marginLeft: "auto" }}>
                       {step === 2 && labeledCount > 0 && (
-                        <button onClick={() => {
-                          setLabeledSnapshot({ ...labeledZonesRef.current });
-                          setFieldOrderSnapshot([...fieldOrderRef.current]);
-                          setStep(3);
-                        }} style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#10b981", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>
-                          Tiếp theo →
+                        <button type="button" onClick={createDraftAndOpenEditor} disabled={uploading} style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#10b981", color: "#fff", cursor: uploading ? "wait" : "pointer", fontWeight: 600, fontSize: "0.85rem", opacity: uploading ? .7 : 1 }}>
+                          {uploading ? "Đang tạo..." : "Mở trình biên tập mới →"}
                         </button>
                       )}
                     </div>
@@ -4279,15 +4544,12 @@ function FormsView() {
                         Đã chọn <strong style={{ color: "#4f46e5" }}>{labeledCount}</strong> nhãn
                       </span>
                       <button
-                        onClick={() => {
-                          if (labeledCount === 0) { showToast("Vui lòng dán nhãn ít nhất 1 vùng", "error"); return; }
-                          setLabeledSnapshot({ ...labeledZonesRef.current });
-                          setFieldOrderSnapshot([...fieldOrderRef.current]);
-                          setStep(3);
-                        }}
-                        style={{ padding: "8px 20px", borderRadius: 6, border: "none", background: "#4f46e5", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+                        type="button"
+                        onClick={createDraftAndOpenEditor}
+                        disabled={uploading}
+                        style={{ padding: "8px 20px", borderRadius: 6, border: "none", background: "#4f46e5", color: "#fff", cursor: uploading ? "wait" : "pointer", fontWeight: 600, opacity: uploading ? .7 : 1 }}
                       >
-                        Tiếp theo →
+                        {uploading ? "Đang tạo..." : "Mở trình biên tập mới →"}
                       </button>
                     </div>
                   )}

@@ -57,6 +57,9 @@ class FormVisualField(BaseModel):
     group_depends_on: Any | None = None
     depends_on: Any | None = None
     require_one_of_group: str | None = None
+    # Tọa độ vùng trên bản xem trước.  Chúng được lưu cùng field để Admin có
+    # thể tiếp tục chỉnh vùng sau khi đã tạo biểu mẫu.
+    visual_zones: List[Dict[str, Any]] = []
 
 class FormVisualCreate(BaseModel):
     name: str
@@ -1556,6 +1559,7 @@ async def create_visual_form(
             "group_depends_on": f.group_depends_on,
             "depends_on": getattr(f, "depends_on", None),
             "require_one_of_group": getattr(f, "require_one_of_group", None),
+            "visual_zones": f.visual_zones,
         })
 
     form = FormSchema(

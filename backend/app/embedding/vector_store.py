@@ -15,7 +15,6 @@ from qdrant_client.models import (
     MatchAny,
     PointStruct,
     VectorParams,
-
 )
 
 from backend.app.document_processing.chunker import DocumentChunk
@@ -37,7 +36,8 @@ class VectorStore:
       payload: {
         chunk_id, text, source_name, source_file,
         group_type, procedure_type, article, clause,
-        field_type, chunk_index, token_estimate
+        field_type, chunk_index, token_estimate,
+        validity_status
       }
     }
     """
@@ -107,11 +107,12 @@ class VectorStore:
                     "field_type": chunk.field_type,
                     "chunk_index": chunk.chunk_index,
                     "token_estimate": chunk.token_estimate,
+                    "validity_status": getattr(chunk, "validity_status", "Còn hiệu lực"),
                 },
             )
             points.append(point)
 
-        # Upsert theo batch (1000 points/lần)
+        # Upsert theo batch (100 points/lần)
         batch_size = 100
         upserted = 0
         for i in range(0, len(points), batch_size):
@@ -134,6 +135,7 @@ class VectorStore:
         group_type: Optional[str] = None,
         field_type: Optional[str] = None,
         score_threshold: float = 0.0,
+        exclude_expired: bool = True,
     ) -> list[dict]:
         """
         Tìm kiếm chunks liên quan nhất với query vector.
@@ -145,6 +147,7 @@ class VectorStore:
             group_type: Filter theo nhóm tài liệu
             field_type: Filter theo loại trường (thanh_phan_ho_so/thoi_han...)
             score_threshold: Điểm similarity tối thiểu
+            exclude_expired: Loại bỏ các văn bản có validity_status = "Hết hiệu lực" (mặc định: True)
             
         Returns:
             List[dict] với keys: text, score, source_name, article, clause, ...
@@ -169,7 +172,17 @@ class VectorStore:
                 FieldCondition(key="field_type", match=MatchValue(value=field_type))
             )
 
-        query_filter = Filter(must=conditions) if conditions else None
+        must_not = []
+        if exclude_expired:
+            must_not.append(
+                FieldCondition(key="validity_status", match=MatchValue(value="Hết hiệu lực"))
+            )
+
+        query_filter = (
+            Filter(must=conditions or None, must_not=must_not or None)
+            if (conditions or must_not)
+            else None
+        )
 
         results = self.client.query_points(
             collection_name=self.collection_name,
@@ -191,6 +204,7 @@ class VectorStore:
                 "field_type": r.payload.get("field_type", ""),
                 "procedure_type": r.payload.get("procedure_type", ""),
                 "chunk_index": r.payload.get("chunk_index", 0),
+                "validity_status": r.payload.get("validity_status", "Còn hiệu lực"),
             }
             for r in results.points
         ]
@@ -199,6 +213,7 @@ class VectorStore:
         self,
         procedure_type: Optional[str | list[str]] = None,
         limit: int = 10000,
+        exclude_expired: bool = True,
     ) -> list[dict]:
         """Read indexed chunks for the local lexical (BM25) side of hybrid search.
 
@@ -209,7 +224,16 @@ class VectorStore:
         if procedure_type:
             match = MatchAny(any=procedure_type) if isinstance(procedure_type, list) else MatchValue(value=procedure_type)
             conditions.append(FieldCondition(key="procedure_type", match=match))
-        query_filter = Filter(must=conditions) if conditions else None
+        must_not = []
+        if exclude_expired:
+            must_not.append(
+                FieldCondition(key="validity_status", match=MatchValue(value="Hết hiệu lực"))
+            )
+        query_filter = (
+            Filter(must=conditions or None, must_not=must_not or None)
+            if (conditions or must_not)
+            else None
+        )
         records: list[dict] = []
         offset = None
         while len(records) < limit:
@@ -231,6 +255,7 @@ class VectorStore:
                 "field_type": point.payload.get("field_type", ""),
                 "procedure_type": point.payload.get("procedure_type", ""),
                 "chunk_index": point.payload.get("chunk_index", 0),
+                "validity_status": point.payload.get("validity_status", "Còn hiệu lực"),
             } for point in points)
             if offset is None or not points:
                 break
@@ -261,3 +286,31 @@ class VectorStore:
         )
         logger.info(f"Đã xóa points từ source: {source_file}")
         return result.status
+
+    def update_validity_status(self, source_name: str, new_status: str) -> int:
+        """
+        Cập nhật validity_status trong payload cho tất cả vectors của một văn bản.
+        Dùng khi văn bản bị sửa đổi bổ sung hoặc thay thế toàn bộ.
+
+        Args:
+            source_name: Tên nguồn tài liệu (VD: "QĐ 1085/QĐ-UBND")
+            new_status: Trạng thái mới ("Còn hiệu lực" | "Đã sửa đổi bổ sung" | "Hết hiệu lực")
+        """
+        try:
+            self.client.set_payload(
+                collection_name=self.collection_name,
+                payload={"validity_status": new_status},
+                points=Filter(
+                    must=[
+                        FieldCondition(
+                            key="source_name",
+                            match=MatchValue(value=source_name),
+                        )
+                    ]
+                ),
+            )
+            logger.info(f"Đã cập nhật validity_status='{new_status}' cho source_name='{source_name}'")
+            return 1
+        except Exception as e:
+            logger.error(f"Lỗi cập nhật validity_status cho '{source_name}': {e}")
+            return 0
