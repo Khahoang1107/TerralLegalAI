@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 import asyncio
 
 from backend.app.core.config import settings
+from backend.app.core.cache import get_cached_response, set_cached_response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
@@ -443,36 +444,75 @@ Yêu cầu:
             procedure_val = active_form.procedure_type
             latency_ms = int((time.time() - start_time) * 1000)
         else:
-            # 4. Call RAG Pipeline
+            # 4. Call RAG Pipeline — check cache trước
             pipeline = get_rag_pipeline(req)
-            rag_response = await asyncio.to_thread(
-                pipeline.query,
-                question=request.question,
-                procedure_filter=request.procedure_filter,
-                chat_history=chat_history,
+
+            # ── Cache lookup ─────────────────────────────────────────────────────
+            # A response is only cacheable for the opening turn. Follow-up
+            # questions rely on conversation history and must remain unique.
+            cached = (
+                await get_cached_response(request.question, request.procedure_filter)
+                if not request.conversation_id
+                else None
             )
-            answer_text = rag_response.answer
-            intent_val = rag_response.intent
-            procedure_val = rag_response.procedure_type
-            confidence = rag_response.confidence
-            latency_ms = rag_response.latency_ms
-            is_fallback = rag_response.is_fallback
-            retrieved_chunks = [
-                # Qdrant / reranker can return numpy.float32. PostgreSQL JSONB
-                # only accepts native JSON values, so normalise before persisting.
-                {"text": c.text[:200], "score": float(c.score), "source_name": c.source_name}
-                for c in rag_response.retrieved_chunks
-            ]
-            citations = [
-                CitationSchema(
-                    source_name=c.source_name,
-                    article=c.article,
-                    clause=c.clause,
-                    text_snippet=c.text_snippet,
-                    relevance_score=c.relevance_score,
+            if cached:
+                answer_text = cached["answer"]
+                intent_val = cached.get("intent", "general")
+                procedure_val = cached.get("procedure_type", request.procedure_filter or "")
+                confidence = cached.get("confidence", 0.9)
+                latency_ms = cached.get("latency_ms", 0)
+                is_fallback = cached.get("is_fallback", False)
+                citations = [
+                    CitationSchema(**c) for c in cached.get("citations", [])
+                ]
+                retrieved_chunks = cached.get("retrieved_chunks", [])
+                logger.info("🎯 Cache HIT — skip RAG pipeline for: %s", request.question[:60])
+            else:
+                # ── Cache MISS: chạy pipeline ─────────────────────────────────────
+                rag_response = await asyncio.to_thread(
+                    pipeline.query,
+                    question=request.question,
+                    procedure_filter=request.procedure_filter,
+                    chat_history=chat_history,
                 )
-                for c in rag_response.citations
-            ]
+                answer_text = rag_response.answer
+                intent_val = rag_response.intent
+                procedure_val = rag_response.procedure_type
+                confidence = rag_response.confidence
+                latency_ms = rag_response.latency_ms
+                is_fallback = rag_response.is_fallback
+                retrieved_chunks = [
+                    # Qdrant / reranker can return numpy.float32. PostgreSQL JSONB
+                    # only accepts native JSON values, so normalise before persisting.
+                    {"text": c.text[:200], "score": float(c.score), "source_name": c.source_name}
+                    for c in rag_response.retrieved_chunks
+                ]
+                citations = [
+                    CitationSchema(
+                        source_name=c.source_name,
+                        article=c.article,
+                        clause=c.clause,
+                        text_snippet=c.text_snippet,
+                        relevance_score=c.relevance_score,
+                    )
+                    for c in rag_response.citations
+                ]
+                # ── Lưu vào cache (non-blocking, không ảnh hưởng latency) ──────
+                if not request.conversation_id:
+                    await set_cached_response(
+                        question=request.question,
+                        procedure_filter=request.procedure_filter,
+                        response_data={
+                            "answer": answer_text,
+                            "intent": intent_val,
+                            "procedure_type": procedure_val,
+                            "confidence": confidence,
+                            "latency_ms": latency_ms,
+                            "is_fallback": is_fallback,
+                            "citations": [c.model_dump(mode="json") for c in citations],
+                            "retrieved_chunks": retrieved_chunks,
+                        },
+                    )
 
         # 5. Save Assistant Message (đầy đủ metadata)
         assistant_msg = Message(

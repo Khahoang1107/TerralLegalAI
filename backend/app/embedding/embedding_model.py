@@ -41,26 +41,32 @@ class EmbeddingModel:
         self._query_cache_size = 256
 
     def _load_model(self):
-        """Lazy load model (chỉ load khi cần, tránh load lúc khởi động)."""
-        if self._model is None:
-            logger.info(f"🔄 Loading embedding model: {self.model_name}")
+        """Lazy load model.
+
+        - Model bắt đầu bằng 'BAAI/bge-m3' → dùng FlagEmbedding (nếu có).
+        - Mọi model khác (multilingual-e5-*, paraphrase-*, ...) → sentence-transformers.
+        """
+        if self._model is not None:
+            return
+        logger.info(f"🔄 Loading embedding model: {self.model_name}")
+        is_bge_m3 = "bge-m3" in self.model_name.lower()
+        if is_bge_m3:
             try:
                 from FlagEmbedding import BGEM3FlagModel
                 self._model = BGEM3FlagModel(
                     self.model_name,
                     use_fp16=self.use_fp16,
                 )
-                logger.info(f"✅ Model loaded: {self.model_name}")
-            except ImportError:
-                # Fallback sang sentence-transformers nếu FlagEmbedding không có
-                logger.warning(
-                    "FlagEmbedding không tìm thấy, dùng sentence-transformers fallback"
-                )
-                from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer(self.model_name)
-                self._use_flag = False
+                self._use_flag = True
+                logger.info(f"✅ Model loaded (FlagEmbedding): {self.model_name}")
                 return
-            self._use_flag = True
+            except ImportError:
+                logger.warning("FlagEmbedding không tìm thấy, fallback sang sentence-transformers")
+        # sentence-transformers fallback (hoặc model nhẹ như multilingual-e5-small)
+        from sentence_transformers import SentenceTransformer
+        self._model = SentenceTransformer(self.model_name)
+        self._use_flag = False
+        logger.info(f"✅ Model loaded (sentence-transformers): {self.model_name}")
 
     def encode(self, texts: list[str]) -> list[list[float]]:
         """
@@ -129,8 +135,9 @@ class EmbeddingModel:
 
     @property
     def dimension(self) -> int:
-        """Số chiều của vector output."""
-        return 1024  # bge-m3 default
+        """Số chiều của vector output (lấy từ config, không hardcode)."""
+        from backend.app.core.config import settings
+        return settings.embedding_dimension
 
 
 # ─── Singleton instance ───────────────────────────────────────────

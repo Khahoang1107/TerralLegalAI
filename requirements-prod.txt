@@ -1,6 +1,7 @@
 # ─── Core Web Framework ───────────────────────────────────────────
 fastapi
 uvicorn[standard]
+gunicorn          # Production WSGI/ASGI server (Gunicorn + UvicornWorker)
 python-multipart
 python-dotenv
 
@@ -70,7 +71,7 @@ pillow==12.2.0
 lxml==6.1.1
 
 # ─── Utilities ────────────────────────────────────────────────────
-redis
+redis[asyncio]    # Async Redis client cho cache layer
 tenacity==9.1.4
 tqdm==4.68.3
 orjson==3.11.9

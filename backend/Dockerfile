@@ -10,10 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Cài torch CPU-only trước (tránh tải CUDA ~2GB)
+# Cài torch CPU-only trước (tránh tải CUDA ~2GB). PyTorch 2.6+ is required
+# by Transformers when loading .bin weights (CVE-2025-32434 mitigation).
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
-        torch==2.5.1 \
+        torch==2.6.0 \
         --index-url https://download.pytorch.org/whl/cpu
 
 # Copy và install requirements nhẹ cho production

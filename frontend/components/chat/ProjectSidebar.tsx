@@ -535,8 +535,11 @@ export default function ProjectSidebar({
                     : "Mọi cuộc trò chuyện đã được phân loại vào các Dự án."}
                 </div>
               ) : (
-                unassignedConversations.map((item) => {
+                unassignedConversations.map((item, index) => {
                   const isActiveChat = currentConversationId === item.id;
+                  // The last rows sit next to the sidebar footer. Open their
+                  // contextual menu upward so it remains inside the scroll area.
+                  const menuOpensUpward = index >= unassignedConversations.length - 2;
                   return (
                     <div
                       className={`conversation-item ${isActiveChat ? "active" : ""}`}
@@ -570,7 +573,7 @@ export default function ProjectSidebar({
 
                       {activeMenuId === item.id && (
                         <div
-                          className="conversation-menu"
+                          className={`conversation-menu ${menuOpensUpward ? "opens-upward" : ""}`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
