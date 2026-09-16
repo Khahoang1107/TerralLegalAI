@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  X, User, Sliders, MapPin, Sparkles, Check, Monitor, Shield, Save
+  X, User, Sliders, MapPin, Sparkles, Check, Monitor, Shield, Save, LogOut, AlertTriangle
 } from "lucide-react";
 
 export interface UserSettings {
@@ -46,6 +46,7 @@ interface UserSettingsModalProps {
   userName: string;
   userEmail: string;
   onSave?: (settings: UserSettings) => void;
+  onLogout?: () => void;
 }
 
 export default function UserSettingsModal({
@@ -55,11 +56,14 @@ export default function UserSettingsModal({
   userName,
   userEmail,
   onSave,
+  onLogout,
 }: UserSettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<"profile" | "ai" | "display">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "ai" | "display" | "account">("profile");
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const settingsStorageKey = `terra_user_settings:${userId}`;
+  const initials = userName.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
   useEffect(() => {
     try {
@@ -73,6 +77,9 @@ export default function UserSettingsModal({
     } catch {
       // fallback to default
     }
+    // Reset logout confirm & active tab on every open
+    setShowLogoutConfirm(false);
+    setActiveTab("profile");
   }, [userName, userEmail, settingsStorageKey, isOpen]);
 
   if (!isOpen) return null;
@@ -90,6 +97,12 @@ export default function UserSettingsModal({
       setIsSaved(false);
       onClose();
     }, 600);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    onClose();
+    if (onLogout) onLogout();
   };
 
   return (
@@ -142,6 +155,15 @@ export default function UserSettingsModal({
             >
               <Monitor size={17} />
               <span>Giao diện & Tiện ích</span>
+            </button>
+
+            <button
+              type="button"
+              className={`settings-nav-item settings-nav-logout ${activeTab === "account" ? "active" : ""}`}
+              onClick={() => setActiveTab("account")}
+            >
+              <LogOut size={17} />
+              <span>Tài khoản</span>
             </button>
 
             <div className="settings-nav-footer">
@@ -283,23 +305,84 @@ export default function UserSettingsModal({
               </div>
             )}
 
-            {/* Footer buttons */}
-            <div className="settings-footer">
-              <button type="button" className="secondary-button" onClick={onClose}>
-                Hủy
-              </button>
-              <button type="submit" className="primary-button save-btn">
-                {isSaved ? (
-                  <>
-                    <Check size={16} /> Đã lưu
-                  </>
+            {activeTab === "account" && (
+              <div className="settings-section">
+                {/* Account info card */}
+                <div className="account-info-card">
+                  <div className="account-avatar-lg">
+                    <span>{initials}</span>
+                  </div>
+                  <div className="account-info-text">
+                    <strong>{userName}</strong>
+                    <span>{userEmail}</span>
+                  </div>
+                </div>
+
+                <div className="account-divider" />
+
+                <h4>Phiên đăng nhập</h4>
+                <p className="form-hint">
+                  Đăng xuất sẽ kết thúc phiên làm việc hiện tại. Dữ liệu hội thoại và tùy chỉnh của bạn được lưu trữ an toàn và sẽ hiển thị lại khi bạn đăng nhập lại.
+                </p>
+
+                {!showLogoutConfirm ? (
+                  <button
+                    type="button"
+                    className="logout-action-btn"
+                    onClick={() => setShowLogoutConfirm(true)}
+                  >
+                    <LogOut size={16} />
+                    Đăng xuất khỏi tài khoản
+                  </button>
                 ) : (
-                  <>
-                    <Save size={16} /> Lưu tùy chỉnh
-                  </>
+                  <div className="logout-confirm-box">
+                    <div className="logout-confirm-icon">
+                      <AlertTriangle size={22} />
+                    </div>
+                    <p className="logout-confirm-text">
+                      Bạn có chắc muốn <strong>đăng xuất</strong> khỏi TerraLegalAI không?
+                    </p>
+                    <div className="logout-confirm-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setShowLogoutConfirm(false)}
+                      >
+                        Hủy bỏ
+                      </button>
+                      <button
+                        type="button"
+                        className="logout-confirm-yes-btn"
+                        onClick={handleConfirmLogout}
+                      >
+                        <LogOut size={15} />
+                        Xác nhận đăng xuất
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </button>
-            </div>
+              </div>
+            )}
+
+            {/* Footer buttons — only show save for non-account tabs */}
+            {activeTab !== "account" && (
+              <div className="settings-footer">
+                <button type="button" className="secondary-button" onClick={onClose}>
+                  Hủy
+                </button>
+                <button type="submit" className="primary-button save-btn">
+                  {isSaved ? (
+                    <>
+                      <Check size={16} /> Đã lưu
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} /> Lưu tùy chỉnh
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

@@ -579,71 +579,171 @@ function AppHeader({
   onToggleRightPanel?: () => void;
 }) {
   const initials = userName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setProfileOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setProfileOpen(false);
+    }, 250);
+  };
+
   return (
-    <header className="app-header modern-header">
-      <div className="header-brand">
-        <button type="button" className="icon-button mobile-only" onClick={onMenu} title="Mở danh mục">
-          <Menu size={20} />
-        </button>
-        <div className="brand-mark-modern">
-          <Scale size={20} className="brand-icon-gold" />
-        </div>
-        <div className="brand-text-block">
-          <div className="brand-title-row">
-            <strong>TerraLegalAI</strong>
-            <span className="brand-badge-version">v2.0</span>
-          </div>
-          <span className="brand-subtitle hide-sm">Trợ lý Pháp lý & Đất đai Chuyên sâu</span>
-        </div>
-        <span className="role-badge-modern">{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
-
-        {activeProjectName && (
-          <div className="header-active-project-tag hide-sm" title={`Dự án đang mở: ${activeProjectName}`}>
-            <Layers size={13} />
-            <span>{activeProjectName}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="header-actions">
-        <div className="system-status-pill hide-sm">
-          <span className="pulse-dot" />
-          <span>Hệ thống sẵn sàng</span>
-        </div>
-
-        {onToggleRightPanel && (
-          <button
-            type="button"
-            className={`panel-toggle-btn ${isRightPanelOpen ? "active" : ""}`}
-            onClick={onToggleRightPanel}
-            title={isRightPanelOpen ? "Ẩn khung Trợ lý Dự án & Đề xuất" : "Hiện khung Trợ lý Dự án & Đề xuất"}
-          >
-            <Sparkles size={15} />
-            <span className="hide-sm">{isRightPanelOpen ? "Thu gọn Trợ lý" : "Trợ lý Dự án"}</span>
+    <>
+      <header className="app-header modern-header">
+        <div className="header-brand">
+          <button type="button" className="icon-button mobile-only" onClick={onMenu} title="Mở danh mục">
+            <Menu size={20} />
           </button>
-        )}
-
-        <button
-          type="button"
-          className="profile-button-enhanced"
-          onClick={onOpenSettings}
-          title="Nhấp vào tên để Mở Cài đặt & Tùy chỉnh"
-        >
-          <span className="avatar-ring">
-            <span className="avatar-text">{initials}</span>
-          </span>
-          <div className="profile-name-col hide-sm">
-            <span className="profile-name">{userName}</span>
-            <span className="profile-hint">Tùy chỉnh & Cài đặt</span>
+          <div className="brand-mark-modern">
+            <Scale size={20} className="brand-icon-gold" />
           </div>
-          <Settings size={15} className="settings-trigger-icon" />
-        </button>
+          <div className="brand-text-block">
+            <div className="brand-title-row">
+              <strong>TerraLegalAI</strong>
+              <span className="brand-badge-version">v2.0</span>
+            </div>
+            <span className="brand-subtitle hide-sm">Trợ lý Pháp lý & Đất đai Chuyên sâu</span>
+          </div>
+          <span className="role-badge-modern">{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
 
-        <button type="button" className="icon-button logout-btn" onClick={onLogout} title="Đăng xuất">
-          <LogOut size={17} />
-        </button>
-      </div>
-    </header>
+          {activeProjectName && (
+            <div className="header-active-project-tag hide-sm" title={`Dự án đang mở: ${activeProjectName}`}>
+              <Layers size={13} />
+              <span>{activeProjectName}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="header-actions">
+          {onToggleRightPanel && (
+            <button
+              type="button"
+              className={`panel-toggle-btn ${isRightPanelOpen ? "active" : ""}`}
+              onClick={onToggleRightPanel}
+              title={isRightPanelOpen ? "Thu gọn Trợ lý Dự án & Đề xuất" : "Hiện Trợ lý Dự án & Đề xuất"}
+            >
+              <Sparkles size={15} />
+              <span className="hide-sm">{isRightPanelOpen ? "Thu gọn Trợ lý" : "Trợ lý Dự án"}</span>
+            </button>
+          )}
+
+          <div
+            className="profile-dropdown-wrap"
+            ref={profileRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <button
+              type="button"
+              className={`profile-button-enhanced ${profileOpen ? "active" : ""}`}
+              onClick={() => setProfileOpen(prev => !prev)}
+              aria-haspopup="true"
+              aria-expanded={profileOpen}
+              title="Nhấp hoặc rê chuột để mở Tùy chỉnh & Đăng xuất"
+            >
+              <span className="avatar-ring">
+                <span className="avatar-text">{initials}</span>
+              </span>
+              <div className="profile-name-col hide-sm">
+                <span className="profile-name">{userName}</span>
+                <span className="profile-hint">Tùy chỉnh & Cài đặt</span>
+              </div>
+              <ChevronDown size={14} className={`profile-chevron ${profileOpen ? "open" : ""}`} />
+            </button>
+
+            {profileOpen && (
+              <div className="profile-dropdown-menu" role="menu">
+                <div className="profile-dropdown-user">
+                  <span className="pdrop-avatar">{initials}</span>
+                  <div className="pdrop-info">
+                    <strong>{userName}</strong>
+                    <span>{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
+                  </div>
+                </div>
+                <div className="profile-dropdown-divider" />
+                <button
+                  type="button"
+                  className="profile-dropdown-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    if (onOpenSettings) onOpenSettings();
+                  }}
+                >
+                  <Settings size={15} />
+                  <span>Cài đặt & Tùy chỉnh</span>
+                </button>
+                <div className="profile-dropdown-divider" />
+                <button
+                  type="button"
+                  className="profile-dropdown-item profile-dropdown-logout"
+                  role="menuitem"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
+                >
+                  <LogOut size={15} />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Modal xác nhận đăng xuất khi bấm từ dropdown */}
+      {showLogoutConfirm && (
+        <div className="dialog-backdrop" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="confirm-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-icon logout-icon">
+              <AlertCircle size={28} />
+            </div>
+            <h3>Xác nhận đăng xuất</h3>
+            <p>Bạn có chắc chắn muốn đăng xuất khỏi hệ thống <strong>TerraLegalAI</strong>?</p>
+            <div className="confirm-modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="logout-confirm-yes-btn"
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  onLogout();
+                }}
+              >
+                <LogOut size={15} />
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1119,6 +1219,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
         userName={userName}
         userEmail={userEmail}
         onSave={(newSettings) => setUserSettings(newSettings)}
+        onLogout={onLogout}
       />
     </div>
   );
