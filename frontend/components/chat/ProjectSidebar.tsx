@@ -231,6 +231,24 @@ export default function ProjectSidebar({
     onNewChat();
   };
 
+  // Prevent the browser's address-bar search shortcut and use Ctrl/Cmd + K
+  // for the action advertised on the new-chat button.
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") return;
+
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+
+      event.preventDefault();
+      onSelectProject(null);
+      onNewChat();
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [onNewChat, onSelectProject]);
+
   // Filter conversations
   const filteredConversations = useMemo(() => {
     if (!searchQuery.trim()) return conversationsList;
