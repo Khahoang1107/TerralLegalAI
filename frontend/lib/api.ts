@@ -175,8 +175,8 @@ client.interceptors.request.use((config) => {
 // ─── Auth API ─────────────────────────────────────────────────────
 
 export const authApi = {
-  async login(email: string, password: string, remember = true): Promise<AuthResponse> {
-    const { data } = await client.post<AuthResponse>("/auth/login", { email, password });
+  async login(identifier: string, password: string, remember = true): Promise<AuthResponse> {
+    const { data } = await client.post<AuthResponse>("/auth/login", { email: identifier, password });
     this.saveToken(data.access_token, remember);
     return data;
   },
