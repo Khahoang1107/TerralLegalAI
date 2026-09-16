@@ -616,10 +616,10 @@ function AppHeader({
             type="button"
             className={`panel-toggle-btn ${isRightPanelOpen ? "active" : ""}`}
             onClick={onToggleRightPanel}
-            title={isRightPanelOpen ? "Ẩn khung đề xuất" : "Hiện khung đề xuất theo dự án"}
+            title={isRightPanelOpen ? "Ẩn khung Trợ lý Dự án & Đề xuất" : "Hiện khung Trợ lý Dự án & Đề xuất"}
           >
             <Sparkles size={15} />
-            <span className="hide-sm">Trợ lý Dự án</span>
+            <span className="hide-sm">{isRightPanelOpen ? "Thu gọn Trợ lý" : "Trợ lý Dự án"}</span>
           </button>
         )}
 
@@ -898,15 +898,17 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
             </div>
 
             <div className="toolbar-right">
-              <button
-                type="button"
-                className={`panel-quick-btn ${isRightPanelOpen ? "active" : ""}`}
-                onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-                title="Bật/tắt Trợ lý gợi ý bên phải"
-              >
-                <Sparkles size={15} />
-                <span>{isRightPanelOpen ? "Thu gọn đề xuất" : "Mở đề xuất"}</span>
-              </button>
+              {currentProject && (
+                <button
+                  type="button"
+                  className="toolbar-project-chat-btn"
+                  onClick={() => handleNewChat()}
+                  title={`Tạo cuộc trò chuyện mới cho dự án: ${currentProject.name}`}
+                >
+                  <Plus size={14} />
+                  <span>Chat mới trong dự án</span>
+                </button>
+              )}
             </div>
           </div>
 

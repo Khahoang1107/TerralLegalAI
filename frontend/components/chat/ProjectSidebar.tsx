@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus, Search, MessageSquare, MoreHorizontal, Pencil, Trash2,
   FolderPlus, Folder, FolderOpen, ChevronDown, ChevronRight,
-  BookOpen, FolderInput, Check, X, ShieldAlert, Sparkles, Layers
+  BookOpen, FolderInput, Check, X, ShieldAlert, Sparkles, Layers,
+  MessageSquarePlus
 } from "lucide-react";
 import type { Conversation } from "@/lib/api";
 
@@ -222,6 +223,14 @@ export default function ProjectSidebar({
     }
   };
 
+  // Create new chat specifically inside a project
+  const handleNewChatInProject = (projectId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    onSelectProject(projectId);
+    setExpandedProjects((prev) => ({ ...prev, [projectId]: true }));
+    onNewChat();
+  };
+
   // Filter conversations
   const filteredConversations = useMemo(() => {
     if (!searchQuery.trim()) return conversationsList;
@@ -243,26 +252,32 @@ export default function ProjectSidebar({
   return (
     <>
       <aside className={`chat-sidebar modern-sidebar ${isOpen ? "open" : ""}`}>
-        {/* Top Actions */}
-        <div className="sidebar-head">
-          <button className="new-chat-btn" onClick={onNewChat} title="Tạo cuộc hội thoại mới">
-            <Plus size={18} />
-            <span>Cuộc trò chuyện mới</span>
+        {/* Top Actions: Redesigned modern, balanced & elegant */}
+        <div className="sidebar-top-actions">
+          <button 
+            type="button" 
+            className="new-chat-btn-modern" 
+            onClick={() => {
+              onSelectProject(null);
+              onNewChat();
+            }} 
+            title="Tạo cuộc trò chuyện mới (Phím tắt: Ctrl + K)"
+          >
+            <div className="new-chat-icon-wrap">
+              <Plus size={15} />
+            </div>
+            <span className="new-chat-text">Cuộc trò chuyện mới</span>
+            <kbd className="new-chat-shortcut">Ctrl K</kbd>
           </button>
-          <button className="icon-button mobile-only" onClick={onClose} title="Đóng">
-            <X size={18} />
-          </button>
-        </div>
 
-        {/* Quick project create action */}
-        <div className="project-action-bar">
           <button
             type="button"
-            className="create-project-btn"
+            className="create-project-btn-modern"
             onClick={() => setIsCreatingProject(true)}
+            title="Tạo Dự án / Hồ sơ đất đai mới"
           >
-            <FolderPlus size={15} />
-            <span>+ Tạo Dự án / Hồ sơ mới</span>
+            <FolderPlus size={15} className="folder-add-icon" />
+            <span>Tạo Dự án / Hồ sơ mới</span>
           </button>
         </div>
 
@@ -341,6 +356,16 @@ export default function ProjectSidebar({
                         </span>
                       </div>
 
+                      {/* Quick Add Chat directly in this Project */}
+                      <button
+                        type="button"
+                        className="project-quick-add-btn"
+                        onClick={(e) => handleNewChatInProject(proj.id, e)}
+                        title={`Tạo cuộc trò chuyện mới trong dự án ${proj.name}`}
+                      >
+                        <Plus size={14} strokeWidth={2.5} />
+                      </button>
+
                       {/* Project Options Menu */}
                       <div className="project-options-container" onClick={(e) => e.stopPropagation()}>
                         <button
@@ -355,6 +380,16 @@ export default function ProjectSidebar({
                         </button>
                         {activeMenuId === proj.id && (
                           <div className="conversation-menu proj-menu">
+                            <button
+                              type="button"
+                              className="proj-add-chat-item"
+                              onClick={() => {
+                                handleNewChatInProject(proj.id);
+                                setActiveMenuId(null);
+                              }}
+                            >
+                              <MessageSquarePlus size={14} /> Thêm chat vào dự án
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -384,79 +419,99 @@ export default function ProjectSidebar({
                     {isExpanded && (
                       <div className="project-conv-children">
                         {projConversations.length === 0 ? (
-                          <div className="empty-project-conv">
-                            Chưa có đoạn chat nào. Bấm vào để bắt đầu chat trong dự án này.
+                          <div className="empty-project-conv-box">
+                            <span className="empty-conv-hint">Chưa có đoạn chat trong dự án này</span>
+                            <button
+                              type="button"
+                              className="btn-create-chat-in-proj"
+                              onClick={() => handleNewChatInProject(proj.id)}
+                            >
+                              <MessageSquarePlus size={14} color="#ffffff" />
+                              <span>+ Bắt đầu chat trong dự án</span>
+                            </button>
                           </div>
                         ) : (
-                          projConversations.map((item) => {
-                            const isActiveChat = currentConversationId === item.id;
-                            return (
-                              <div
-                                key={item.id}
-                                className={`conversation-item child-item ${isActiveChat ? "active" : ""}`}
-                              >
-                                <button
-                                  className="conversation-select"
-                                  onClick={() => {
-                                    onSelectConversation(item.id);
-                                    onSelectProject(proj.id);
-                                  }}
-                                  title={item.title}
+                          <>
+                            {projConversations.map((item) => {
+                              const isActiveChat = currentConversationId === item.id;
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={`conversation-item child-item ${isActiveChat ? "active" : ""}`}
                                 >
-                                  <MessageSquare size={14} className="conv-icon" />
-                                  <span>
-                                    <strong>{item.title}</strong>
-                                    <small>{new Date(item.created_at).toLocaleDateString("vi-VN")}</small>
-                                  </span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  className="conversation-menu-trigger"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuId(activeMenuId === item.id ? null : item.id);
-                                  }}
-                                  title="Tùy chọn cuộc trò chuyện"
-                                >
-                                  <MoreHorizontal size={15} />
-                                </button>
-
-                                {activeMenuId === item.id && (
-                                  <div
-                                    className="conversation-menu"
-                                    onClick={(e) => e.stopPropagation()}
+                                  <button
+                                    className="conversation-select"
+                                    onClick={() => {
+                                      onSelectConversation(item.id);
+                                      onSelectProject(proj.id);
+                                    }}
+                                    title={item.title}
                                   >
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        onOpenRename(item);
-                                        setActiveMenuId(null);
-                                      }}
+                                    <MessageSquare size={14} className="conv-icon" />
+                                    <span>
+                                      <strong>{item.title}</strong>
+                                      <small>{new Date(item.created_at).toLocaleDateString("vi-VN")}</small>
+                                    </span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="conversation-menu-trigger"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuId(activeMenuId === item.id ? null : item.id);
+                                    }}
+                                    title="Tùy chọn cuộc trò chuyện"
+                                  >
+                                    <MoreHorizontal size={15} />
+                                  </button>
+
+                                  {activeMenuId === item.id && (
+                                    <div
+                                      className="conversation-menu"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      <Pencil size={14} /> Đổi tên
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setMoveMenuId(item.id)}
-                                    >
-                                      <FolderInput size={14} /> Chuyển dự án...
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="danger"
-                                      onClick={() => {
-                                        onDeleteConversation(item);
-                                        setActiveMenuId(null);
-                                      }}
-                                    >
-                                      <Trash2 size={14} /> Xóa
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          onOpenRename(item);
+                                          setActiveMenuId(null);
+                                        }}
+                                      >
+                                        <Pencil size={14} /> Đổi tên
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setMoveMenuId(item.id)}
+                                      >
+                                        <FolderInput size={14} /> Chuyển dự án...
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="danger"
+                                        onClick={() => {
+                                          onDeleteConversation(item);
+                                          setActiveMenuId(null);
+                                        }}
+                                      >
+                                        <Trash2 size={14} /> Xóa
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            <button
+                              type="button"
+                              className="btn-add-more-chat-in-proj"
+                              onClick={() => handleNewChatInProject(proj.id)}
+                              title="Tạo cuộc trò chuyện mới trong dự án này"
+                            >
+                              <Plus size={13} />
+                              <span>Thêm cuộc trò chuyện mới</span>
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
