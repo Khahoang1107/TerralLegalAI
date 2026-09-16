@@ -18,25 +18,6 @@ export interface LegalProject {
   conversation_ids: string[];
 }
 
-const DEFAULT_PROJECTS: LegalProject[] = [
-  {
-    id: "proj_chuyen_nhuong",
-    name: "Hồ sơ Chuyển nhượng QSDĐ",
-    procedure_type: "chuyen_nhuong",
-    color: "#166b45",
-    created_at: new Date().toISOString(),
-    conversation_ids: [],
-  },
-  {
-    id: "proj_cap_doi",
-    name: "Cấp đổi & Cấp lại Giấy chứng nhận",
-    procedure_type: "cap_doi",
-    color: "#2563eb",
-    created_at: new Date().toISOString(),
-    conversation_ids: [],
-  },
-];
-
 const PROCEDURE_OPTIONS = [
   { id: "all", label: "Tất cả thủ tục" },
   { id: "chuyen_nhuong", label: "Chuyển nhượng / Mua bán đất" },
@@ -48,6 +29,7 @@ const PROCEDURE_OPTIONS = [
 ];
 
 interface ProjectSidebarProps {
+  userId: string;
   isOpen: boolean;
   onClose: () => void;
   conversationsList: Conversation[];
@@ -61,6 +43,7 @@ interface ProjectSidebarProps {
 }
 
 export default function ProjectSidebar({
+  userId,
   isOpen,
   onClose,
   conversationsList,
@@ -72,6 +55,7 @@ export default function ProjectSidebar({
   selectedProjectId,
   onSelectProject,
 }: ProjectSidebarProps) {
+  const projectsStorageKey = `terra_legal_projects:${userId}`;
   const [projects, setProjects] = useState<LegalProject[]>([]);
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({
     proj_chuyen_nhuong: true,
@@ -94,7 +78,7 @@ export default function ProjectSidebar({
   // Load projects from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("terra_legal_projects");
+      const saved = localStorage.getItem(projectsStorageKey);
       if (saved) {
         const parsed: LegalProject[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -102,19 +86,18 @@ export default function ProjectSidebar({
           return;
         }
       }
-      // If no saved projects, init default
-      setProjects(DEFAULT_PROJECTS);
-      localStorage.setItem("terra_legal_projects", JSON.stringify(DEFAULT_PROJECTS));
+      // A new account starts with no projects. Projects are private to its user ID.
+      setProjects([]);
     } catch {
-      setProjects(DEFAULT_PROJECTS);
+      setProjects([]);
     }
-  }, []);
+  }, [projectsStorageKey]);
 
   // Save projects to localStorage
   const saveProjects = (updated: LegalProject[]) => {
     setProjects(updated);
     try {
-      localStorage.setItem("terra_legal_projects", JSON.stringify(updated));
+      localStorage.setItem(projectsStorageKey, JSON.stringify(updated));
     } catch (err) {
       console.error("Failed to save projects:", err);
     }
@@ -148,13 +131,13 @@ export default function ProjectSidebar({
         };
       });
       try {
-        localStorage.setItem("terra_legal_projects", JSON.stringify(updated));
+        localStorage.setItem(projectsStorageKey, JSON.stringify(updated));
       } catch (e) {
         console.error(e);
       }
       return updated;
     });
-  }, [currentConversationId, selectedProjectId]);
+  }, [currentConversationId, selectedProjectId, projectsStorageKey]);
 
   // Handle create project
   const handleCreateProject = (e: React.FormEvent) => {

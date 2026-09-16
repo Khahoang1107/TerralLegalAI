@@ -7,7 +7,7 @@ import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
 import TestsView from "@/components/admin/TestsView";
-import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
+import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type AuthUser, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import ProjectSidebar, { type LegalProject } from "@/components/chat/ProjectSidebar";
 import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
 import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
@@ -647,7 +647,7 @@ function AppHeader({
   );
 }
 
-function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => void }) {
+function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string; userName: string; userEmail: string; onLogout: () => void }) {
   const [sidebar, setSidebar] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
@@ -667,6 +667,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>({
     fullName: userName,
+    email: userEmail,
     region: "TP. Hồ Chí Minh",
     responseStyle: "detailed",
     autoShowRightPanel: false,
@@ -678,7 +679,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   // Load user settings
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("terra_user_settings");
+      const saved = localStorage.getItem(`terra_user_settings:${userId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
         // Ignore the legacy auto-open preference. Suggestions should only be
@@ -688,7 +689,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -704,7 +705,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const [currentProject, setCurrentProject] = useState<LegalProject | null>(null);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("terra_legal_projects");
+      const saved = localStorage.getItem(`terra_legal_projects:${userId}`);
       if (saved) {
         const parsed: LegalProject[] = JSON.parse(saved);
         const found = parsed.find(p => p.id === selectedProjectId) || null;
@@ -713,7 +714,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
     } catch {
       setCurrentProject(null);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, userId]);
 
   const handleSelectConversation = async (id: string) => {
     try {
@@ -870,6 +871,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
       <div className={`workspace workspace-three-col ${!isRightPanelOpen ? "right-collapsed" : ""}`}>
         {/* Left Sidebar: Projects and Conversations with scroll */}
         <ProjectSidebar
+          userId={userId}
           isOpen={sidebar}
           onClose={() => setSidebar(false)}
           conversationsList={conversationsList}
@@ -1113,7 +1115,9 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
       <UserSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        userId={userId}
         userName={userName}
+        userEmail={userEmail}
         onSave={(newSettings) => setUserSettings(newSettings)}
       />
     </div>
@@ -4243,14 +4247,14 @@ function AdminPortal({ userName, onLogout }: { userName: string; onLogout: () =>
 }
 
 export default function Home() {
-  const [user, setUser] = useState<{ role: Role; full_name: string } | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     authApi.me()
       .then((u) => {
-        if (u) setUser({ role: u.role, full_name: u.full_name });
+        if (u) setUser(u);
       })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
@@ -4264,7 +4268,7 @@ export default function Home() {
 
   if (authLoading) return <main className="auth-loading">Đang kiểm tra phiên đăng nhập...</main>;
   if (!user) return authView === "login"
-    ? <Login onLogin={(role) => authApi.me().then(u => u && setUser({ role, full_name: u.full_name }))} onRegister={() => setAuthView("register")} />
-    : <Register onBack={() => setAuthView("login")} onRegister={(role) => authApi.me().then(u => u && setUser({ role, full_name: u.full_name }))} />;
-  return user.role === "admin" ? <AdminPortal userName={user.full_name} onLogout={logout} /> : <UserPortal userName={user.full_name} onLogout={logout} />;
+    ? <Login onLogin={() => authApi.me().then(u => u && setUser(u))} onRegister={() => setAuthView("register")} />
+    : <Register onBack={() => setAuthView("login")} onRegister={() => authApi.me().then(u => u && setUser(u))} />;
+  return user.role === "admin" ? <AdminPortal userName={user.full_name} onLogout={logout} /> : <UserPortal userId={user.id} userName={user.full_name} userEmail={user.email} onLogout={logout} />;
 }

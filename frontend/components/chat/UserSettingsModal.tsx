@@ -42,45 +42,50 @@ const PROVINCES = [
 interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userId: string;
   userName: string;
+  userEmail: string;
   onSave?: (settings: UserSettings) => void;
 }
 
 export default function UserSettingsModal({
   isOpen,
   onClose,
+  userId,
   userName,
+  userEmail,
   onSave,
 }: UserSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "ai" | "display">("profile");
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
+  const settingsStorageKey = `terra_user_settings:${userId}`;
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("terra_user_settings");
+      const saved = localStorage.getItem(settingsStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed, fullName: userName || parsed.fullName });
+        setSettings({ ...DEFAULT_SETTINGS, ...parsed, fullName: userName || parsed.fullName, email: userEmail });
       } else {
-        setSettings((prev) => ({ ...prev, fullName: userName || prev.fullName }));
+        setSettings({ ...DEFAULT_SETTINGS, fullName: userName, email: userEmail });
       }
     } catch {
       // fallback to default
     }
-  }, [userName, isOpen]);
+  }, [userName, userEmail, settingsStorageKey, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      localStorage.setItem("terra_user_settings", JSON.stringify(settings));
+      localStorage.setItem(settingsStorageKey, JSON.stringify({ ...settings, email: userEmail }));
     } catch (err) {
       console.error(err);
     }
     setIsSaved(true);
-    if (onSave) onSave(settings);
+    if (onSave) onSave({ ...settings, email: userEmail });
     setTimeout(() => {
       setIsSaved(false);
       onClose();
@@ -164,9 +169,9 @@ export default function UserSettingsModal({
                   <label>Địa chỉ Email</label>
                   <input
                     type="email"
-                    value={settings.email || ""}
-                    onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                    placeholder="name@example.com"
+                    value={userEmail}
+                    readOnly
+                    title="Email tài khoản được quản lý tại hồ sơ đăng nhập"
                   />
                 </div>
 
