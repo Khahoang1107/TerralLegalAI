@@ -1847,19 +1847,11 @@ tr:hover td { background:#fafcfb; }
   font-size: 11px;
   color: #94a3b8;
 }
-/* Logout nav item styling */
-.settings-nav-logout {
+/* Account nav item styling */
+.settings-nav-account {
   margin-top: 8px;
   border-top: 1px solid #f1f5f9;
   padding-top: 12px;
-}
-.settings-nav-logout:hover {
-  background: #fff5f5 !important;
-  color: #dc2626 !important;
-}
-.settings-nav-logout.active {
-  background: #fee2e2 !important;
-  color: #b91c1c !important;
 }
 /* Account info card */
 .account-info-card {
@@ -1903,6 +1895,55 @@ tr:hover td { background:#fafcfb; }
   height: 1px;
   background: #e2e8f0;
   margin: 16px 0;
+}
+.password-change-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.password-change-fields .form-group:first-child {
+  grid-column: 1 / -1;
+}
+.password-change-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.password-change-message.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+.password-change-message.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+.change-password-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #166b45;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.change-password-btn:hover:not(:disabled) {
+  background: #115537;
+}
+.change-password-btn:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+@media (max-width: 640px) {
+  .password-change-fields { grid-template-columns: 1fr; }
+  .password-change-fields .form-group:first-child { grid-column: auto; }
 }
 /* Logout action button */
 .logout-action-btn {

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  X, User, Sliders, MapPin, Sparkles, Check, Monitor, Shield, Save, LogOut, AlertTriangle
+  X, User, Sliders, MapPin, Sparkles, Check, Monitor, Shield, Save, LogOut, AlertTriangle, KeyRound
 } from "lucide-react";
+import { authApi } from "@/lib/api";
 
 export interface UserSettings {
   fullName: string;
@@ -62,6 +63,12 @@ export default function UserSettingsModal({
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isSaved, setIsSaved] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const settingsStorageKey = `terra_user_settings:${userId}`;
   const initials = userName.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
@@ -80,6 +87,11 @@ export default function UserSettingsModal({
     // Reset logout confirm & active tab on every open
     setShowLogoutConfirm(false);
     setActiveTab("profile");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError("");
+    setPasswordSuccess("");
   }, [userName, userEmail, settingsStorageKey, isOpen]);
 
   if (!isOpen) return null;
@@ -103,6 +115,37 @@ export default function UserSettingsModal({
     setShowLogoutConfirm(false);
     onClose();
     if (onLogout) onLogout();
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    setPasswordSuccess("");
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Vui lòng nhập đầy đủ mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Xác nhận mật khẩu mới không khớp.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await authApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess("Đã đổi mật khẩu thành công.");
+    } catch (error: unknown) {
+      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setPasswordError(detail || "Không thể đổi mật khẩu. Vui lòng thử lại.");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   return (
@@ -159,7 +202,7 @@ export default function UserSettingsModal({
 
             <button
               type="button"
-              className={`settings-nav-item settings-nav-logout ${activeTab === "account" ? "active" : ""}`}
+              className={`settings-nav-item settings-nav-account ${activeTab === "account" ? "active" : ""}`}
               onClick={() => setActiveTab("account")}
             >
               <LogOut size={17} />
@@ -317,6 +360,31 @@ export default function UserSettingsModal({
                     <span>{userEmail}</span>
                   </div>
                 </div>
+
+                <div className="account-divider" />
+
+                <h4>Đổi mật khẩu</h4>
+                <p className="form-hint">Mật khẩu mới cần có ít nhất 8 ký tự. Sau khi đổi, bạn vẫn đăng nhập bình thường trên thiết bị này.</p>
+                <div className="password-change-fields">
+                  <div className="form-group">
+                    <label htmlFor="current-password">Mật khẩu hiện tại</label>
+                    <input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="new-password">Mật khẩu mới</label>
+                    <input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="confirm-password">Xác nhận mật khẩu mới</label>
+                    <input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                  </div>
+                </div>
+                {passwordError && <p className="password-change-message error" role="alert">{passwordError}</p>}
+                {passwordSuccess && <p className="password-change-message success" role="status">{passwordSuccess}</p>}
+                <button type="button" className="change-password-btn" onClick={handleChangePassword} disabled={isChangingPassword}>
+                  <KeyRound size={16} />
+                  {isChangingPassword ? "Đang đổi mật khẩu..." : "Đổi mật khẩu"}
+                </button>
 
                 <div className="account-divider" />
 

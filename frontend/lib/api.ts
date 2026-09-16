@@ -185,6 +185,12 @@ export const authApi = {
     this.saveToken(data.access_token, true);
     return data;
   },
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await client.post("/auth/change-password", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  },
   async me(): Promise<AuthUser | null> {
     if (!getToken()) return null;
     try {
