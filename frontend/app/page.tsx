@@ -658,14 +658,14 @@ function AppHeader({
               onClick={() => setProfileOpen(prev => !prev)}
               aria-haspopup="true"
               aria-expanded={profileOpen}
-              title="Nhấp hoặc rê chuột để mở Tùy chỉnh & Đăng xuất"
+              title={role === "admin" ? "Nhấp hoặc rê chuột để mở tài khoản và đăng xuất" : "Nhấp hoặc rê chuột để mở Tùy chỉnh & Đăng xuất"}
             >
               <span className="avatar-ring">
                 <span className="avatar-text">{initials}</span>
               </span>
               <div className="profile-name-col hide-sm">
                 <span className="profile-name">{userName}</span>
-                <span className="profile-hint">Tùy chỉnh & Cài đặt</span>
+                <span className="profile-hint">{role === "admin" ? "Tài khoản quản trị" : "Tùy chỉnh & Cài đặt"}</span>
               </div>
               <ChevronDown size={14} className={`profile-chevron ${profileOpen ? "open" : ""}`} />
             </button>
@@ -679,19 +679,21 @@ function AppHeader({
                     <span>{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
                   </div>
                 </div>
-                <div className="profile-dropdown-divider" />
-                <button
-                  type="button"
-                  className="profile-dropdown-item"
-                  role="menuitem"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    if (onOpenSettings) onOpenSettings();
-                  }}
-                >
-                  <Settings size={15} />
-                  <span>Cài đặt & Tùy chỉnh</span>
-                </button>
+                {role !== "admin" && onOpenSettings && <>
+                  <div className="profile-dropdown-divider" />
+                  <button
+                    type="button"
+                    className="profile-dropdown-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      onOpenSettings();
+                    }}
+                  >
+                    <Settings size={15} />
+                    <span>Cài đặt & Tùy chỉnh</span>
+                  </button>
+                </>}
                 <div className="profile-dropdown-divider" />
                 <button
                   type="button"
@@ -4329,7 +4331,6 @@ function AdminPortal({ userName, onLogout }: { userName: string; onLogout: () =>
             <button className={view === "users" ? "active" : ""} onClick={() => { setView("users"); setSidebar(false); }}>
               <Users size={18} />Người dùng
             </button>
-            <button><Settings size={18} />Cấu hình</button>
           </nav>
           <div className="admin-version"><ShieldCheck size={17} /><span><strong>TerraLegalAI</strong><small>Phiên bản 0.1.0</small></span></div>
         </aside>
