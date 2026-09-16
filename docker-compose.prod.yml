@@ -58,9 +58,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* is embedded into browser JavaScript at build time.
+        NEXT_PUBLIC_API_URL: https://api.trolyphaplydatdai.online
     container_name: terralegal_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=https://api.trolyphaplydatdai.online
     ports:
       - "3000:3000"
     depends_on:
