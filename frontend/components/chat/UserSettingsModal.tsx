@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   email: "tructhanh@terralegal.vn",
   region: "TP. Hồ Chí Minh",
   responseStyle: "detailed",
-  autoShowRightPanel: true,
+  autoShowRightPanel: false,
   fontSize: "normal",
 };
 
@@ -255,23 +255,6 @@ export default function UserSettingsModal({
             {activeTab === "display" && (
               <div className="settings-section">
                 <h4>Hiển thị & Tiện ích Không gian làm việc</h4>
-
-                <div className="toggle-row">
-                  <div>
-                    <strong>Tự động mở Khung Đề xuất bên phải</strong>
-                    <span>Hiển thị gợi ý câu hỏi và checklist giấy tờ theo dự án đang làm việc.</span>
-                  </div>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.autoShowRightPanel}
-                      onChange={(e) =>
-                        setSettings({ ...settings, autoShowRightPanel: e.target.checked })
-                      }
-                    />
-                    <span className="slider round"></span>
-                  </label>
-                </div>
 
                 <div className="form-group" style={{ marginTop: "20px" }}>
                   <label>Kích thước cỡ chữ tin nhắn</label>

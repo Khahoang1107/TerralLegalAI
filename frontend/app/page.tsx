@@ -662,13 +662,14 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
 
   // Project and Right Panel States
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  // The project assistant is opt-in: keep it closed until the user opens it.
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>({
     fullName: userName,
     region: "TP. Hồ Chí Minh",
     responseStyle: "detailed",
-    autoShowRightPanel: true,
+    autoShowRightPanel: false,
     fontSize: "normal",
   });
   
@@ -680,10 +681,9 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
       const saved = localStorage.getItem("terra_user_settings");
       if (saved) {
         const parsed = JSON.parse(saved);
-        setUserSettings(prev => ({ ...prev, ...parsed }));
-        if (parsed.autoShowRightPanel !== undefined) {
-          setIsRightPanelOpen(parsed.autoShowRightPanel);
-        }
+        // Ignore the legacy auto-open preference. Suggestions should only be
+        // displayed after an explicit click in the current session.
+        setUserSettings(prev => ({ ...prev, ...parsed, autoShowRightPanel: false }));
       }
     } catch (e) {
       console.error(e);
