@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   output: "standalone",
   devIndicators: false,
+  allowedDevOrigins: ["trolyphaplydatdai.online"],
   async redirects() {
     return [
       {

@@ -1065,8 +1065,8 @@ function FormsView() {
   const [docxFile, setDocxFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<any | null>(null);
   const [editableZones, setEditableZones] = useState<any[]>([]);
-  const [mode, setMode] = useState<'label' | 'merge' | 'remove' | 'add'>('label');
-  const modeRef = useRef<'label' | 'merge' | 'remove' | 'add'>('label');
+  const [mode, setMode] = useState<'label' | 'merge' | 'remove' | 'add' | 'adjust'>('label');
+  const modeRef = useRef<'label' | 'merge' | 'remove' | 'add' | 'adjust'>('label');
   const [mergeCount, setMergeCount] = useState(0);
   const [labeledCount, setLabeledCount] = useState(0);
   const [activeZoneIdx, setActiveZoneIdx] = useState<string | null>(null);
@@ -1161,6 +1161,8 @@ function FormsView() {
       setLabeledCount(Object.keys(labeledZonesRef.current).length);
       setLabeledSnapshot({ ...labeledZonesRef.current });
       setFieldOrderSnapshot([...fieldOrderRef.current]);
+    } else if (mode === 'adjust') {
+      setActiveZoneIdx(idxStr);
     } else if (mode === 'merge') {
       if (mergeSelectionRef.current.has(idxStr)) {
         mergeSelectionRef.current.delete(idxStr);
@@ -3855,14 +3857,14 @@ function FormsView() {
                     borderBottom: "1px solid #1e40af",
                     display: "flex", gap: 8, alignItems: "center", flexShrink: 0, flexWrap: "wrap",
                   }}>
-                    {(["label", "add", "merge", "remove"] as const).map(m => (
+                    {(["label", "add", "adjust", "merge", "remove"] as const).map(m => (
                       <button key={m} onClick={() => setMode(m)} style={{
                         padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer",
                         fontSize: "0.8rem", fontWeight: 600,
                         background: mode === m ? "#3b82f6" : "rgba(255,255,255,0.1)",
                         color: mode === m ? "#fff" : "#cbd5e1"
                       }}>
-                        {m === "label" ? "🏷 Dán nhãn" : m === "add" ? "➕ Thêm vùng" : m === "merge" ? `🔀 Gộp${mergeCount > 0 ? ` (${mergeCount})` : ""}` : "🗑 Xóa vùng"}
+                        {m === "label" ? "🏷 Dán nhãn" : m === "add" ? "➕ Thêm vùng" : m === "adjust" ? "↔ Chỉnh vùng" : m === "merge" ? `🔀 Gộp${mergeCount > 0 ? ` (${mergeCount})` : ""}` : "🗑 Xóa vùng"}
                       </button>
                     ))}
                     {mode === "merge" && mergeCount >= 2 && (

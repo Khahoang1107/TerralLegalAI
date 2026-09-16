@@ -88,7 +88,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: terralegal_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=https://api.trolyphaplydatdai.online
+      # Local defaults to the local backend. VPS overrides this in its ignored .env file.
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     volumes:

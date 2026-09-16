@@ -2,6 +2,27 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+const apiOrigin = configuredApiUrl
+  ? configuredApiUrl.replace(/\/api\/v1$/, "")
+  : "http://localhost:8000";
+
+function resolveApiAssetUrl(value: string): string {
+  if (value.startsWith("data:") || value.startsWith("blob:")) return value;
+
+  try {
+    const parsed = new URL(value, `${apiOrigin}/`);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      const target = new URL(apiOrigin);
+      parsed.protocol = target.protocol;
+      parsed.host = target.host;
+    }
+    return parsed.toString();
+  } catch {
+    return `${apiOrigin}${value.startsWith("/") ? "" : "/"}${value}`;
+  }
+}
+
 interface Zone {
   idx: number;
   page: number;
@@ -25,12 +46,13 @@ interface TextBlock {
 }
 
 type AiPred = { label: string; description: string; confidence: number; section: string };
+type PreviewMode = 'label' | 'add' | 'adjust' | 'remove' | 'merge';
 
 interface PdfFormPreviewProps {
   pageImages: string[];
   zones: Zone[];
   textBlocks?: TextBlock[];
-  mode: 'label' | 'add' | 'remove' | 'merge';
+  mode: PreviewMode;
   labeledZones: Record<string, string>;
   mergeSelection: Set<string>;
   activeZoneIdx?: string | null;
@@ -182,7 +204,7 @@ interface PageCanvasProps {
   pageNumber: number;
   pageZones: Zone[];
   pageTextBlocks: TextBlock[];
-  mode: 'label' | 'add' | 'remove' | 'merge';
+  mode: PreviewMode;
   labeledZones: Record<string, string>;
   mergeSelection: Set<string>;
   activeZoneIdx?: string | null;
@@ -205,18 +227,94 @@ function PageCanvas({
   const [drawing, setDrawing] = useState(false);
   const [drawStart, setDrawStart] = useState<{x: number, y: number} | null>(null);
   const [drawRect, setDrawRect] = useState<{x: number, y: number, w: number, h: number} | null>(null);
+  const [adjustment, setAdjustment] = useState<{
+    zoneIdx: string;
+    handle: string;
+    startX: number;
+    startY: number;
+    original: Zone;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch image via blob URL (to pass Bearer token)
   useEffect(() => {
     if (!imgUrl) return;
-    const url = imgUrl.startsWith("http") ? imgUrl : `http://localhost:8000${imgUrl}`;
+    const url = resolveApiAssetUrl(imgUrl);
     fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then(res => { if (!res.ok) throw new Error("Status " + res.status); return res.blob(); })
       .then(blob => setBlobUrl(URL.createObjectURL(blob)))
       .catch(err => { console.error("Image fetch error:", err); setBlobUrl("ERROR"); });
     return () => { if (blobUrl && blobUrl !== "ERROR") URL.revokeObjectURL(blobUrl); };
   }, [imgUrl, token]);
+
+  const updateZone = useCallback((zoneIdx: string, updater: (zone: Zone) => Zone) => {
+    if (!onZonesChange) return;
+    onZonesChange(allZones.map(zone => String(zone.idx) === zoneIdx ? updater(zone) : zone));
+  }, [allZones, onZonesChange]);
+
+  // Move/resize the selected region while preserving PDF coordinates.
+  useEffect(() => {
+    if (!adjustment || mode !== 'adjust') return;
+
+    const handleMove = (event: MouseEvent) => {
+      event.preventDefault();
+      const dx = (event.clientX - adjustment.startX) / scale;
+      const dy = (event.clientY - adjustment.startY) / scale;
+      const source = adjustment.original;
+      const minimumSize = 3;
+      let { x, y, width, height } = source;
+
+      if (adjustment.handle === 'move') {
+        x = Math.max(0, source.x + dx);
+        y = Math.max(0, source.y + dy);
+      } else {
+        if (adjustment.handle.includes('e')) width = Math.max(minimumSize, source.width + dx);
+        if (adjustment.handle.includes('s')) height = Math.max(minimumSize, source.height + dy);
+        if (adjustment.handle.includes('w')) {
+          const nextX = Math.min(source.x + source.width - minimumSize, Math.max(0, source.x + dx));
+          width = source.width + source.x - nextX;
+          x = nextX;
+        }
+        if (adjustment.handle.includes('n')) {
+          const nextY = Math.min(source.y + source.height - minimumSize, Math.max(0, source.y + dy));
+          height = source.height + source.y - nextY;
+          y = nextY;
+        }
+      }
+
+      updateZone(adjustment.zoneIdx, zone => ({ ...zone, x, y, width, height }));
+    };
+
+    const handleUp = () => setAdjustment(null);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp, { once: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [adjustment, mode, scale, updateZone]);
+
+  // Fine adjustment: arrows move about one screen pixel at 100%; Shift moves 10x.
+  useEffect(() => {
+    if (mode !== 'adjust' || !activeZoneIdx) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const directions: Record<string, [number, number]> = {
+        ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+      };
+      const direction = directions[event.key];
+      if (!direction) return;
+      event.preventDefault();
+      const screenPixels = event.shiftKey ? 10 : 1;
+      const step = screenPixels / scale;
+      updateZone(activeZoneIdx, zone => ({
+        ...zone,
+        x: Math.max(0, zone.x + direction[0] * step),
+        y: Math.max(0, zone.y + direction[1] * step),
+      }));
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeZoneIdx, mode, scale, updateZone]);
 
   // ── Mouse handlers for "add" mode ──────────────────────────────────────────
   const getRelativePos = useCallback((e: React.MouseEvent) => {
@@ -291,6 +389,20 @@ function PageCanvas({
     }
   };
 
+  const startAdjustment = (e: React.MouseEvent, zone: Zone, handle: string) => {
+    if (mode !== 'adjust') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (activeZoneIdx !== String(zone.idx)) onZoneClick(zone.idx);
+    setAdjustment({
+      zoneIdx: String(zone.idx),
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      original: { ...zone },
+    });
+  };
+
   if (blobUrl === "ERROR") return (
     <div style={{ padding: 40, color: "red", textAlign: "center", background: "#fff", marginBottom: 20, width: pageWidth, borderRadius: 4 }}>
       ❌ Lỗi tải trang {pageNumber}. Vui lòng thử lại.
@@ -310,7 +422,7 @@ function PageCanvas({
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         width: pageWidth,
         background: "white",
-        cursor: readOnly ? 'default' : (mode === 'add' ? 'crosshair' : 'default'),
+            cursor: readOnly ? 'default' : (mode === 'add' ? 'crosshair' : 'default'),
         userSelect: 'none',
         pointerEvents: readOnly ? 'none' : 'auto',
       }}
@@ -374,6 +486,7 @@ function PageCanvas({
           }
 
           if (mode === 'add') cursor = "crosshair";
+          if (mode === 'adjust') cursor = isActive ? "move" : "pointer";
 
           // Label text hiển thị trên zone
           let displayLabel = "";
@@ -411,7 +524,9 @@ function PageCanvas({
             <div
               key={`zone_${zone.idx}_${i}`}
               onClick={(e) => handleZoneClick(e, zone)}
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onMouseDown={(e) => mode === 'adjust'
+                ? startAdjustment(e, zone, 'move')
+                : (() => { e.preventDefault(); e.stopPropagation(); })()}
               style={{
                 position: "absolute",
                 left: zone.x * scale,
@@ -444,6 +559,28 @@ function PageCanvas({
                   {displayLabel}
                 </span>
               )}
+              {mode === 'adjust' && isActive && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(handle => {
+                const positions: Record<string, React.CSSProperties> = {
+                  nw: { left: -5, top: -5 }, n: { left: '50%', top: -5, transform: 'translateX(-50%)' },
+                  ne: { right: -5, top: -5 }, e: { right: -5, top: '50%', transform: 'translateY(-50%)' },
+                  se: { right: -5, bottom: -5 }, s: { left: '50%', bottom: -5, transform: 'translateX(-50%)' },
+                  sw: { left: -5, bottom: -5 }, w: { left: -5, top: '50%', transform: 'translateY(-50%)' },
+                };
+                const cursors: Record<string, string> = {
+                  nw: 'nwse-resize', n: 'ns-resize', ne: 'nesw-resize', e: 'ew-resize',
+                  se: 'nwse-resize', s: 'ns-resize', sw: 'nesw-resize', w: 'ew-resize',
+                };
+                return <span
+                  key={handle}
+                  onMouseDown={(event) => startAdjustment(event, zone, handle)}
+                  style={{
+                    position: 'absolute', width: 10, height: 10, borderRadius: 2,
+                    background: '#fff', border: '2px solid #2563eb', boxSizing: 'border-box',
+                    pointerEvents: 'auto', cursor: cursors[handle], zIndex: 20,
+                    ...positions[handle],
+                  }}
+                />;
+              })}
             </div>
           );
         })}
@@ -513,6 +650,15 @@ function PageCanvas({
           padding: "3px 10px", borderRadius: 99, pointerEvents: "none", whiteSpace: "nowrap"
         }}>
           Kéo để vẽ vùng mới
+        </div>
+      )}
+      {mode === 'adjust' && (
+        <div style={{
+          position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(37,99,235,0.92)", color: "#fff", fontSize: 11, fontWeight: 600,
+          padding: "4px 12px", borderRadius: 99, pointerEvents: "none", whiteSpace: "nowrap", zIndex: 30,
+        }}>
+          Chọn rồi kéo khung/điểm neo · Phím mũi tên để căn chính xác
         </div>
       )}
     </div>
