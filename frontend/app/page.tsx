@@ -8,10 +8,13 @@ import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
 import TestsView from "@/components/admin/TestsView";
 import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
+import ProjectSidebar, { type LegalProject } from "@/components/chat/ProjectSidebar";
+import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
+import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
 import {
   AlertCircle, ArrowRight, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
   ExternalLink, Eye, EyeOff, FileCheck2, FileText, GitBranch, Layers, LayoutDashboard, Lock, LogOut, Mail,
-  Maximize2, Menu, MessageSquare, Minimize2, MoreHorizontal, Paperclip, Pencil, Plus, RefreshCw, Save, Search,
+  Maximize2, Menu, MessageSquare, Minimize2, MoreHorizontal, Paperclip, Pencil, Plus, RefreshCw, Save, Scale, Search,
   Send, Settings, ShieldCheck, Sparkles, TestTube2, ThumbsDown, ThumbsUp,
   Trash2, UploadCloud, User, Users, X,
 } from "lucide-react";
@@ -216,7 +219,7 @@ function Login({ onLogin, onRegister }: { onLogin: (role: Role) => void; onRegis
               <div className="trust-card-icon"><FileCheck2 size={20} /></div>
               <div className="trust-card-content">
                 <strong>Theo dõi hiệu lực tài liệu</strong>
-                <span>Cập nhật quyết định từ UBND tỉnh & Bộ Tài nguyên Môi trường</span>
+                <span>Cập nhật quyết định từ UBND tỉnh & Bộ Nông nghiệp và Môi trường</span>
               </div>
             </div>
             <div className="trust-card">
@@ -556,12 +559,90 @@ function Register({ onBack, onRegister }: { onBack: () => void; onRegister: (rol
   );
 }
 
-function AppHeader({ role, userName = "Người dùng", onLogout, onMenu }: { role: Role; userName?: string; onLogout: () => void; onMenu: () => void }) {
+function AppHeader({
+  role,
+  userName = "Người dùng",
+  onLogout,
+  onMenu,
+  onOpenSettings,
+  activeProjectName,
+  isRightPanelOpen,
+  onToggleRightPanel,
+}: {
+  role: Role;
+  userName?: string;
+  onLogout: () => void;
+  onMenu: () => void;
+  onOpenSettings?: () => void;
+  activeProjectName?: string;
+  isRightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
+}) {
   const initials = userName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
   return (
-    <header className="app-header">
-      <div className="header-brand"><button className="icon-button mobile-only" onClick={onMenu}><Menu /></button><div className="brand-mark small"><BookOpen size={19} /></div><strong>TerraLegalAI</strong><span className="role-badge">{role === "admin" ? "Quản trị" : "Tra cứu"}</span></div>
-      <div className="header-actions"><span className="system-status"><i /> Hệ thống hoạt động</span><button className="profile-button"><span className="avatar">{initials}</span><span>{userName}</span><ChevronDown size={15} /></button><button className="icon-button" onClick={onLogout} title="Đăng xuất"><LogOut size={18} /></button></div>
+    <header className="app-header modern-header">
+      <div className="header-brand">
+        <button type="button" className="icon-button mobile-only" onClick={onMenu} title="Mở danh mục">
+          <Menu size={20} />
+        </button>
+        <div className="brand-mark-modern">
+          <Scale size={20} className="brand-icon-gold" />
+        </div>
+        <div className="brand-text-block">
+          <div className="brand-title-row">
+            <strong>TerraLegalAI</strong>
+            <span className="brand-badge-version">v2.0</span>
+          </div>
+          <span className="brand-subtitle hide-sm">Trợ lý Pháp lý & Đất đai Chuyên sâu</span>
+        </div>
+        <span className="role-badge-modern">{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
+
+        {activeProjectName && (
+          <div className="header-active-project-tag hide-sm" title={`Dự án đang mở: ${activeProjectName}`}>
+            <Layers size={13} />
+            <span>{activeProjectName}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="header-actions">
+        <div className="system-status-pill hide-sm">
+          <span className="pulse-dot" />
+          <span>Hệ thống sẵn sàng</span>
+        </div>
+
+        {onToggleRightPanel && (
+          <button
+            type="button"
+            className={`panel-toggle-btn ${isRightPanelOpen ? "active" : ""}`}
+            onClick={onToggleRightPanel}
+            title={isRightPanelOpen ? "Ẩn khung đề xuất" : "Hiện khung đề xuất theo dự án"}
+          >
+            <Sparkles size={15} />
+            <span className="hide-sm">Trợ lý Dự án</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="profile-button-enhanced"
+          onClick={onOpenSettings}
+          title="Nhấp vào tên để Mở Cài đặt & Tùy chỉnh"
+        >
+          <span className="avatar-ring">
+            <span className="avatar-text">{initials}</span>
+          </span>
+          <div className="profile-name-col hide-sm">
+            <span className="profile-name">{userName}</span>
+            <span className="profile-hint">Tùy chỉnh & Cài đặt</span>
+          </div>
+          <Settings size={15} className="settings-trigger-icon" />
+        </button>
+
+        <button type="button" className="icon-button logout-btn" onClick={onLogout} title="Đăng xuất">
+          <LogOut size={17} />
+        </button>
+      </div>
     </header>
   );
 }
@@ -571,7 +652,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [conversationMenuId, setConversationMenuId] = useState<string | null>(null);
   const [renamingConversation, setRenamingConversation] = useState<Conversation | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [conversationActionLoading, setConversationActionLoading] = useState(false);
@@ -579,9 +659,36 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const [reviewingForm, setReviewingForm] = useState<{form_id: string, collected_data: Record<string, string>} | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const procedureFilter = "all";
+
+  // Project and Right Panel States
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [userSettings, setUserSettings] = useState<UserSettings>({
+    fullName: userName,
+    region: "TP. Hồ Chí Minh",
+    responseStyle: "detailed",
+    autoShowRightPanel: true,
+    fontSize: "normal",
+  });
   
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Load user settings
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("terra_user_settings");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setUserSettings(prev => ({ ...prev, ...parsed }));
+        if (parsed.autoShowRightPanel !== undefined) {
+          setIsRightPanelOpen(parsed.autoShowRightPanel);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -592,6 +699,21 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
       setConversationsList(data);
     }).catch(console.error);
   }, []);
+
+  // Find active project object
+  const [currentProject, setCurrentProject] = useState<LegalProject | null>(null);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("terra_legal_projects");
+      if (saved) {
+        const parsed: LegalProject[] = JSON.parse(saved);
+        const found = parsed.find(p => p.id === selectedProjectId) || null;
+        setCurrentProject(found);
+      }
+    } catch {
+      setCurrentProject(null);
+    }
+  }, [selectedProjectId]);
 
   const handleSelectConversation = async (id: string) => {
     try {
@@ -605,7 +727,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
       const collectedData = formState?.collected_data || {};
       
       const mappedMessages = detail.messages.map((m, idx, arr) => {
-        // Find index of last assistant message
         let lastAssistantIdx = -1;
         for (let i = arr.length - 1; i >= 0; i--) {
           if (arr[i].role === 'assistant') { lastAssistantIdx = i; break; }
@@ -616,7 +737,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
           text: m.content,
           time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           citations: m.citations,
-          // Inject form info into last assistant message if form is complete
           form_completed: (isLastAssistantMsg && isFormComplete) ? true : (m as any).form_completed,
           form_id: (isLastAssistantMsg && isFormComplete) ? formId : (m as any).form_id,
           collected_data: (isLastAssistantMsg && isFormComplete) ? collectedData : (m as any).collected_data,
@@ -630,7 +750,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
     }
   };
 
-
   const handleNewChat = () => {
     setCurrentConversationId(null);
     setMessages([]);
@@ -640,7 +759,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   const openRenameConversation = (conversation: Conversation) => {
     setRenamingConversation(conversation);
     setRenameTitle(conversation.title);
-    setConversationMenuId(null);
   };
 
   const handleRenameConversation = async (e: React.FormEvent) => {
@@ -662,7 +780,6 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   };
 
   const handleDeleteConversation = async (conversation: Conversation) => {
-    setConversationMenuId(null);
     if (!window.confirm(`Xóa cuộc trò chuyện "${conversation.title}"?`)) return;
 
     try {
@@ -680,23 +797,23 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
     }
   };
 
-  const handleSend = async (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent, customQuestion?: string) => {
     e?.preventDefault();
-    if (!input.trim() || loading) return;
+    const textToSend = (customQuestion !== undefined ? customQuestion : input).trim();
+    if (!textToSend || loading) return;
     
-    const userMessage = input.trim();
     setInput("");
     
     const now = new Date();
     const timeString = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
     
-    setMessages(prev => [...prev, { role: "user", text: userMessage, time: timeString }]);
+    setMessages(prev => [...prev, { role: "user", text: textToSend, time: timeString }]);
     setLoading(true);
     
     try {
       const response = await chatApi.sendMessage({
-        question: userMessage,
-        procedure_filter: procedureFilter === "all" ? undefined : procedureFilter,
+        question: textToSend,
+        procedure_filter: currentProject?.procedure_type !== "all" ? currentProject?.procedure_type : undefined,
         conversation_id: currentConversationId || undefined,
       });
       
@@ -738,67 +855,124 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
   };
 
   return (
-    <div className="app-shell">
-      <AppHeader role="citizen" userName={userName} onLogout={onLogout} onMenu={() => setSidebar(true)} />
-      <div className="workspace">
-        <aside className={`chat-sidebar ${sidebar ? "open" : ""}`}>
-          <div className="sidebar-head">
-            <button className="new-chat" onClick={handleNewChat}>
-              <Plus size={17} /> Cuộc trò chuyện mới
-            </button>
-            <button className="icon-button mobile-only" onClick={() => setSidebar(false)}>
-              <X />
-            </button>
-          </div>
-          <div className="sidebar-search"><Search size={16} /><input placeholder="Tìm lịch sử" /></div>
-          {conversationsList.length > 0 && (
-            <>
-              <p className="section-label">Gần đây</p>
-              <nav className="conversation-list">
-                {conversationsList.map((item) => (
-                  <div className={`conversation-item ${currentConversationId === item.id ? "active" : ""}`} key={item.id}>
-                    <button className="conversation-select" onClick={() => handleSelectConversation(item.id)}>
-                      <MessageSquare size={16} />
-                      <span>
-                        <strong>{item.title}</strong>
-                        <small>{new Date(item.created_at).toLocaleDateString()}</small>
-                      </span>
-                    </button>
-                    <button
-                      className="conversation-menu-trigger"
-                      onClick={() => setConversationMenuId((id) => id === item.id ? null : item.id)}
-                      title="Tùy chọn cuộc trò chuyện"
-                      aria-label={`Tùy chọn cho ${item.title}`}
-                    >
-                      <MoreHorizontal size={16} />
-                    </button>
-                    {conversationMenuId === item.id && (
-                      <div className="conversation-menu">
-                        <button onClick={() => openRenameConversation(item)}><Pencil size={15} /> Đổi tên</button>
-                        <button className="danger" onClick={() => handleDeleteConversation(item)}><Trash2 size={15} /> Xóa</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </>
-          )}
-          <div className="sidebar-help"><BookOpen size={18} /><div><strong>Kho tài liệu</strong><span>2 văn bản đang hiệu lực</span></div></div>
-        </aside>
-        {sidebar && <button className="overlay" onClick={() => setSidebar(false)} />}
+    <div className={`app-shell ${userSettings.fontSize === "large" ? "text-large-mode" : ""}`}>
+      <AppHeader
+        role="citizen"
+        userName={userSettings.fullName || userName}
+        onLogout={onLogout}
+        onMenu={() => setSidebar(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        activeProjectName={currentProject?.name}
+        isRightPanelOpen={isRightPanelOpen}
+        onToggleRightPanel={() => setIsRightPanelOpen(!isRightPanelOpen)}
+      />
 
+      <div className={`workspace workspace-three-col ${!isRightPanelOpen ? "right-collapsed" : ""}`}>
+        {/* Left Sidebar: Projects and Conversations with scroll */}
+        <ProjectSidebar
+          isOpen={sidebar}
+          onClose={() => setSidebar(false)}
+          conversationsList={conversationsList}
+          currentConversationId={currentConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewChat={handleNewChat}
+          onOpenRename={openRenameConversation}
+          onDeleteConversation={handleDeleteConversation}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={(id) => setSelectedProjectId(id)}
+        />
+        {sidebar && <button type="button" className="overlay" onClick={() => setSidebar(false)} />}
+
+        {/* Central Main Chat Area */}
         <main className="chat-main">
           <div className="chat-toolbar">
-            <div><h1>Tra cứu thủ tục đất đai</h1><p>Thông tin được đối chiếu từ văn bản trong hệ thống</p></div>
+            <div className="toolbar-left">
+              <h1>
+                {currentProject ? currentProject.name : "Tra cứu & Tư vấn thủ tục đất đai"}
+              </h1>
+              <p>
+                {currentProject
+                  ? `Đang áp dụng đối chiếu theo quy chuẩn hồ sơ: ${currentProject.name}`
+                  : "Thông tin được đối chiếu từ Luật Đất đai 2024 & Nghị định hướng dẫn"}
+              </p>
+            </div>
 
+            <div className="toolbar-right">
+              <button
+                type="button"
+                className={`panel-quick-btn ${isRightPanelOpen ? "active" : ""}`}
+                onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+                title="Bật/tắt Trợ lý gợi ý bên phải"
+              >
+                <Sparkles size={15} />
+                <span>{isRightPanelOpen ? "Thu gọn đề xuất" : "Mở đề xuất"}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="message-stream">
+          <div className="message-stream custom-scrollbar">
             <div className="date-divider"><span>Hôm nay</span></div>
             
             {messages.length === 0 ? (
-              <div className="welcome-message" style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
-                Hãy đặt câu hỏi về thủ tục đất đai để được hỗ trợ.
+              <div className="welcome-hero-container">
+                <div className="welcome-badge-icon">
+                  <Scale size={28} />
+                </div>
+                <h2>Chào mừng bạn đến với TerraLegalAI</h2>
+                <p>
+                  Trợ lý pháp lý thông minh hỗ trợ giải đáp quy trình, thành phần hồ sơ và tính nghĩa vụ tài chính đất đai chuẩn xác.
+                </p>
+
+                {/* Prompt Cards Grid */}
+                <div className="prompt-cards-grid">
+                  <button
+                    type="button"
+                    className="prompt-card"
+                    onClick={() => handleSend(undefined, "Thành phần hồ sơ đăng ký sang tên chuyển nhượng đất gồm những giấy tờ gì?")}
+                  >
+                    <div className="prompt-card-icon"><FileCheck2 size={20} /></div>
+                    <div className="prompt-card-text">
+                      <strong>Hồ sơ sang tên Sổ đỏ</strong>
+                      <span>Thành phần giấy tờ bắt buộc theo Nghị định 101/2024</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="prompt-card"
+                    onClick={() => handleSend(undefined, "Cách tính Thuế TNCN 2% và Lệ phí trước bạ 0.5% khi chuyển nhượng bất động sản?")}
+                  >
+                    <div className="prompt-card-icon"><Sparkles size={20} /></div>
+                    <div className="prompt-card-text">
+                      <strong>Nghĩa vụ tài chính</strong>
+                      <span>Công thức tính thuế TNCN, lệ phí trước bạ và trường hợp miễn giảm</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="prompt-card"
+                    onClick={() => handleSend(undefined, "Điều kiện và thủ tục cấp đổi Sổ đỏ sang mẫu mới theo Luật Đất đai 2024?")}
+                  >
+                    <div className="prompt-card-icon"><BookOpen size={20} /></div>
+                    <div className="prompt-card-text">
+                      <strong>Cấp đổi Sổ đỏ mới</strong>
+                      <span>Trình tự đổi phôi Giấy chứng nhận mẫu mới thống nhất</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="prompt-card"
+                    onClick={() => handleSend(undefined, "Quy định về thời hạn giải quyết và cơ quan tiếp nhận hồ sơ đất đai?")}
+                  >
+                    <div className="prompt-card-icon"><Clock3 size={20} /></div>
+                    <div className="prompt-card-text">
+                      <strong>Thời hạn & Thẩm quyền</strong>
+                      <span>Chi nhánh Văn phòng Đăng ký đất đai & Bộ phận Một cửa</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             ) : (
               messages.map((msg, idx) => (
@@ -807,7 +981,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
                     {msg.role === "user" ? <User size={17} /> : <Bot size={18} />}
                   </div>
                   <div className={msg.role === "user" ? "bubble" : "answer-block"}>
-                    {msg.role === "ai" && <div className="answer-label"><Sparkles size={15} /> TerraLegalAI</div>}
+                    {msg.role === "ai" && <div className="answer-label"><Sparkles size={15} /> TerraLegalAI Trợ lý</div>}
                     {msg.role === "user" ? (
                       <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     ) : (
@@ -818,7 +992,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
                     
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="citations-list" style={{ marginTop: "1rem" }}>
-                        <p className="citations-heading">Nguồn tham khảo</p>
+                        <p className="citations-heading">Cơ sở pháp lý đối chiếu</p>
                         {uniqueCitations(msg.citations).map((cit, cidx) => (
                           <div key={cidx} className="citation-box">
                             <div>
@@ -836,14 +1010,15 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
                     {msg.role === "ai" && (
                       <div className="answer-actions">
                         <span>Câu trả lời này có hữu ích?</span>
-                        <button className={feedback === "up" ? "selected" : ""} onClick={() => setFeedback("up")} title="Hữu ích"><ThumbsUp size={16} /></button>
-                        <button className={feedback === "down" ? "selected negative" : ""} onClick={() => setFeedback("down")} title="Chưa hữu ích"><ThumbsDown size={16} /></button>
+                        <button type="button" className={feedback === "up" ? "selected" : ""} onClick={() => setFeedback("up")} title="Hữu ích"><ThumbsUp size={16} /></button>
+                        <button type="button" className={feedback === "down" ? "selected negative" : ""} onClick={() => setFeedback("down")} title="Chưa hữu ích"><ThumbsDown size={16} /></button>
                         <span className="answer-time">{msg.time}</span>
                       </div>
                     )}
                     {msg.form_completed && msg.form_id && (
                       <div style={{ marginTop: "16px" }}>
                         <button 
+                          type="button"
                           className="primary-button" 
                           onClick={() => setReviewingForm({ form_id: msg.form_id!, collected_data: msg.collected_data || {} })}
                           style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 8 }}
@@ -862,40 +1037,51 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
               <article className="message-row ai-message">
                 <div className="message-avatar ai"><Bot size={18} /></div>
                 <div className="answer-block">
-                   <div className="answer-label"><Sparkles size={15} /> TerraLegalAI đang tìm kiếm...</div>
+                   <div className="answer-label pulse-glow"><Sparkles size={15} /> TerraLegalAI đang tra cứu cơ sở dữ liệu pháp luật...</div>
                 </div>
               </article>
             )}
             <div ref={bottomRef} />
           </div>
 
+          {/* Composer Input Area */}
           <div className="composer-area">
-            {messages.length === 0 && (
-              <div className="suggestions">
-                <button onClick={() => setInput("Thời hạn giải quyết là bao lâu?")}>Thời hạn giải quyết là bao lâu?</button>
-                <button onClick={() => setInput("Nộp hồ sơ ở đâu?")}>Nộp hồ sơ ở đâu?</button>
-                <button onClick={() => setInput("Lệ phí cấp đổi thế nào?")}>Lệ phí cấp đổi thế nào?</button>
+            {messages.length > 0 && (
+              <div className="quick-suggestions-bar">
+                <button type="button" onClick={() => handleSend(undefined, "Thời hạn giải quyết là bao lâu?")}>Thời hạn giải quyết?</button>
+                <button type="button" onClick={() => handleSend(undefined, "Nộp hồ sơ ở cơ quan nào?")}>Nộp hồ sơ ở đâu?</button>
+                <button type="button" onClick={() => handleSend(undefined, "Mức phí và lệ phí nhà nước?")}>Lệ phí cấp đổi thế nào?</button>
               </div>
             )}
-            <form className="composer" onSubmit={handleSend}>
-              <button type="button" className="icon-button" title="Đính kèm"><Paperclip size={19} /></button>
+            <form className="composer modern-composer" onSubmit={(e) => handleSend(e)}>
+              <button type="button" className="icon-button attach-btn" title="Đính kèm tài liệu tham khảo"><Paperclip size={18} /></button>
               <textarea 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Nhập câu hỏi về thủ tục đất đai..." 
+                placeholder={currentProject ? `Đặt câu hỏi cho ${currentProject.name}...` : "Hỏi về quy trình, thành phần hồ sơ, lệ phí đất đai..."}
                 rows={1} 
                 disabled={loading}
               />
-              <button type="submit" className="send-button" title="Gửi câu hỏi" disabled={!input.trim() || loading}>
+              <button type="submit" className="send-button modern-send" title="Gửi câu hỏi" disabled={!input.trim() || loading}>
                 <Send size={18} />
               </button>
             </form>
-            <p>Thông tin mang tính tham khảo. Vui lòng kiểm tra lại với cơ quan có thẩm quyền.</p>
+            <p className="legal-disclaimer">Thông tin mang tính tham khảo đối chiếu từ văn bản pháp quy. Vui lòng kiểm tra lại với cơ quan có thẩm quyền tại địa phương.</p>
           </div>
         </main>
+
+        {/* Right Assistant Panel: Contextual suggestions by project */}
+        <ProjectAssistantPanel
+          isOpen={isRightPanelOpen}
+          onClose={() => setIsRightPanelOpen(false)}
+          selectedProject={currentProject}
+          onSelectSuggestion={(q) => handleSend(undefined, q)}
+          userRegion={userSettings.region}
+        />
       </div>
 
+      {/* Review Form Modal */}
       {reviewingForm && (
         <FormReviewModal 
           formId={reviewingForm.form_id} 
@@ -904,6 +1090,7 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
         />
       )}
 
+      {/* Rename Conversation Dialog */}
       {renamingConversation && (
         <div className="dialog-backdrop" onClick={() => setRenamingConversation(null)}>
           <form className="rename-dialog" onSubmit={handleRenameConversation} onClick={(e) => e.stopPropagation()}>
@@ -919,6 +1106,14 @@ function UserPortal({ userName, onLogout }: { userName: string; onLogout: () => 
           </form>
         </div>
       )}
+
+      {/* User Settings Modal */}
+      <UserSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        userName={userName}
+        onSave={(newSettings) => setUserSettings(newSettings)}
+      />
     </div>
   );
 }
