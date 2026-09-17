@@ -138,8 +138,19 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
-    # Giới hạn Redis chỉ dùng tối đa 128MB RAM
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-} --maxmemory 128mb --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    # ``--requirepass`` must be omitted altogether when no password is set.
+    # Passing an empty compose variable made Redis interpret --maxmemory as
+    # its password and crash in a restart loop.
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD" --maxmemory 256mb --maxmemory-policy allkeys-lru
+        fi
+        exec redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     deploy:
       resources:
         limits:
