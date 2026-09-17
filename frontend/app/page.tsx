@@ -40,6 +40,19 @@ function fmtPct(val?: number | null) {
   return `${Math.round(val * 100)}%`;
 }
 
+// Keep field numbers in the same reading order as the rendered PDF. The API
+// may return zones in detection/DOM order, which is not guaranteed to match
+// top-to-bottom order on the page.
+function sortFormZones<T extends { page?: number; x?: number; y?: number }>(zones: T[]): T[] {
+  return [...zones].sort((a, b) => {
+    const pageDiff = (a.page ?? 0) - (b.page ?? 0);
+    if (pageDiff) return pageDiff;
+    const yDiff = (a.y ?? 0) - (b.y ?? 0);
+    if (Math.abs(yDiff) > 6) return yDiff;
+    return (a.x ?? 0) - (b.x ?? 0);
+  });
+}
+
 function statusLabel(s: string) {
   if (s === "indexed") return { label: "Hoàn thành", cls: "done", icon: <Check size={13} /> };
   if (s === "indexing") return { label: "Đang xử lý", cls: "processing", icon: <Clock3 size={13} /> };
@@ -1205,7 +1218,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                 </div>
               </div>
             ) : (
-              messages.map((msg, idx) => (
+              messages.filter(msg => msg.role === "user" || msg.text.trim().length > 0).map((msg, idx) => (
                 <article key={idx} className={`message-row ${msg.role === "user" ? "user-message" : "ai-message"}`}>
                   <div className={`message-avatar ${msg.role}`} >
                     {msg.role === "user" ? <User size={17} /> : <Bot size={18} />}
@@ -1609,7 +1622,8 @@ function FormsView() {
       });
 
       const res = await formsApi.aiPredict(previewData.temp_id, editableZones, userLabels);
-      setEditableZones(res.zones);
+      const orderedZones = sortFormZones(res.zones);
+      setEditableZones(orderedZones);
       
       const newLabeledSnapshot = { ...labeledSnapshot };
       const newFieldOrder = [...fieldOrderSnapshot];
@@ -1617,7 +1631,7 @@ function FormsView() {
       let addedCount = 0;
       let fieldCounter = manualCounterRef.current;
       
-      res.zones.forEach((z: any) => {
+      orderedZones.forEach((z: any) => {
         if (z.suggested_label) {
           const idxStr = String(z.idx);
           if (!newLabeledSnapshot[idxStr] && !labeledZonesRef.current[idxStr]) {
@@ -1734,10 +1748,20 @@ function FormsView() {
     fieldOrderSnapshot.filter(fid => Object.values(labeledSnapshot).includes(fid))
   ));
   uniqueFieldsSnapshot.sort((a, b) => {
-    const idxA = Object.entries(labeledSnapshot).find(([, v]) => v === a)?.[0] || "";
-    const idxB = Object.entries(labeledSnapshot).find(([, v]) => v === b)?.[0] || "";
-    const zoneA = editableZones?.find((z: any) => String(z.idx) === idxA);
-    const zoneB = editableZones?.find((z: any) => String(z.idx) === idxB);
+    // A merged label can cover several PDF zones. Use the top-most/left-most
+    // zone in each group as its stable display position, instead of whichever
+    // zone happened to be inserted first into the mapping.
+    const groupZones = (fieldId: string) => editableZones
+      ?.filter((z: any) => labeledSnapshot[String(z.idx)] === fieldId)
+      .sort((zoneA: any, zoneB: any) => {
+        const pageDiff = (zoneA.page ?? 0) - (zoneB.page ?? 0);
+        if (pageDiff) return pageDiff;
+        const yDiff = (zoneA.y ?? 0) - (zoneB.y ?? 0);
+        if (Math.abs(yDiff) > 6) return yDiff;
+        return (zoneA.x ?? 0) - (zoneB.x ?? 0);
+      }) ?? [];
+    const zoneA = groupZones(a)[0];
+    const zoneB = groupZones(b)[0];
     if (!zoneA || !zoneB) return 0;
     if (zoneA.page !== zoneB.page) return zoneA.page - zoneB.page;
     const yDiff = zoneA.y - zoneB.y;
@@ -1814,7 +1838,8 @@ function FormsView() {
       const res = await formsApi.analyzeDocx(docxFile);
       const zones = res.zones || [];
       setPreviewData(res);
-      setEditableZones(zones);
+      const orderedZones = sortFormZones(zones);
+      setEditableZones(orderedZones);
       setFormName(docxFile.name.replace(/\.[^.]+$/, "") || "Biểu mẫu mới");
       setProcedureType("khac");
       
@@ -1824,7 +1849,7 @@ function FormsView() {
       let fieldCounter = 1;
 
       // Auto-assign labels for zones with suggestions
-      zones.forEach((zone: any) => {
+      orderedZones.forEach((zone: any) => {
         const suggestion = zone.suggested_label || zone.ai_label || zone.fallback_name;
         if (suggestion) {
           const fieldId = `field_${9000 + fieldCounter++}`;
