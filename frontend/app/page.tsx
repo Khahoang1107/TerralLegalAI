@@ -1376,10 +1376,11 @@ function DocumentsView() {
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [chunkDoc, setChunkDoc] = useState<Document | null>(null);
-  const [chunks, setChunks] = useState<{id:string;text:string;article?:string;clause?:string;field_type?:string}[]>([]);
+  const [chunks, setChunks] = useState<{id:string;text:string;article?:string;clause?:string;field_type?:string;validity_status?:string;validity_note?:string}[]>([]);
   const [analysis, setAnalysis] = useState<AmendmentAnalysis | null>(null);
   const [selectedChanges, setSelectedChanges] = useState<Set<string>>(new Set());
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [validityFilter, setValidityFilter] = useState("all");
   const { toast, show: showToast, hide: hideToast } = useToast();
 
   useEffect(() => {
@@ -1416,11 +1417,12 @@ function DocumentsView() {
     finally { setAnalysisLoading(false); }
   };
 
+  const visibleDocs = validityFilter === "all" ? docs : docs.filter(doc => doc.validity_status === validityFilter);
   return <><div className="page-heading"><div><span className="eyebrow">Kho tri thức</span><h1>Quản lý tài liệu</h1><p>Cập nhật, kiểm duyệt và theo dõi quá trình lập chỉ mục.</p></div><button className="primary-button fit" onClick={() => setShowUpload(true)}><UploadCloud size={17} /> Tải tài liệu lên</button></div>
-    <section className="panel table-panel"><div className="table-wrap"><table><thead><tr><th>Tài liệu</th><th>Số / Ký hiệu</th><th>Hiệu lực</th><th>Ngày tạo</th><th>Chunks</th><th>Trạng thái</th><th /></tr></thead><tbody>
+    <section className="panel table-panel"><div style={{display:"flex",justifyContent:"flex-end",padding:"14px 16px 0"}}><label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600}}>Lọc hiệu lực<select className="compact-select" value={validityFilter} onChange={e=>setValidityFilter(e.target.value)}><option value="all">Tất cả</option><option value="Còn hiệu lực">Còn hiệu lực</option><option value="Đã sửa đổi bổ sung">Đã sửa đổi bổ sung</option><option value="Hết hiệu lực">Hết hiệu lực</option></select></label></div><div className="table-wrap"><table><thead><tr><th>Tài liệu</th><th>Số / Ký hiệu</th><th>Hiệu lực</th><th>Ngày tạo</th><th>Chunks</th><th>Trạng thái</th><th /></tr></thead><tbody>
       {loading ? <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>Đang tải...</td></tr>
-      : docs.length === 0 ? <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>Chưa có tài liệu nào.</td></tr>
-      : docs.map(doc => {
+      : visibleDocs.length === 0 ? <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px" }}>{docs.length ? "Không có tài liệu phù hợp." : "Chưa có tài liệu nào."}</td></tr>
+      : visibleDocs.map(doc => {
           const sl = statusLabel(doc.status);
           const vb = validityBadge(doc.validity_status);
           const amendedParent = doc.related_documents?.find(rel => rel.relation === "amends");
@@ -1488,7 +1490,7 @@ function DocumentsView() {
       }
     </tbody></table></div></section>
     {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => { documentsApi.getDocuments().then(setDocs).catch(console.error); showToast("Tải lên thành công!", "success"); }} />}
-    {chunkDoc && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:820}}><div className="modal-header"><div><h2>Chunks: {chunkDoc.source_name}</h2><small>{chunks.length} chunk · chỉ xem để đối chiếu nguồn</small></div><button className="icon-button" onClick={()=>setChunkDoc(null)}>×</button></div><div className="modal-body">{chunks.length===0?<p>Chưa có chunk. Hãy re-index tài liệu.</p>:chunks.map((chunk,index)=><article key={chunk.id} style={{border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><strong>Chunk {index+1} {chunk.field_type ? `· ${chunk.field_type}` : ""}</strong><small style={{display:"block",color:"#64748b",margin:"4px 0 8px"}}>{[chunk.article,chunk.clause].filter(Boolean).join(" · ") || "Chưa có Điều/Khoản"}</small><p style={{whiteSpace:"pre-wrap",margin:0,lineHeight:1.55}}>{chunk.text}</p></article>)}</div></div></div>}
+    {chunkDoc && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:820}}><div className="modal-header"><div><h2>Chunks: {chunkDoc.source_name}</h2><small>{chunks.length} chunk · trạng thái hiệu lực theo từng đoạn</small></div><button className="icon-button" onClick={()=>setChunkDoc(null)}>×</button></div><div className="modal-body">{chunks.length===0?<p>Chưa có chunk. Hãy re-index tài liệu.</p>:chunks.map((chunk,index)=><article key={chunk.id} style={{border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><div style={{display:"flex",justifyContent:"space-between",gap:12}}><strong>Chunk {index+1} {chunk.field_type ? `· ${chunk.field_type}` : ""}</strong><span style={{fontSize:11,fontWeight:700,color:chunk.validity_status === "active" ? "#047857" : "#b45309"}}>{chunk.validity_status || "active"}</span></div><small style={{display:"block",color:"#64748b",margin:"4px 0 8px"}}>{[chunk.article,chunk.clause].filter(Boolean).join(" · ") || "Chưa có Điều/Khoản"}</small><p style={{whiteSpace:"pre-wrap",margin:0,lineHeight:1.55}}>{chunk.text}</p>{chunk.validity_note && <small style={{display:"block",color:"#92400e",marginTop:8}}>Ghi chú: {chunk.validity_note}</small>}</article>)}</div></div></div>}
     {analysis && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:940}}><div className="modal-header"><div><h2>Kiểm duyệt thay đổi hiệu lực</h2><small>{analysis.source_document} → {analysis.target_document}</small></div><button className="icon-button" onClick={()=>setAnalysis(null)}>×</button></div><div className="modal-body">
       {analysis.changes.length === 0 ? <p>Không nhận dạng được dẫn chiếu Điều/Khoản rõ ràng. Chưa có dữ liệu nào bị thay đổi.</p> : analysis.changes.map(change => <label key={change.id} style={{display:"grid",gridTemplateColumns:"24px 1fr",gap:10,border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><input type="checkbox" checked={selectedChanges.has(change.id)} onChange={event=>setSelectedChanges(previous=>{const next=new Set(previous);event.target.checked?next.add(change.id):next.delete(change.id);return next;})}/><span><strong>{change.action.toUpperCase()} · {change.article}{change.clause ? ` · ${change.clause}` : ""}</strong><small style={{display:"block",color:"#64748b",margin:"4px 0"}}>Tin cậy {Math.round(change.confidence*100)}% · {change.evidence_text}</small><p style={{whiteSpace:"pre-wrap",margin:0}}>{change.target_text_preview}</p></span></label>)}
     </div><div className="dialog-actions"><button className="secondary-button" onClick={()=>setAnalysis(null)}>Hủy</button><button className="primary-button" disabled={analysisLoading || selectedChanges.size===0} onClick={confirmAnalysis}>{analysisLoading?"Đang áp dụng...":`Xác nhận ${selectedChanges.size} thay đổi`}</button></div></div></div>}
