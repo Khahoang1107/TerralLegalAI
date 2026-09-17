@@ -34,12 +34,19 @@ def _get_client() -> redis.Redis:
     return _client
 
 
+def _discard_client() -> None:
+    """Force a fresh Docker-DNS lookup after a transient Redis failure."""
+    global _client
+    _client = None
+
+
 async def get_cached_response(question: str, procedure_filter: str | None) -> dict[str, Any] | None:
     """Return a cached response, or ``None`` when absent/unavailable."""
     try:
         raw = await _get_client().get(_cache_key(question, procedure_filter))
         return json.loads(raw) if raw else None
     except (redis.RedisError, json.JSONDecodeError) as exc:
+        _discard_client()
         logger.warning("RAG cache read skipped: %s", exc)
         return None
 
@@ -52,6 +59,7 @@ async def set_cached_response(
         payload = json.dumps(response_data, ensure_ascii=False, separators=(",", ":"))
         await _get_client().setex(_cache_key(question, procedure_filter), _TTL_SECONDS, payload)
     except (redis.RedisError, TypeError, ValueError) as exc:
+        _discard_client()
         logger.warning("RAG cache write skipped: %s", exc)
 
 

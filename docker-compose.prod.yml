@@ -27,6 +27,12 @@ services:
       - MKL_NUM_THREADS=2
       - OPENBLAS_NUM_THREADS=2
       - TOKENIZERS_PARALLELISM=false
+      # Keep Hugging Face/SentenceTransformer model files on the existing
+      # persistent data mount.  Rebuilding the image must never force the
+      # first chat request to download BGE-M3 again.
+      - HF_HOME=/app/data/huggingface
+      - SENTENCE_TRANSFORMERS_HOME=/app/data/huggingface/sentence_transformers
+      - HF_HUB_DISABLE_TELEMETRY=1
       # Keep legal answers complete but avoid an unnecessarily long 4,096-token
       # generation on a small VPS / remote LLM connection.
       - GEMINI_MAX_TOKENS=1200

@@ -4,6 +4,7 @@ Sử dụng BAAI/bge-m3 (multilingual, tốt cho tiếng Việt).
 Hỗ trợ batch encoding và caching.
 """
 import logging
+import os
 from functools import lru_cache
 from collections import OrderedDict
 from threading import Lock
@@ -78,7 +79,14 @@ class EmbeddingModel:
                 logger.warning("FlagEmbedding không tìm thấy, fallback sang sentence-transformers")
         # sentence-transformers fallback (hoặc model nhẹ như multilingual-e5-small)
         from sentence_transformers import SentenceTransformer
-        self._model = SentenceTransformer(self.model_name)
+        # Use the persistent production cache configured through HF_HOME.
+        # Without an explicit cache folder, an image rebuild can make the
+        # first public chat download the multi-GB model and hit a gateway
+        # timeout before the answer is generated.
+        self._model = SentenceTransformer(
+            self.model_name,
+            cache_folder=os.getenv("SENTENCE_TRANSFORMERS_HOME") or os.getenv("HF_HOME"),
+        )
         self._use_flag = False
         logger.info(f"✅ Model loaded (sentence-transformers): {self.model_name}")
 
