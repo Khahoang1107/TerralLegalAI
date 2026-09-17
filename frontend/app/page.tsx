@@ -4637,6 +4637,11 @@ function FormsView() {
                       </button>
                     )}
                     <div style={{ marginLeft: "auto" }}>
+                      {step === 3 && (
+                        <button type="button" onClick={() => setStep(2)} style={{ padding: "6px 16px", borderRadius: 6, border: "1px solid #93c5fd", background: "#fff", color: "#1d4ed8", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>
+                          ← Quay lại bản xem trước
+                        </button>
+                      )}
                       {step === 2 && labeledCount > 0 && (
                         <button type="button" onClick={createDraftAndOpenEditor} disabled={uploading} style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#10b981", color: "#fff", cursor: uploading ? "wait" : "pointer", fontWeight: 600, fontSize: "0.85rem", opacity: uploading ? .7 : 1 }}>
                           {uploading ? "Đang tạo..." : "Mở trình biên tập mới →"}
@@ -4648,21 +4653,13 @@ function FormsView() {
                   {/* PDF Preview */}
                   <div className="doc-preview-shell" style={{ flex: 1, minHeight: 0, minWidth: 0, position: "relative", overflow: "hidden" }}>
                     {(() => {
-                      const currentFieldOrder = step === 3 ? fieldOrderSnapshot : fieldOrderRef.current;
+                      // Use the same spatially ordered list as the field panel.
+                      // The old snapshot order was assignment order, so step 3
+                      // could show labels such as 11 before 7/8 on the PDF.
                       const currentLabeledZones = step === 3 ? labeledSnapshot : labeledZonesRef.current;
-                      let uniqueFields = Array.from(new Set(currentFieldOrder.filter(fid => Object.values(currentLabeledZones).includes(fid))));
-                      
-                      uniqueFields.sort((a, b) => {
-                        const idxA = Object.entries(currentLabeledZones).find(([, v]) => v === a)?.[0] || "";
-                        const idxB = Object.entries(currentLabeledZones).find(([, v]) => v === b)?.[0] || "";
-                        const zoneA = editableZones?.find((z: any) => String(z.idx) === idxA);
-                        const zoneB = editableZones?.find((z: any) => String(z.idx) === idxB);
-                        if (!zoneA || !zoneB) return 0;
-                        if (zoneA.page !== zoneB.page) return zoneA.page - zoneB.page;
-                        const yDiff = zoneA.y - zoneB.y;
-                        if (Math.abs(yDiff) > 10) return yDiff;
-                        return zoneA.x - zoneB.x;
-                      });
+                      const uniqueFields = labeledList
+                        .map(field => field.id)
+                        .filter(fid => Object.values(currentLabeledZones).includes(fid));
                       
                       const fieldDetailsMap = uniqueFields.reduce((acc, fid, i) => {
                         const zoneIdx = Object.entries(currentLabeledZones).find(([, v]) => v === fid)?.[0] || "";
@@ -4681,7 +4678,7 @@ function FormsView() {
                           pageImages={previewData.page_images || [previewData.preview_url]}
                           zones={editableZones}
                           mode={mode}
-                          labeledZones={labeledZonesRef.current}
+                          labeledZones={currentLabeledZones}
                           mergeSelection={mergeSelectionRef.current}
                           readOnly={false}
                           fieldDetails={fieldDetailsMap}
