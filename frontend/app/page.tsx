@@ -53,6 +53,22 @@ function sortFormZones<T extends { page?: number; x?: number; y?: number }>(zone
   });
 }
 
+// Rank all zones together so merged fields and newly drawn boxes use the same
+// PDF reading order. Fields without geometry retain their existing slots.
+function sortVisualFields<T extends { key: string; visual_zones?: any[] }>(fields: T[]): T[] {
+  const zones = sortFormZones(fields.flatMap(field =>
+    (field.visual_zones || []).map(zone => ({ ...zone, owner: field.key }))
+  ));
+  const ranks = new Map<string, number>();
+  zones.forEach((zone, index) => {
+    if (!ranks.has(zone.owner)) ranks.set(zone.owner, index);
+  });
+  const positioned = fields.filter(field => ranks.has(field.key))
+    .sort((a, b) => ranks.get(a.key)! - ranks.get(b.key)!);
+  let index = 0;
+  return fields.map(field => ranks.has(field.key) ? positioned[index++] : field);
+}
+
 function statusLabel(s: string) {
   if (s === "indexed") return { label: "Hoàn thành", cls: "done", icon: <Check size={13} /> };
   if (s === "indexing") return { label: "Đang xử lý", cls: "processing", icon: <Clock3 size={13} /> };
@@ -1892,7 +1908,10 @@ function FormsView() {
 
     const mapping = { ...labeledZonesRef.current };
     const orderedIds = fieldOrderRef.current.filter(id => Object.values(mapping).includes(id));
-    const uniqueIds = Array.from(new Set(orderedIds));
+    const uniqueIds = sortVisualFields(Array.from(new Set(orderedIds)).map(key => ({
+      key,
+      visual_zones: editableZones.filter((zone: any) => mapping[String(zone.idx)] === key),
+    }))).map(field => field.key);
     const fields = uniqueIds.map((id, index) => {
       const zones = editableZones
         .filter((zone: any) => mapping[String(zone.idx)] === id)
@@ -2351,7 +2370,7 @@ function FormsView() {
     }
     setEditSaving(true);
     try {
-      const physicalFields = editFields.filter(f => !f.is_virtual);
+      const physicalFields = sortVisualFields(editFields.filter(f => !f.is_virtual));
       const invalidFormula = physicalFields.find(f => f.value_source === "formula" && !(f.calculation_formula || "").trim());
       if (invalidFormula) {
         showToast(`Vui lòng nhập công thức cho trường "${invalidFormula.name}".`, "error");
@@ -2532,7 +2551,7 @@ function FormsView() {
 
       {/* Edit Form Dialog */}
       {editingForm && (() => {
-        const physicalFields = editFields.filter(f => !f.is_virtual);
+        const physicalFields = sortVisualFields(editFields.filter(f => !f.is_virtual));
         const assignedCount = physicalFields.filter(f => {
           const isOneOfBranch = editSections.some(s => s.mode === "one_of" && s.oneOfStyle === "branches" && s.branches.some(b => b.fieldIds.includes(f.key)));
           const isTickPdf = editSections.some(s => s.pdfBehavior === "checkboxes" && (s.tickYesField === f.key || s.tickNoField === f.key));
