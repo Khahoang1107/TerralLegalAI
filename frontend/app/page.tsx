@@ -4130,16 +4130,15 @@ function FormsView() {
                       background: "#525659"
                     }}
                   />
-                ) : editPageImages.length > 0 ? (
+                ) : editZoneMode !== "view" && editPageImages.length > 0 ? (
                   <PdfFormPreview
                     pageImages={editPageImages}
                     zones={editVisualZones}
-                    mode={editZoneMode === "view" ? "label" : editZoneMode}
+                    mode={editZoneMode}
                     labeledZones={editLabeledZones}
                     mergeSelection={editMergeSelection}
                     activeZoneIdx={editActiveZoneIdx}
                     fieldDetails={editFieldDetails}
-                    readOnly={editZoneMode === "view"}
                     onZoneClick={selectEditZone}
                     onZonesChange={updateEditVisualZones}
                   />
