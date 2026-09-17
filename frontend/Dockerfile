@@ -29,6 +29,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Docker injects HOSTNAME as the container id. Next's standalone server would
+# otherwise bind only to that resolved container IP, leaving loopback health
+# checks unable to connect. Bind on every interface explicitly.
+ENV HOSTNAME=0.0.0.0
 
 # Copy built artifacts
 COPY --from=builder /app/.next/standalone ./
@@ -44,6 +48,6 @@ USER nextjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget -qO- http://localhost:3000/ || exit 1
+    CMD wget -qO- http://127.0.0.1:3000/ || exit 1
 
 CMD ["node", "server.js"]
