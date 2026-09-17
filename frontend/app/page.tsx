@@ -4008,7 +4008,7 @@ function FormsView() {
                       </div>
                     )}
 
-                    {editPageImages.length > 0 && (
+                    {(editPageImages.length > 0 || Boolean(editPdfUrl)) && (
                       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                         {([
                           { mode: "view", label: "← Xem trước", title: "Thoát chế độ chỉnh sửa và xem lại tài liệu" },
