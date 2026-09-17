@@ -2184,7 +2184,10 @@ function FormsView() {
         formsApi.previewImages(form.id, {}, "admin").catch(() => []),
         formsApi.previewPdf(form.id, {}, "admin").catch(() => null),
       ]);
-      if (imgs && imgs.length > 0) {
+      const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
+      if (originalPreviewImages?.length > 0) {
+        setEditPageImages(originalPreviewImages);
+      } else if (imgs && imgs.length > 0) {
         setEditPageImages(imgs);
       }
       if (blob) {
