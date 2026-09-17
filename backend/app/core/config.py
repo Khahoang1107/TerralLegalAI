@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(..., description="Gemini API Key")
     gemini_model: str = "gemini-2.5-flash"
     gemini_temperature: float = 0.1
-    gemini_max_tokens: int = 2048
+    # Match the production override so a missing environment variable cannot
+    # silently double the maximum generation length and tail latency.
+    gemini_max_tokens: int = 1200
 
     # ── Qdrant ───────────────────────────────────────────────────
     qdrant_host: str = "localhost"

@@ -2,8 +2,10 @@
 TerraLegalAI — FastAPI Backend
 Entry point cho API server.
 """
+import asyncio
 import logging
-from contextlib import asynccontextmanager
+import time
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -75,11 +77,40 @@ async def lifespan(app: FastAPI):
     )
     logger.info("✅ RAG Pipeline initialized successfully.")
 
+    async def warm_bm25_cache() -> None:
+        """Populate the lexical index without delaying application startup."""
+        started = time.perf_counter()
+        try:
+            await asyncio.to_thread(
+                app.state.rag_pipeline._lexical_candidates,
+                "thủ tục đất đai Vĩnh Long",
+                None,
+                1,
+            )
+            cached = app.state.rag_pipeline._lexical_cache.get("all")
+            document_count = len(cached[2]) if cached else 0
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            logger.info(
+                "BM25 cache warmed in %sms with %s documents",
+                elapsed_ms,
+                document_count,
+            )
+        except Exception as exc:
+            logger.warning("BM25 warm-up skipped (non-fatal): %s", exc)
+
+    app.state.bm25_warm_task = asyncio.create_task(warm_bm25_cache())
+
     from backend.app.rag.agent import FormAgent
     app.state.form_agent = FormAgent()
     logger.info("✅ Form Agent initialized successfully.")
 
     yield
+
+    warm_task = getattr(app.state, "bm25_warm_task", None)
+    if warm_task and not warm_task.done():
+        warm_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await warm_task
     
     logger.info("👋 TerraLegalAI API shutting down...")
 

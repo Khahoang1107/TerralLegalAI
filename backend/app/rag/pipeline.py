@@ -241,8 +241,21 @@ class RAGPipeline:
         # ── Step 7: Call LLM ──────────────────────────────────────────
         # Gemini is an external dependency. A transient timeout/quota/network
         # failure must not turn a successful legal search into HTTP 500.
+        first_token_ms: Optional[int] = None
+
+        def emit_token(piece: str) -> None:
+            nonlocal first_token_ms
+            if first_token_ms is None:
+                first_token_ms = int((time.time() - start_time) * 1000)
+                logger.info("⚡ First streamed token in %sms", first_token_ms)
+            if on_token is not None:
+                on_token(piece)
+
         try:
-            llm_response = self._call_llm(messages, on_token=on_token)
+            llm_response = self._call_llm(
+                messages,
+                on_token=emit_token if on_token is not None else None,
+            )
         except Exception as exc:
             logger.error("LLM generation failed; returning retrieved legal context: %s", exc, exc_info=True)
             citations = self._extract_citations(top_chunks, "")
@@ -276,8 +289,14 @@ class RAGPipeline:
 
         latency_ms = int((time.time() - start_time) * 1000)
         logger.info(
-            "✅ Query done in %sms | embed=%sms retrieve=%sms rerank=%sms llm=%sms | confidence=%.2f",
-            latency_ms, embedding_ms, retrieval_ms, rerank_ms, llm_ms, confidence,
+            "✅ Query done in %sms | ttft=%s | embed=%sms retrieve=%sms rerank=%sms llm=%sms | confidence=%.2f",
+            latency_ms,
+            f"{first_token_ms}ms" if first_token_ms is not None else "n/a",
+            embedding_ms,
+            retrieval_ms,
+            rerank_ms,
+            llm_ms,
+            confidence,
         )
 
         return RAGResponse(
