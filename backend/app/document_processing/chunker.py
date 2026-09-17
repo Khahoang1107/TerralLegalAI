@@ -113,6 +113,7 @@ class DocumentChunk:
     clause:          str  = ""   # "Khoản 1"
     field_type:      str  = "general"
     chunk_index:     int  = 0
+    validity_status: str  = "Còn hiệu lực"
 
 
 @dataclass

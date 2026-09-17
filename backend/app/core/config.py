@@ -36,9 +36,12 @@ class Settings(BaseSettings):
     qdrant_collection_name: str = "land_law_chunks"
 
     # ── Embedding ─────────────────────────────────────────────────
-    embedding_model_name: str = "BAAI/bge-m3"
-    embedding_dimension: int = 1024
-    embedding_batch_size: int = 32
+    # multilingual-e5-small is a 384-dimension multilingual model.  It is a
+    # better fit for the 4 GB production VPS than BGE-M3 while preserving
+    # Vietnamese retrieval quality.
+    embedding_model_name: str = "intfloat/multilingual-e5-small"
+    embedding_dimension: int = 384
+    embedding_batch_size: int = 16
     # VPS production has 2 vCPU. Keep the embedding model in one process but
     # let PyTorch use both cores instead of its environment-dependent default.
     embedding_cpu_threads: int = 2

@@ -100,10 +100,24 @@ class EmbeddingModel:
         Returns:
             List of vectors, mỗi vector có 1024 chiều
         """
+        return self._encode(texts, is_query=False)
+
+    def _encode(self, texts: list[str], *, is_query: bool) -> list[list[float]]:
+        """Encode texts, adding E5's required query/passage instruction."""
         self._load_model()
 
         if not texts:
             return []
+
+        # E5 models were trained with distinct prefixes.  Applying them is
+        # essential: legal chunks are passages, while a citizen message is a
+        # query.  BGE and other existing models keep their current behaviour.
+        if "e5" in self.model_name.lower():
+            prefix = "query: " if is_query else "passage: "
+            texts = [
+                text if text.startswith(("query: ", "passage: ")) else prefix + text
+                for text in texts
+            ]
 
         logger.info(f"Encoding {len(texts)} texts (batch_size={self.batch_size})")
 
@@ -145,7 +159,11 @@ class EmbeddingModel:
                 logger.debug("Query embedding cache hit")
                 return list(cached)
 
-        results = self.encode([text])
+        # Keep this call through ``encode`` so callers/tests can provide an
+        # inexpensive encoder replacement.  E5 sees the explicit query
+        # prefix, while document indexing continues to receive passage.
+        query_text = f"query: {text}" if "e5" in self.model_name.lower() else text
+        results = self.encode([query_text])
         vector = results[0] if results else []
         if vector:
             with self._query_cache_lock:
