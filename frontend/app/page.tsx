@@ -3831,6 +3831,10 @@ function FormsView() {
                   {/* Panel Footer */}
                   <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                     <div style={{ display: "flex", gap: 8 }}>
+                      {editPageImages.length > 0 && <>
+                        <button type="button" onClick={() => { setEditViewFormat("images"); setEditZoneMode("view"); }} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #38bdf8", background: editZoneMode === "view" ? "#e0f2fe" : "#fff", color: "#0369a1", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>← Xem trước</button>
+                        <button type="button" onClick={() => { setEditViewFormat("images"); setEditZoneMode("label"); }} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: editZoneMode !== "view" ? "#f1f5f9" : "#fff", color: "#334155", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>🏷 Dán nhãn</button>
+                      </>}
                       <button type="button" className="secondary-button" onClick={closeEdit} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Hủy bỏ</button>
                       {labelPreviewBackup && <button type="button" onClick={returnToLabelPreview} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", color: "#1d4ed8", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>← Quay lại bước 2</button>}
                     </div>
@@ -4126,15 +4130,16 @@ function FormsView() {
                       background: "#525659"
                     }}
                   />
-                ) : editZoneMode !== "view" && editPageImages.length > 0 ? (
+                ) : editPageImages.length > 0 ? (
                   <PdfFormPreview
                     pageImages={editPageImages}
                     zones={editVisualZones}
-                    mode={editZoneMode}
+                    mode={editZoneMode === "view" ? "label" : editZoneMode}
                     labeledZones={editLabeledZones}
                     mergeSelection={editMergeSelection}
                     activeZoneIdx={editActiveZoneIdx}
                     fieldDetails={editFieldDetails}
+                    readOnly={editZoneMode === "view"}
                     onZoneClick={selectEditZone}
                     onZonesChange={updateEditVisualZones}
                   />
