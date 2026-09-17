@@ -162,6 +162,7 @@ class RAGPipeline:
             RAGResponse với answer, citations, confidence
         """
         start_time = time.time()
+        stage_started = time.perf_counter()
 
         logger.info(f"🔍 Query: {question[:100]}...")
 
@@ -171,6 +172,8 @@ class RAGPipeline:
 
         # ── Step 2: Embed query ───────────────────────────────────────
         query_vector = self.embedding_model.encode_single(expanded_query)
+        embedding_ms = int((time.perf_counter() - stage_started) * 1000)
+        stage_started = time.perf_counter()
 
         # ── Step 3: Retrieve ──────────────────────────────────────────
         search_proc_type = procedure_filter
@@ -191,6 +194,8 @@ class RAGPipeline:
             procedure_type=search_proc_type,
             top_k=self.top_k,
         )
+        retrieval_ms = int((time.perf_counter() - stage_started) * 1000)
+        stage_started = time.perf_counter()
 
         retrieved_chunks = [
             RetrievedChunk(
@@ -222,6 +227,8 @@ class RAGPipeline:
 
         # ── Step 5: Rerank (simple score-based, upgrade sang cross-encoder sau) ──
         top_chunks = self._rerank(question, retrieved_chunks)
+        rerank_ms = int((time.perf_counter() - stage_started) * 1000)
+        stage_started = time.perf_counter()
 
         # ── Step 6: Build context + prompt ───────────────────────────
         context_text = self._build_context(top_chunks)
@@ -232,14 +239,46 @@ class RAGPipeline:
         )
 
         # ── Step 7: Call LLM ──────────────────────────────────────────
-        llm_response = self._call_llm(messages, on_token=on_token)
+        # Gemini is an external dependency. A transient timeout/quota/network
+        # failure must not turn a successful legal search into HTTP 500.
+        try:
+            llm_response = self._call_llm(messages, on_token=on_token)
+        except Exception as exc:
+            logger.error("LLM generation failed; returning retrieved legal context: %s", exc, exc_info=True)
+            citations = self._extract_citations(top_chunks, "")
+            excerpts = "\n\n".join(
+                f"• {chunk.text.strip()[:900]}"
+                for chunk in top_chunks[:2]
+                if chunk.text.strip()
+            )
+            answer = (
+                "Hệ thống đã tìm được tài liệu liên quan nhưng dịch vụ AI đang tạm thời "
+                "không thể diễn giải câu trả lời. Nội dung tham khảo gần nhất là:\n\n"
+                f"{excerpts}\n\n"
+                "Bạn có thể gửi lại câu hỏi sau ít phút; các nguồn đối chiếu vẫn được hiển thị bên dưới."
+            )
+            latency_ms = int((time.time() - start_time) * 1000)
+            return RAGResponse(
+                answer=answer,
+                citations=citations,
+                retrieved_chunks=top_chunks,
+                confidence=0.0,
+                intent=intent,
+                procedure_type=procedure_filter or self._detect_procedure(top_chunks),
+                latency_ms=latency_ms,
+                is_fallback=True,
+            )
+        llm_ms = int((time.perf_counter() - stage_started) * 1000)
 
         # ── Step 8: Parse citations ───────────────────────────────────
         citations = self._extract_citations(top_chunks, llm_response)
         confidence = self._calculate_confidence(top_chunks, llm_response, citations)
 
         latency_ms = int((time.time() - start_time) * 1000)
-        logger.info(f"✅ Query done in {latency_ms}ms | confidence={confidence:.2f}")
+        logger.info(
+            "✅ Query done in %sms | embed=%sms retrieve=%sms rerank=%sms llm=%sms | confidence=%.2f",
+            latency_ms, embedding_ms, retrieval_ms, rerank_ms, llm_ms, confidence,
+        )
 
         return RAGResponse(
             answer=llm_response,

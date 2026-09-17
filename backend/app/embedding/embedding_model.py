@@ -30,11 +30,13 @@ class EmbeddingModel:
         batch_size: int = 32,
         max_length: int = 512,
         use_fp16: bool = True,
+        cpu_threads: int | None = None,
     ):
         self.model_name = model_name
         self.batch_size = batch_size
         self.max_length = max_length
         self.use_fp16 = use_fp16
+        self.cpu_threads = cpu_threads
         self._model = None
         self._query_cache: OrderedDict[str, tuple[float, ...]] = OrderedDict()
         self._query_cache_lock = Lock()
@@ -48,6 +50,18 @@ class EmbeddingModel:
         """
         if self._model is not None:
             return
+        # The production VPS runs one backend worker to avoid loading the
+        # embedding model twice. Explicitly give that worker both CPU cores.
+        # This is safe for local development too: a missing torch install is
+        # handled by the model import below.
+        if self.cpu_threads and self.cpu_threads > 0:
+            try:
+                import torch
+                torch.set_num_threads(self.cpu_threads)
+                torch.set_num_interop_threads(1)
+                logger.info("Embedding CPU threads configured: %s", self.cpu_threads)
+            except (ImportError, RuntimeError) as exc:
+                logger.warning("Could not configure embedding CPU threads: %s", exc)
         logger.info(f"🔄 Loading embedding model: {self.model_name}")
         is_bge_m3 = "bge-m3" in self.model_name.lower()
         if is_bge_m3:
@@ -148,4 +162,5 @@ def get_embedding_model() -> EmbeddingModel:
     return EmbeddingModel(
         model_name=settings.embedding_model_name,
         batch_size=settings.embedding_batch_size,
+        cpu_threads=settings.embedding_cpu_threads,
     )

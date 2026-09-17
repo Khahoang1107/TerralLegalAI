@@ -179,6 +179,21 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+// A token can expire while the portal is already open.  Clear it and notify
+// React immediately instead of leaving the old screen visible and allowing a
+// later chat request to fail with a confusing mix of 401/500 errors.
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      window.dispatchEvent(new Event("terralegal:unauthorized"));
+    }
+    return Promise.reject(error);
+  },
+);
+
 // ─── Auth API ─────────────────────────────────────────────────────
 
 export const authApi = {

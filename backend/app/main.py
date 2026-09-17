@@ -52,7 +52,11 @@ async def lifespan(app: FastAPI):
         collection_name=settings.qdrant_collection_name,
     )
     # Model sẽ load một lần duy nhất tại đây
-    emb = EmbeddingModel(model_name=settings.embedding_model_name)
+    emb = EmbeddingModel(
+        model_name=settings.embedding_model_name,
+        batch_size=settings.embedding_batch_size,
+        cpu_threads=settings.embedding_cpu_threads,
+    )
     from google import genai
     client = genai.Client(api_key=settings.gemini_api_key)
 

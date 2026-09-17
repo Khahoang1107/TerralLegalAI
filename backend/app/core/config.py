@@ -39,10 +39,13 @@ class Settings(BaseSettings):
     embedding_model_name: str = "BAAI/bge-m3"
     embedding_dimension: int = 1024
     embedding_batch_size: int = 32
+    # VPS production has 2 vCPU. Keep the embedding model in one process but
+    # let PyTorch use both cores instead of its environment-dependent default.
+    embedding_cpu_threads: int = 2
 
     # ── Reranker ──────────────────────────────────────────────────
     reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
-    reranker_top_k: int = 4
+    reranker_top_k: int = 3
     reranker_enabled: bool = False
 
     # ── PostgreSQL ────────────────────────────────────────────────
@@ -54,7 +57,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # ── RAG Settings ─────────────────────────────────────────────
-    retrieval_top_k: int = 10
+    retrieval_top_k: int = 6
     chunk_size: int = 500
     chunk_overlap: int = 80
     similarity_threshold: float = 0.65

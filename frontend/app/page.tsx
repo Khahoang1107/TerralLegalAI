@@ -1513,7 +1513,12 @@ function FormsView() {
   const [editSplitPercent, setEditSplitPercent] = useState<number>(50);
   const [editIsDraggingSplit, setEditIsDraggingSplit] = useState(false);
   const [editPdfOnly, setEditPdfOnly] = useState(false);
-  const [editZoneMode, setEditZoneMode] = useState<"view" | "adjust">("view");
+  // The advanced editor keeps the same visual tools as step 2.  "view" is
+  // deliberately a first-class mode so an administrator can always leave an
+  // editing tool and inspect the document without draggable overlays.
+  const [editZoneMode, setEditZoneMode] = useState<"view" | "label" | "add" | "adjust" | "merge">("view");
+  const [editActiveZoneIdx, setEditActiveZoneIdx] = useState<string | null>(null);
+  const [editMergeSelection, setEditMergeSelection] = useState<Set<string>>(new Set());
   const editContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2037,6 +2042,8 @@ function FormsView() {
     setEditCollapsedSections({});
     setEditGroupMenuOpen(false);
     setEditZoneMode("view");
+    setEditActiveZoneIdx(null);
+    setEditMergeSelection(new Set());
 
     // Parse sections from fields
     const physical = rawFields.filter((f: any) => !f.is_virtual);
@@ -2453,6 +2460,93 @@ function FormsView() {
         const editLabeledZones = Object.fromEntries(editVisualZones.map((zone: any) => [String(zone.idx), zone.field_key]));
         const editFieldDetails = Object.fromEntries(physicalFields.map((field, index) => [field.key, { num: index + 1, label: field.name || field.key }]));
 
+        // A new box drawn from the PDF side immediately becomes a real field.
+        // This avoids the old visual-builder problem where a region could be
+        // visible in the preview but disappear because it had no field record.
+        const updateEditVisualZones = (newZones: any[]) => {
+          setEditFields((previous) => {
+            const addedFields: any[] = [];
+            let newFieldNumber = previous.filter((field) => !field.is_virtual).length + 1;
+            const zonesWithOwners = newZones.map((zone: any) => {
+              if (zone.field_key) return zone;
+              const key = `field_manual_${Date.now()}_${newFieldNumber}`;
+              addedFields.push({
+                key,
+                name: `Trường mới ${newFieldNumber}`,
+                type: "string",
+                required: true,
+                value_source: "user_input",
+                visual_zones: [{ ...zone, field_key: undefined }],
+              });
+              newFieldNumber += 1;
+              return { ...zone, field_key: key };
+            });
+
+            return [
+              ...previous.map((field) => {
+                if (field.is_virtual) return field;
+                return {
+                  ...field,
+                  visual_zones: zonesWithOwners
+                    .filter((zone: any) => zone.field_key === field.key)
+                    .map((zone: any) => ({ ...zone, field_key: undefined })),
+                };
+              }),
+              ...addedFields,
+            ];
+          });
+        };
+
+        const selectEditZone = (zoneIdx: number) => {
+          const id = String(zoneIdx);
+          if (editZoneMode === "merge") {
+            setEditMergeSelection((previous) => {
+              const next = new Set(previous);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+            return;
+          }
+          setEditActiveZoneIdx(id);
+          const fieldKey = editLabeledZones[id];
+          if (!fieldKey) return;
+          // In label mode the selected field is brought into view, so the
+          // administrator can rename/type it without hunting through the list.
+          requestAnimationFrame(() => {
+            document.getElementById(`form-field-${fieldKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+        };
+
+        const applyEditMerge = () => {
+          if (editMergeSelection.size < 2) return;
+          const selectedIds = Array.from(editMergeSelection);
+          const targetZone = editVisualZones.find((zone: any) => String(zone.idx) === selectedIds[0]);
+          if (!targetZone?.field_key) return;
+          const selectedSet = new Set(selectedIds);
+          const targetFieldKey = targetZone.field_key;
+          const selectedZones = editVisualZones.filter((zone: any) => selectedSet.has(String(zone.idx)));
+
+          setEditFields((previous) => previous.map((field) => {
+            if (field.is_virtual) return field;
+            const existing = Array.isArray(field.visual_zones) ? field.visual_zones : [];
+            if (field.key === targetFieldKey) {
+              const merged = [...existing, ...selectedZones]
+                .filter((zone, index, zones) => zones.findIndex((candidate: any) => String(candidate.idx) === String(zone.idx)) === index)
+                .map((zone: any) => ({ ...zone, field_key: undefined }));
+              return { ...field, visual_zones: merged };
+            }
+            return {
+              ...field,
+              visual_zones: existing.filter((zone: any) => !selectedSet.has(String(zone.idx))),
+            };
+          }));
+          setEditMergeSelection(new Set());
+          setEditZoneMode("label");
+          setEditActiveZoneIdx(String(targetZone.idx));
+          showToast(`Đã gộp ${selectedIds.length} vùng vào trường “${targetZone.field_key}”.`, "success");
+        };
+
         const filteredFields = physicalFields.filter((field, idx) => {
           const q = editSearchQuery.toLowerCase().trim();
           const num = idx + 1;
@@ -2812,12 +2906,12 @@ function FormsView() {
                             const advOpen = editAdvancedOpen[field.key] ?? false;
 
                             return (
-                              <div key={field.key} style={{
+                              <div id={`form-field-${field.key}`} key={field.key} style={{
                                 padding: "10px 12px",
-                                border: `1px solid ${hasGroup ? "#c4b5fd" : "#e2e8f0"}`,
+                                border: `2px solid ${editActiveZoneIdx && editLabeledZones[editActiveZoneIdx] === field.key ? "#2563eb" : hasGroup ? "#c4b5fd" : "#e2e8f0"}`,
                                 borderRadius: 8,
-                                background: hasGroup ? "#faf8ff" : "#ffffff",
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                                background: editActiveZoneIdx && editLabeledZones[editActiveZoneIdx] === field.key ? "#eff6ff" : hasGroup ? "#faf8ff" : "#ffffff",
+                                boxShadow: editActiveZoneIdx && editLabeledZones[editActiveZoneIdx] === field.key ? "0 0 0 3px rgba(37,99,235,0.12)" : "0 1px 2px rgba(0,0,0,0.02)"
                               }}>
                                 {/* Row 1: Badge, Input, Type selector */}
                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -3826,21 +3920,54 @@ function FormsView() {
                       </div>
                     )}
 
-                    {editViewFormat === "images" && editVisualZones.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setEditZoneMode(mode => mode === "adjust" ? "view" : "adjust")}
-                        title="Chỉnh kích thước và vị trí vùng điền trực tiếp trên mẫu"
-                        style={{
-                          padding: "5px 11px", fontSize: "0.74rem", fontWeight: 700,
-                          color: editZoneMode === "adjust" ? "#0f172a" : "#f1f5f9",
-                          background: editZoneMode === "adjust" ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
-                          border: `1px solid ${editZoneMode === "adjust" ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}`,
-                          borderRadius: 6, cursor: "pointer"
-                        }}
-                      >
-                        ↔ {editZoneMode === "adjust" ? "Đang chỉnh vùng" : "Chỉnh vùng"}
-                      </button>
+                    {editPageImages.length > 0 && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                        {([
+                          { mode: "view", label: "← Xem trước", title: "Thoát chế độ chỉnh sửa và xem lại tài liệu" },
+                          { mode: "label", label: "🏷 Dán nhãn", title: "Nhấn vào một vùng để chọn trường tương ứng và đặt lại nhãn ở bảng bên trái" },
+                          { mode: "add", label: "＋ Thêm vùng", title: "Kéo trên tài liệu để thêm vùng điền mới" },
+                          { mode: "adjust", label: "↔ Chỉnh vùng", title: "Kéo khung hoặc điểm neo để chỉnh chính xác vị trí vùng" },
+                          { mode: "merge", label: `🔀 Gộp${editMergeSelection.size ? ` (${editMergeSelection.size})` : ""}`, title: "Chọn các vùng cần dùng chung một câu trả lời, rồi xác nhận gộp" },
+                        ] as const).map((tool) => {
+                          const isActive = editZoneMode === tool.mode;
+                          return (
+                            <button
+                              key={tool.mode}
+                              type="button"
+                              onClick={() => {
+                                setEditViewFormat("images");
+                                setEditZoneMode(tool.mode);
+                                setEditActiveZoneIdx(null);
+                                if (tool.mode !== "merge") setEditMergeSelection(new Set());
+                              }}
+                              title={tool.title}
+                              style={{
+                                padding: "5px 9px", fontSize: "0.72rem", fontWeight: 700,
+                                color: isActive ? "#0f172a" : "#f1f5f9",
+                                background: isActive ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
+                                border: `1px solid ${isActive ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}`,
+                                borderRadius: 6, cursor: "pointer"
+                              }}
+                            >
+                              {tool.label}
+                            </button>
+                          );
+                        })}
+                        {editZoneMode === "merge" && editMergeSelection.size >= 2 && (
+                          <button
+                            type="button"
+                            onClick={applyEditMerge}
+                            title="Gộp các vùng đã chọn vào cùng một trường"
+                            style={{
+                              padding: "5px 9px", fontSize: "0.72rem", fontWeight: 800,
+                              color: "#fff", background: "#f59e0b", border: "1px solid #fbbf24",
+                              borderRadius: 6, cursor: "pointer"
+                            }}
+                          >
+                            Gộp {editMergeSelection.size} vùng
+                          </button>
+                        )}
+                      </div>
                     )}
 
                     <button
@@ -3914,23 +4041,17 @@ function FormsView() {
                       background: "#525659"
                     }}
                   />
-                ) : editZoneMode === "adjust" && editPageImages.length > 0 ? (
+                ) : editZoneMode !== "view" && editPageImages.length > 0 ? (
                   <PdfFormPreview
                     pageImages={editPageImages}
                     zones={editVisualZones}
-                    mode="adjust"
+                    mode={editZoneMode}
                     labeledZones={editLabeledZones}
-                    mergeSelection={new Set<string>()}
+                    mergeSelection={editMergeSelection}
+                    activeZoneIdx={editActiveZoneIdx}
                     fieldDetails={editFieldDetails}
-                    onZoneClick={() => {}}
-                    onZonesChange={(newZones) => {
-                      setEditFields((previous) => previous.map((field) => ({
-                        ...field,
-                        visual_zones: newZones
-                          .filter((zone: any) => zone.field_key === field.key)
-                          .map((zone: any) => ({ ...zone, field_key: undefined })),
-                      })));
-                    }}
+                    onZoneClick={selectEditZone}
+                    onZonesChange={updateEditVisualZones}
                   />
                 ) : editPageImages.length > 0 ? (
                   <div style={{
@@ -4622,6 +4743,15 @@ export default function Home() {
       })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setAuthView("login");
+    };
+    window.addEventListener("terralegal:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("terralegal:unauthorized", handleUnauthorized);
   }, []);
 
   const logout = () => {

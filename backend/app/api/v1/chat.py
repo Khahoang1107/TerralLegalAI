@@ -214,11 +214,19 @@ async def chat(
                 )
             # ─────────────────────────────────────────────────────────────────────
         else:
-            # LLM Intent Router: Lấy danh sách biểu mẫu và tự động map câu hỏi
+            # Chỉ gọi Gemini để định tuyến khi người dùng thực sự có ý định
+            # điền/tạo biểu mẫu. Trước đây mọi câu hỏi pháp lý đều phải chờ thêm
+            # một lượt gọi Gemini này rồi mới tới RAG, làm tăng đáng kể độ trễ.
             forms_result = await db.execute(select(FormSchema).where(FormSchema.is_active == True))
             available_forms = forms_result.scalars().all()
-            
-            if available_forms:
+            normalized_question = " ".join(request.question.casefold().split())
+            form_intent_markers = (
+                "điền mẫu", "điền biểu mẫu", "điền đơn", "kê khai", "tạo đơn",
+                "làm đơn", "xuất đơn", "điền form", "tạo biểu mẫu", "mở biểu mẫu",
+            )
+            needs_form_router = any(marker in normalized_question for marker in form_intent_markers)
+
+            if available_forms and needs_form_router:
                 from google import genai
                 from google.genai import types
                 from backend.app.core.config import settings
