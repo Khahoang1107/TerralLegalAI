@@ -1589,7 +1589,7 @@ function FormsView() {
   // The advanced editor keeps the same visual tools as step 2.  "view" is
   // deliberately a first-class mode so an administrator can always leave an
   // editing tool and inspect the document without draggable overlays.
-  const [editZoneMode, setEditZoneMode] = useState<"view" | "label" | "add" | "adjust" | "merge">("view");
+  const [editZoneMode, setEditZoneMode] = useState<"view" | "label" | "add" | "adjust" | "merge" | "remove">("label");
   const [editActiveZoneIdx, setEditActiveZoneIdx] = useState<string | null>(null);
   const [editMergeSelection, setEditMergeSelection] = useState<Set<string>>(new Set());
   const editContainerRef = useRef<HTMLDivElement>(null);
@@ -2132,7 +2132,7 @@ function FormsView() {
     setEditAdvancedOpen({});
     setEditCollapsedSections({});
     setEditGroupMenuOpen(false);
-    setEditZoneMode("view");
+    setEditZoneMode("label");
     setEditActiveZoneIdx(null);
     setEditMergeSelection(new Set());
 
@@ -2587,7 +2587,7 @@ function FormsView() {
             });
 
             return [
-              ...previous.map((field) => {
+              ...previous.filter((field) => field.is_virtual || !field.visual_zones?.length || zonesWithOwners.some((zone: any) => zone.field_key === field.key)).map((field) => {
                 if (field.is_virtual) return field;
                 return {
                   ...field,
@@ -3913,6 +3913,27 @@ function FormsView() {
                 flexDirection: "column",
                 background: "#0f172a"
               }}>
+                <div style={{ padding: "8px 16px", background: "#1e3a5f", borderBottom: "1px solid #1e40af", display: "flex", gap: 8, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+                  {(["label", "add", "adjust", "merge", "remove"] as const).map(m => (
+                    <button key={m} type="button" onClick={() => {
+                      setEditViewFormat("images");
+                      setEditZoneMode(m);
+                      setEditActiveZoneIdx(null);
+                      if (m !== "merge") setEditMergeSelection(new Set());
+                    }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, background: editZoneMode === m ? "#3b82f6" : "rgba(255,255,255,0.1)", color: editZoneMode === m ? "#fff" : "#cbd5e1" }}>
+                      {m === "label" ? "🏷 Dán nhãn" : m === "add" ? "➕ Thêm vùng" : m === "adjust" ? "↔ Chỉnh vùng" : m === "merge" ? `🔀 Gộp${editMergeSelection.size > 0 ? ` (${editMergeSelection.size})` : ""}` : "🗑 Xóa vùng"}
+                    </button>
+                  ))}
+                  {editZoneMode === "merge" && editMergeSelection.size >= 2 && (
+                    <button type="button" onClick={applyEditMerge} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "#f59e0b", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>Gộp {editMergeSelection.size} vùng</button>
+                  )}
+                  <button type="button" onClick={() => {
+                    setEditZoneMode("view");
+                    setEditViewFormat("images");
+                    setEditActiveZoneIdx(null);
+                    setEditMergeSelection(new Set());
+                  }} style={{ marginLeft: "auto", padding: "6px 16px", borderRadius: 6, border: "none", background: editZoneMode === "view" ? "#3b82f6" : "#10b981", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>👁 Preview</button>
+                </div>
                 <div style={{
                   padding: "10px 16px",
                   background: "#1e293b",
@@ -4022,56 +4043,6 @@ function FormsView() {
                         >
                           Vừa khung
                         </button>
-                      </div>
-                    )}
-
-                    {(editPageImages.length > 0 || Boolean(editPdfUrl)) && (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                        {([
-                          { mode: "view", label: "← Xem trước", title: "Thoát chế độ chỉnh sửa và xem lại tài liệu" },
-                          { mode: "label", label: "🏷 Dán nhãn", title: "Nhấn vào một vùng để chọn trường tương ứng và đặt lại nhãn ở bảng bên trái" },
-                          { mode: "add", label: "＋ Thêm vùng", title: "Kéo trên tài liệu để thêm vùng điền mới" },
-                          { mode: "adjust", label: "↔ Chỉnh vùng", title: "Kéo khung hoặc điểm neo để chỉnh chính xác vị trí vùng" },
-                          { mode: "merge", label: `🔀 Gộp${editMergeSelection.size ? ` (${editMergeSelection.size})` : ""}`, title: "Chọn các vùng cần dùng chung một câu trả lời, rồi xác nhận gộp" },
-                        ] as const).map((tool) => {
-                          const isActive = editZoneMode === tool.mode;
-                          return (
-                            <button
-                              key={tool.mode}
-                              type="button"
-                              onClick={() => {
-                                setEditViewFormat("images");
-                                setEditZoneMode(tool.mode);
-                                setEditActiveZoneIdx(null);
-                                if (tool.mode !== "merge") setEditMergeSelection(new Set());
-                              }}
-                              title={tool.title}
-                              style={{
-                                padding: "5px 9px", fontSize: "0.72rem", fontWeight: 700,
-                                color: isActive ? "#0f172a" : "#f1f5f9",
-                                background: isActive ? "#38bdf8" : "rgba(255, 255, 255, 0.1)",
-                                border: `1px solid ${isActive ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}`,
-                                borderRadius: 6, cursor: "pointer"
-                              }}
-                            >
-                              {tool.label}
-                            </button>
-                          );
-                        })}
-                        {editZoneMode === "merge" && editMergeSelection.size >= 2 && (
-                          <button
-                            type="button"
-                            onClick={applyEditMerge}
-                            title="Gộp các vùng đã chọn vào cùng một trường"
-                            style={{
-                              padding: "5px 9px", fontSize: "0.72rem", fontWeight: 800,
-                              color: "#fff", background: "#f59e0b", border: "1px solid #fbbf24",
-                              borderRadius: 6, cursor: "pointer"
-                            }}
-                          >
-                            Gộp {editMergeSelection.size} vùng
-                          </button>
-                        )}
                       </div>
                     )}
 
