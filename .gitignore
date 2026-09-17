@@ -29,6 +29,15 @@ update_*.py
 fix_legal_fields.py
 patch_docx_squares_inline.py
 
+# Test & debug artifacts outside the repository test suite
+/backend/test_*.py
+/frontend/test_*.tsx
+/data/processed/test_*
+/patch_*.py
+/debug_*.json
+/debug_*.txt
+/active_form.json
+
 # Test output files (root level)
 test*.docx
 test*.pdf
