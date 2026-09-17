@@ -2189,7 +2189,8 @@ function FormsView() {
         const origin = typeof window !== "undefined" ? window.location.origin : "";
         setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${origin}${src}` : src));
       } else if (imgs && imgs.length > 0) {
-        setEditPageImages(imgs);
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${origin}${src}` : src));
       }
       if (blob) {
         setEditPdfUrl(URL.createObjectURL(blob));
