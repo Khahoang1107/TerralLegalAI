@@ -2186,7 +2186,8 @@ function FormsView() {
       ]);
       const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
       if (originalPreviewImages?.length > 0) {
-        setEditPageImages(originalPreviewImages);
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${origin}${src}` : src));
       } else if (imgs && imgs.length > 0) {
         setEditPageImages(imgs);
       }
@@ -4106,7 +4107,6 @@ function FormsView() {
                       </button>
                     )}
 
-                    {labelPreviewBackup && <button type="button" onClick={returnToLabelPreview} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#334155", fontWeight: 600, cursor: "pointer" }}>← Quay lại xem nhãn</button>}
                     <button type="button" className="icon-button" onClick={closeEdit} title="Đóng" style={{ color: "#cbd5e1", marginLeft: 4 }}>
                       <X size={18} />
                     </button>
