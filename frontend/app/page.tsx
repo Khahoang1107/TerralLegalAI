@@ -1602,6 +1602,7 @@ function FormsView() {
   const [step, setStep] = useState(1);
   const [docxFile, setDocxFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<any | null>(null);
+  const [labelPreviewBackup, setLabelPreviewBackup] = useState<any>(null);
   const [editableZones, setEditableZones] = useState<any[]>([]);
   const [mode, setMode] = useState<'label' | 'merge' | 'remove' | 'add' | 'adjust'>('label');
   const modeRef = useRef<'label' | 'merge' | 'remove' | 'add' | 'adjust'>('label');
@@ -1913,6 +1914,7 @@ function FormsView() {
     });
 
     setUploading(true);
+    setLabelPreviewBackup({ previewData, editableZones, labeledZones: { ...labeledZonesRef.current }, fieldOrder: [...fieldOrderRef.current], fieldData: { ...fieldData }, formName, procedureType, formDesc });
     try {
       const created = await formsApi.createVisualForm({
         name: formName.trim() || docxFile?.name.replace(/\.[^.]+$/, "") || "Biểu mẫu mới",
@@ -2201,6 +2203,14 @@ function FormsView() {
     setEditPdfUrl(null);
     setEditPageImages([]);
     setEditPdfOnly(false);
+  };
+  const returnToLabelPreview = () => {
+    const b = labelPreviewBackup;
+    if (!b) return closeEdit();
+    setPreviewData(b.previewData); setEditableZones(b.editableZones); labeledZonesRef.current = b.labeledZones;
+    fieldOrderRef.current = b.fieldOrder; setFieldData(b.fieldData); setFormName(b.formName); setProcedureType(b.procedureType); setFormDesc(b.formDesc);
+    setLabeledCount(Object.keys(b.labeledZones).length); setLabeledSnapshot({ ...b.labeledZones }); setFieldOrderSnapshot([...b.fieldOrder]);
+    closeEdit(); setStep(2); setShowModal(true);
   };
 
   const addEditSectionPreset = (preset: "always" | "yes_no_none" | "yes_no_tick" | "one_of") => {
@@ -3817,9 +3827,10 @@ function FormsView() {
 
                   {/* Panel Footer */}
                   <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                    <button type="button" className="secondary-button" onClick={closeEdit} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
-                      Hủy bỏ
-                    </button>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button type="button" className="secondary-button" onClick={closeEdit} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Hủy bỏ</button>
+                      {labelPreviewBackup && <button type="button" onClick={returnToLabelPreview} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", color: "#1d4ed8", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>← Quay lại bước 2</button>}
+                    </div>
                     <button
                       type="submit"
                       disabled={editSaving}
@@ -4088,6 +4099,7 @@ function FormsView() {
                       </button>
                     )}
 
+                    {labelPreviewBackup && <button type="button" onClick={returnToLabelPreview} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", color: "#334155", fontWeight: 600, cursor: "pointer" }}>← Quay lại xem nhãn</button>}
                     <button type="button" className="icon-button" onClick={closeEdit} title="Đóng" style={{ color: "#cbd5e1", marginLeft: 4 }}>
                       <X size={18} />
                     </button>
