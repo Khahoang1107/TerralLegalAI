@@ -18,12 +18,19 @@ services:
       - QDRANT_HOST=qdrant
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
+      # Browser frontend runs on the public site while the API uses its own
+      # subdomain. Override any development-only value from .env.
+      - CORS_ORIGINS=["https://trolyphaplydatdai.online","https://www.trolyphaplydatdai.online","http://localhost:3000"]
       # One worker keeps RAM stable; these let its embedding workload use the
       # two CPU cores now available on the VPS.
       - OMP_NUM_THREADS=2
       - MKL_NUM_THREADS=2
       - OPENBLAS_NUM_THREADS=2
       - TOKENIZERS_PARALLELISM=false
+      # Keep legal answers complete but avoid an unnecessarily long 4,096-token
+      # generation on a small VPS / remote LLM connection.
+      - GEMINI_MAX_TOKENS=1200
+      - RERANKER_TOP_K=3
     # Production: không dùng --reload, chạy một worker phù hợp VPS 1 vCPU.
     command: [
       "gunicorn", "backend.app.main:app",
