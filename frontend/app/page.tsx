@@ -1624,6 +1624,7 @@ function FormsView() {
       const res = await formsApi.aiPredict(previewData.temp_id, editableZones, userLabels);
       const orderedZones = sortFormZones(res.zones);
       setEditableZones(orderedZones);
+      setPreviewData((previous: any) => previous ? { ...previous, zones: orderedZones } : previous);
       
       const newLabeledSnapshot = { ...labeledSnapshot };
       const newFieldOrder = [...fieldOrderSnapshot];
@@ -1837,9 +1838,9 @@ function FormsView() {
     try {
       const res = await formsApi.analyzeDocx(docxFile);
       const zones = res.zones || [];
-      setPreviewData(res);
       const orderedZones = sortFormZones(zones);
       setEditableZones(orderedZones);
+      setPreviewData({ ...res, zones: orderedZones });
       setFormName(docxFile.name.replace(/\.[^.]+$/, "") || "Biểu mẫu mới");
       setProcedureType("khac");
       
@@ -4690,7 +4691,9 @@ function FormsView() {
                             const oldIdxSet = new Set(editableZones.map((z: any) => String(z.idx)));
                             const newZonesAdded = newZones.filter((z: any) => !oldIdxSet.has(String(z.idx)));
 
-                            setEditableZones(newZones);
+                            const orderedZones = sortFormZones(newZones);
+                            setEditableZones(orderedZones);
+                            setPreviewData((previous: any) => previous ? { ...previous, zones: orderedZones } : previous);
                             const newIdxSet = new Set(newZones.map((z: any) => String(z.idx)));
                             
                             // Remove labels for deleted zones
