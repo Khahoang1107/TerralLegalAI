@@ -245,6 +245,60 @@ export const chatApi = {
     const { data } = await client.post<ChatResponse>("/chat", payload);
     return data;
   },
+  async sendMessageStream(
+    payload: ChatRequest,
+    onDelta: (text: string) => void,
+  ): Promise<ChatResponse> {
+    const token = getToken();
+    const response = await fetch(`${baseURL}/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      window.dispatchEvent(new Event("terralegal:unauthorized"));
+    }
+    if (!response.ok || !response.body) {
+      throw new Error(`Chat stream failed (${response.status})`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalResponse: ChatResponse | undefined;
+
+    const consumeLine = (line: string) => {
+      if (!line.trim()) return;
+      const event = JSON.parse(line) as {
+        type: "delta" | "done" | "error";
+        data: string | ChatResponse | { detail?: string };
+      };
+      if (event.type === "delta") onDelta(event.data as string);
+      if (event.type === "done") finalResponse = event.data as ChatResponse;
+      if (event.type === "error") {
+        throw new Error((event.data as { detail?: string }).detail || "Chat stream failed");
+      }
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      lines.forEach(consumeLine);
+      if (done) break;
+    }
+    consumeLine(buffer);
+
+    if (!finalResponse) throw new Error("Chat stream ended without a final response");
+    return finalResponse;
+  },
   async sendFeedback(messageId: string, value: 1 | -1): Promise<void> {
     await client.post(`/messages/${messageId}/feedback`, { value });
   },

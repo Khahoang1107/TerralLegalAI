@@ -38,31 +38,47 @@ export default function ChatWindow() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    const streamingMessageId = `${Date.now()}-stream`;
+    setMessages(prev => [...prev, {
+      id: streamingMessageId,
+      role: 'assistant',
+      content: ''
+    }]);
 
     try {
-      // Gọi RAG API
-      const response = await chatApi.sendMessage({
-        question: userMessage.content,
-        procedure_filter: procedureFilter === 'all' ? undefined : procedureFilter
-      });
+      let streamedText = '';
+      const response = await chatApi.sendMessageStream(
+        {
+          question: userMessage.content,
+          procedure_filter: procedureFilter === 'all' ? undefined : procedureFilter
+        },
+        (delta) => {
+          streamedText += delta;
+          setMessages(prev => prev.map(message =>
+            message.id === streamingMessageId
+              ? { ...message, content: streamedText }
+              : message
+          ));
+        },
+      );
 
-      const assistantMessage: Message = {
-        id: response.message_id || (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.answer,
-        citations: response.citations
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages(prev => prev.map(message =>
+        message.id === streamingMessageId
+          ? {
+              ...message,
+              id: response.message_id || streamingMessageId,
+              content: response.answer,
+              citations: response.citations,
+            }
+          : message
+      ));
     } catch (error: unknown) {
       console.error('Error calling chat API:', error);
-      
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Xin lỗi, đã xảy ra lỗi kết nối với máy chủ. Vui lòng thử lại sau.'
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => prev.map(message =>
+        message.id === streamingMessageId
+          ? { ...message, content: 'Xin lỗi, đã xảy ra lỗi kết nối với máy chủ. Vui lòng thử lại sau.' }
+          : message
+      ));
     } finally {
       setIsLoading(false);
     }

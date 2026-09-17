@@ -866,7 +866,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
   const [renamingConversation, setRenamingConversation] = useState<Conversation | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [conversationActionLoading, setConversationActionLoading] = useState(false);
-  const [messages, setMessages] = useState<Array<{role: "user" | "ai", text: string, time: string, citations?: Citation[], form_completed?: boolean, form_id?: string, collected_data?: Record<string, string>}>>([]);
+  const [messages, setMessages] = useState<Array<{role: "user" | "ai", text: string, time: string, streamId?: string, citations?: Citation[], form_completed?: boolean, form_id?: string, collected_data?: Record<string, string>}>>([]);
   const [reviewingForm, setReviewingForm] = useState<{form_id: string, collected_data: Record<string, string>} | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1021,38 +1021,53 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
     
     setMessages(prev => [...prev, { role: "user", text: textToSend, time: timeString }]);
     setLoading(true);
+    const streamId = `${Date.now()}-${Math.random()}`;
+    const streamingMessage = {
+      role: "ai" as const,
+      text: "",
+      time: timeString,
+      streamId,
+    };
+    setMessages(prev => [...prev, streamingMessage]);
     
     try {
-      const response = await chatApi.sendMessage({
-        question: textToSend,
-        procedure_filter: currentProject?.procedure_type !== "all" ? currentProject?.procedure_type : undefined,
-        conversation_id: currentConversationId || undefined,
-      });
+      let streamedText = "";
+      const response = await chatApi.sendMessageStream(
+        {
+          question: textToSend,
+          procedure_filter: currentProject?.procedure_type !== "all" ? currentProject?.procedure_type : undefined,
+          conversation_id: currentConversationId || undefined,
+        },
+        (delta) => {
+          streamedText += delta;
+          setMessages(prev => prev.map(message =>
+            message.streamId === streamId ? { ...message, text: streamedText } : message
+          ));
+        },
+      );
       
       if (!currentConversationId && response.conversation_id) {
         setCurrentConversationId(response.conversation_id);
       }
       
-      setMessages(prev => [...prev, { 
-        role: "ai", 
-        text: response.answer, 
-        time: timeString,
+      setMessages(prev => prev.map(message => message.streamId === streamId ? {
+        ...message,
+        text: response.answer,
         citations: response.citations,
         form_completed: response.form_completed,
         form_id: response.form_id,
         collected_data: response.collected_data
-      }]);
+      } : message));
       
       if (response.form_completed && response.form_id) {
         setReviewingForm({ form_id: response.form_id, collected_data: response.collected_data || {} });
       }
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { 
-        role: "ai", 
-        text: "Xin lỗi, đã có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.", 
-        time: timeString 
-      }]);
+      setMessages(prev => prev.map(message => message.streamId === streamId ? {
+        ...message,
+        text: "Xin lỗi, đã có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau."
+      } : message));
     } finally {
       conversationApi.getConversations().then(setConversationsList).catch(console.error);
       setLoading(false);

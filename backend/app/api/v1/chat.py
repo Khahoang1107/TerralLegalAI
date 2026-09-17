@@ -4,9 +4,11 @@ POST /api/v1/chat           — Gửi câu hỏi, nhận câu trả lời RAG
 POST /api/v1/messages/{id}/feedback — Gửi feedback 👍/👎
 """
 import logging
-from typing import Optional
+import json
+from typing import Callable, Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import StreamingResponse
 import asyncio
 
 from backend.app.core.config import settings
@@ -114,13 +116,13 @@ async def _load_chat_history(
 
 # ─── Endpoints ────────────────────────────────────────────────────
 
-@router.post("/chat", response_model=ChatResponse)
-async def chat(
+async def _execute_chat(
     request: ChatRequest,
     req: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
+    db: AsyncSession,
+    current_user: User,
+    on_token: Optional[Callable[[str], None]] = None,
+) -> ChatResponse:
     """
     Gửi câu hỏi và nhận câu trả lời từ RAG pipeline.
 
@@ -482,6 +484,7 @@ Yêu cầu:
                     question=request.question,
                     procedure_filter=request.procedure_filter,
                     chat_history=chat_history,
+                    on_token=on_token,
                 )
                 answer_text = rag_response.answer
                 intent_val = rag_response.intent
@@ -569,6 +572,66 @@ Yêu cầu:
             status_code=500,
             detail=f"Lỗi xử lý câu hỏi: {str(e)}",
         )
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(
+    request: ChatRequest,
+    req: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Compatibility endpoint that returns the complete response as JSON."""
+    return await _execute_chat(request, req, db, current_user)
+
+
+@router.post("/chat/stream")
+async def chat_stream(
+    request: ChatRequest,
+    req: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Stream answer deltas as NDJSON, followed by one final metadata event."""
+
+    async def event_stream():
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue[tuple[str, object]] = asyncio.Queue()
+
+        def on_token(text: str) -> None:
+            loop.call_soon_threadsafe(queue.put_nowait, ("delta", text))
+
+        async def run_chat() -> None:
+            try:
+                response = await _execute_chat(
+                    request, req, db, current_user, on_token=on_token
+                )
+                await queue.put(("done", response.model_dump(mode="json")))
+            except HTTPException as exc:
+                await queue.put(("error", {"status": exc.status_code, "detail": exc.detail}))
+            except Exception:
+                logger.exception("Unexpected streaming chat error")
+                await queue.put(("error", {"status": 500, "detail": "Lỗi xử lý câu hỏi"}))
+
+        task = asyncio.create_task(run_chat())
+        try:
+            while True:
+                event_type, payload = await queue.get()
+                yield json.dumps(
+                    {"type": event_type, "data": payload}, ensure_ascii=False
+                ) + "\n"
+                if event_type in {"done", "error"}:
+                    break
+        finally:
+            if not task.done():
+                task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/messages/{message_id}/feedback", status_code=200)
