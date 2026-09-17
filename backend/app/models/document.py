@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, DateTime, Date, Enum, ForeignKey, Text, Float
+from sqlalchemy import Column, String, DateTime, Date, ForeignKey, Text, Float
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -39,6 +39,44 @@ class DocumentChunk(Base):
     text = Column(Text, nullable=False)
     article = Column(String(50), nullable=True)
     clause = Column(String(50), nullable=True)
+    point = Column(String(50), nullable=True)
     field_type = Column(String(50), nullable=True)
+    validity_status = Column(String(30), nullable=False, default="active", index=True)
+    effective_from = Column(Date, nullable=True)
+    effective_to = Column(Date, nullable=True)
+    validity_note = Column(Text, nullable=True)
     
     document = relationship("Document", back_populates="chunks")
+
+
+class AmendmentAnalysis(Base):
+    """Persistent, reviewable result of a rule/AI amendment analysis."""
+    __tablename__ = "amendment_analyses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source_document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    target_document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(20), nullable=False, default="draft")
+    method = Column(String(20), nullable=False, default="rules")
+    changes = Column(JSONB, nullable=False, default=list)
+    created_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    confirmed_at = Column(DateTime, nullable=True)
+
+
+class ProvisionEffect(Base):
+    """Audited legal effect confirmed by an administrator."""
+    __tablename__ = "provision_effects"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("amendment_analyses.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    target_document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    target_chunk_id = Column(String(255), ForeignKey("document_chunks.id", ondelete="CASCADE"), nullable=False, index=True)
+    replacement_chunk_id = Column(String(255), ForeignKey("document_chunks.id", ondelete="SET NULL"), nullable=True)
+    effect_type = Column(String(30), nullable=False)
+    effective_from = Column(Date, nullable=True)
+    evidence_text = Column(Text, nullable=False)
+    confidence = Column(Float, nullable=False, default=0.0)
+    confirmed_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    confirmed_at = Column(DateTime, nullable=False, default=datetime.utcnow)

@@ -113,7 +113,7 @@ class DocumentChunk:
     clause:          str  = ""   # "Khoản 1"
     field_type:      str  = "general"
     chunk_index:     int  = 0
-    validity_status: str  = "Còn hiệu lực"
+    validity_status: str  = "active"
 
 
 @dataclass
@@ -687,6 +687,8 @@ class DocumentChunker:
                     f"[{art_label}]\n"
                     f"{sub}"
                 )
+                clause_match = re.match(r"\s*(\d+[a-zđ]?)\.\s", sub, re.IGNORECASE)
+                clause_label = f"Khoản {clause_match.group(1)}" if clause_match else ""
                 chunks.append(DocumentChunk(
                     chunk_id       = str(uuid.uuid4()),
                     text           = full_text,
@@ -696,6 +698,7 @@ class DocumentChunker:
                     group_type     = group_type,
                     procedure_type = procedure_type,
                     article        = art_label,
+                    clause         = clause_label,
                     field_type     = "can_cu_phap_ly",
                 ))
 

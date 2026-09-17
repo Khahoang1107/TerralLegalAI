@@ -13,19 +13,19 @@ Endpoints:
 import logging
 import shutil
 import uuid
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
-from pydantic import BaseModel
-from sqlalchemy import select, func
+from pydantic import BaseModel, Field
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.config import settings
 from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user
-from backend.app.models.document import Document, DocumentChunk
+from backend.app.models.document import Document, DocumentChunk, AmendmentAnalysis, ProvisionEffect
 from backend.app.models.user import User
 
 router = APIRouter()
@@ -73,6 +73,17 @@ class ChunkResponse(BaseModel):
     article: Optional[str] = None
     clause: Optional[str] = None
     field_type: Optional[str] = None
+    validity_status: str = "active"
+    validity_note: Optional[str] = None
+
+
+class ConfirmAmendmentsRequest(BaseModel):
+    confirmed_change_ids: list[str] = Field(default_factory=list)
+
+
+class ChunkValidityRequest(BaseModel):
+    validity_status: str
+    validity_note: str = ""
 
 
 VALID_DOCUMENT_ACTIONS = {"new", "amend", "replace"}
@@ -333,28 +344,23 @@ async def upload_document(
             "effective_date": effective_date_str,
         })
 
-        # Đồng bộ payload để RAG biết bản gốc đã có văn bản sửa đổi.
-        # Không loại bản gốc khỏi kết quả vì các phần không bị sửa vẫn có thể
-        # còn áp dụng, nhưng pipeline sẽ gắn cảnh báo hiệu lực vào context.
-        try:
-            from backend.app.embedding.vector_store import VectorStore
-            vs = VectorStore(
-                host=settings.qdrant_host,
-                port=settings.qdrant_port,
-                collection_name=settings.qdrant_collection_name,
-            )
-            vs.update_validity_status(
-                source_name=parent_doc.source_name,
-                new_status="Đã sửa đổi bổ sung",
-            )
-        except Exception as e:
-            logger.warning(f"Không thể cập nhật Qdrant payload cho văn bản đã sửa đổi: {e}")
+        # Provision payloads remain active until an administrator confirms the
+        # exact affected Điều/Khoản in the amendment review workflow.
 
         logger.info(f"Amend: {parent_doc.source_name} → Đã sửa đổi bổ sung bởi {source_name}")
 
     elif document_action == "replace" and parent_doc:
         # Bản gốc → "Hết hiệu lực"
         parent_doc.validity_status = "Hết hiệu lực"
+        await db.execute(
+            update(DocumentChunk)
+            .where(DocumentChunk.document_id == parent_doc.id)
+            .values(
+                validity_status="repealed",
+                effective_to=parsed_effective,
+                validity_note=f"Bị thay thế toàn bộ bởi {source_name}",
+            )
+        )
 
         # Liên kết bản gốc → bản mới (replaced_by)
         parent_related = list(parent_doc.related_documents or [])
@@ -384,7 +390,7 @@ async def upload_document(
             )
             vs.update_validity_status(
                 source_name=parent_doc.source_name,
-                new_status="Hết hiệu lực",
+                new_status="repealed",
             )
         except Exception as e:
             logger.warning(f"Không thể cập nhật Qdrant payload cho văn bản cũ: {e}")
@@ -524,7 +530,195 @@ async def list_document_chunks(document_id: str, db: AsyncSession = Depends(get_
     except ValueError:
         raise HTTPException(status_code=400, detail="document_id không hợp lệ")
     chunks = (await db.execute(select(DocumentChunk).where(DocumentChunk.document_id == doc_uuid).order_by(DocumentChunk.id))).scalars().all()
-    return [ChunkResponse(id=chunk.id, text=chunk.text, article=chunk.article, clause=chunk.clause, field_type=chunk.field_type) for chunk in chunks]
+    return [ChunkResponse(id=chunk.id, text=chunk.text, article=chunk.article, clause=chunk.clause, field_type=chunk.field_type, validity_status=chunk.validity_status or "active", validity_note=chunk.validity_note) for chunk in chunks]
+
+
+@router.post("/documents/{document_id}/analyze-amendments")
+async def analyze_amendments(
+    document_id: str,
+    parent_document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a persistent rule-based draft; never changes legal status."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được phân tích hiệu lực")
+    try:
+        source_id, target_id = uuid.UUID(document_id), uuid.UUID(parent_document_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID văn bản không hợp lệ")
+    source = await db.scalar(select(Document).where(Document.id == source_id))
+    target = await db.scalar(select(Document).where(Document.id == target_id))
+    if not source or not target:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản nguồn hoặc văn bản gốc")
+    if source.status != "indexed" or target.status != "indexed":
+        raise HTTPException(status_code=409, detail="Hai văn bản phải index xong trước khi phân tích")
+
+    from backend.app.document_processing.article_mapper import ArticleMapper, normalize_label
+    source_chunks = (await db.execute(
+        select(DocumentChunk).where(DocumentChunk.document_id == source_id)
+    )).scalars().all()
+    target_chunks = (await db.execute(
+        select(DocumentChunk).where(DocumentChunk.document_id == target_id)
+    )).scalars().all()
+    extracted = ArticleMapper().extract_changes("\n\n".join(chunk.text for chunk in source_chunks))
+    changes: list[dict] = []
+    for change in extracted:
+        for chunk in target_chunks:
+            if normalize_label(chunk.article) != normalize_label(change.article):
+                continue
+            if change.clause:
+                clause_matches = normalize_label(chunk.clause) == normalize_label(change.clause)
+                text_matches = normalize_label(change.clause) in normalize_label(chunk.text)
+                if not (clause_matches or text_matches):
+                    continue
+            changes.append({
+                "id": str(uuid.uuid4()),
+                **change.as_dict(),
+                "target_chunk_id": chunk.id,
+                "target_text_preview": chunk.text[:500],
+                "replacement_chunk_id": None,
+                "method": "rules",
+            })
+
+    analysis = AmendmentAnalysis(
+        source_document_id=source_id,
+        target_document_id=target_id,
+        method="rules",
+        changes=changes,
+        created_by=str(current_user.id),
+    )
+    db.add(analysis)
+    await db.commit()
+    return {
+        "analysis_id": str(analysis.id),
+        "status": analysis.status,
+        "source_document": source.source_name,
+        "target_document": target.source_name,
+        "changes": changes,
+        "summary": {
+            "detected_references": len(extracted),
+            "mapped_changes": len(changes),
+            "target_chunks": len(target_chunks),
+        },
+    }
+
+
+@router.get("/documents/amendment-analyses/{analysis_id}")
+async def get_amendment_analysis(
+    analysis_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        analysis_uuid = uuid.UUID(analysis_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="analysis_id không hợp lệ")
+    analysis = await db.scalar(select(AmendmentAnalysis).where(AmendmentAnalysis.id == analysis_uuid))
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bản phân tích")
+    return {"analysis_id": str(analysis.id), "status": analysis.status, "changes": analysis.changes}
+
+
+@router.post("/documents/amendment-analyses/{analysis_id}/confirm")
+async def confirm_amendments(
+    analysis_id: str,
+    payload: ConfirmAmendmentsRequest,
+    req: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Apply only explicitly selected draft items and record an audit trail."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được xác nhận hiệu lực")
+    try:
+        analysis_uuid = uuid.UUID(analysis_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="analysis_id không hợp lệ")
+    analysis = await db.scalar(select(AmendmentAnalysis).where(AmendmentAnalysis.id == analysis_uuid))
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bản phân tích")
+    if analysis.status != "draft":
+        raise HTTPException(status_code=409, detail="Bản phân tích đã được xử lý")
+    selected = set(payload.confirmed_change_ids)
+    available = {item["id"] for item in analysis.changes}
+    if not selected.issubset(available):
+        raise HTTPException(status_code=400, detail="Có thay đổi không thuộc bản phân tích")
+
+    source = await db.scalar(select(Document).where(Document.id == analysis.source_document_id))
+    qdrant_updates: dict[tuple[str, str], list[str]] = {}
+    applied = 0
+    for item in analysis.changes:
+        if item["id"] not in selected:
+            continue
+        chunk = await db.scalar(select(DocumentChunk).where(DocumentChunk.id == item["target_chunk_id"]))
+        if not chunk:
+            continue
+        effect_type = item["action"]
+        new_status = {
+            "repeal": "repealed",
+            "replace": "superseded",
+            "amend": "amended",
+            "replace_text": "amended",
+        }.get(effect_type, "active")
+        note = f"{item['evidence_text']} — nguồn: {source.source_name if source else analysis.source_document_id}"
+        # Adding a new provision does not invalidate the existing article.
+        if effect_type != "add":
+            chunk.validity_status = new_status
+            chunk.effective_to = source.effective_date if source else None
+            chunk.validity_note = note
+            qdrant_updates.setdefault((new_status, note), []).append(chunk.id)
+        db.add(ProvisionEffect(
+            analysis_id=analysis.id,
+            source_document_id=analysis.source_document_id,
+            target_document_id=analysis.target_document_id,
+            target_chunk_id=chunk.id,
+            replacement_chunk_id=item.get("replacement_chunk_id"),
+            effect_type=effect_type,
+            effective_from=source.effective_date if source else None,
+            evidence_text=item["evidence_text"],
+            confidence=float(item.get("confidence", 0)),
+            confirmed_by=str(current_user.id),
+        ))
+        applied += 1
+    analysis.status = "confirmed"
+    analysis.confirmed_at = datetime.utcnow()
+    await db.commit()
+
+    vector_store = req.app.state.rag_pipeline.vector_store
+    for (status_value, note), chunk_ids in qdrant_updates.items():
+        try:
+            vector_store.update_chunk_validity(chunk_ids, status_value, note)
+        except Exception as exc:
+            logger.error("Qdrant chunk validity sync failed: %s", exc)
+    req.app.state.rag_pipeline._lexical_cache.clear()
+    return {"analysis_id": analysis_id, "status": "confirmed", "applied": applied}
+
+
+@router.patch("/documents/chunks/{chunk_id}/validity")
+async def patch_chunk_validity(
+    chunk_id: str,
+    payload: ChunkValidityRequest,
+    req: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được sửa hiệu lực")
+    allowed = {"active", "amended", "superseded", "repealed"}
+    if payload.validity_status not in allowed:
+        raise HTTPException(status_code=400, detail=f"Trạng thái hợp lệ: {', '.join(sorted(allowed))}")
+    chunk = await db.scalar(select(DocumentChunk).where(DocumentChunk.id == chunk_id))
+    if not chunk:
+        raise HTTPException(status_code=404, detail="Không tìm thấy chunk")
+    chunk.validity_status = payload.validity_status
+    chunk.validity_note = payload.validity_note or None
+    await db.commit()
+    req.app.state.rag_pipeline.vector_store.update_chunk_validity(
+        [chunk_id], payload.validity_status, payload.validity_note
+    )
+    req.app.state.rag_pipeline._lexical_cache.clear()
+    return {"chunk_id": chunk_id, "validity_status": chunk.validity_status}
 
 
 @router.delete("/documents/{document_id}", status_code=204)

@@ -21,7 +21,7 @@ def test_search_excludes_expired_by_default():
     assert query_filter.must_not is not None
     assert len(query_filter.must_not) == 1
     assert query_filter.must_not[0].key == "validity_status"
-    assert query_filter.must_not[0].match.value == "Hết hiệu lực"
+    assert set(query_filter.must_not[0].match.any) == {"Hết hiệu lực", "superseded", "repealed"}
 
 
 def test_search_allows_expired_when_flag_false():
@@ -51,4 +51,4 @@ def test_scroll_chunks_excludes_expired():
     assert scroll_filter is not None
     assert scroll_filter.must_not is not None
     assert scroll_filter.must_not[0].key == "validity_status"
-    assert scroll_filter.must_not[0].match.value == "Hết hiệu lực"
+    assert set(scroll_filter.must_not[0].match.any) == {"Hết hiệu lực", "superseded", "repealed"}

@@ -42,4 +42,12 @@ async def init_db():
         # Lightweight forward-compatible schema addition for the per-case RAG
         # evidence introduced after the initial evaluation table existed.
         await conn.execute(text("ALTER TABLE evaluation_case_results ADD COLUMN IF NOT EXISTS retrieved_contexts JSONB"))
-
+        # Chunk-level legal validity. PostgreSQL remains the source of truth;
+        # Qdrant payloads are a derived search index.
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS point VARCHAR(50)"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS validity_status VARCHAR(30) NOT NULL DEFAULT 'active'"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS effective_from DATE"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS effective_to DATE"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS validity_note TEXT"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_chunks_validity ON document_chunks(validity_status)"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_chunks_document_article ON document_chunks(document_id, article, clause)"))

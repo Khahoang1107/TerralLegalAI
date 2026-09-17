@@ -175,7 +175,10 @@ class VectorStore:
         must_not = []
         if exclude_expired:
             must_not.append(
-                FieldCondition(key="validity_status", match=MatchValue(value="Hết hiệu lực"))
+                FieldCondition(
+                    key="validity_status",
+                    match=MatchAny(any=["Hết hiệu lực", "superseded", "repealed"]),
+                )
             )
 
         query_filter = (
@@ -227,7 +230,10 @@ class VectorStore:
         must_not = []
         if exclude_expired:
             must_not.append(
-                FieldCondition(key="validity_status", match=MatchValue(value="Hết hiệu lực"))
+                FieldCondition(
+                    key="validity_status",
+                    match=MatchAny(any=["Hết hiệu lực", "superseded", "repealed"]),
+                )
             )
         query_filter = (
             Filter(must=conditions or None, must_not=must_not or None)
@@ -314,3 +320,16 @@ class VectorStore:
         except Exception as e:
             logger.error(f"Lỗi cập nhật validity_status cho '{source_name}': {e}")
             return 0
+
+    def update_chunk_validity(self, chunk_ids: list[str], new_status: str, note: str = "") -> int:
+        """Update derived Qdrant payloads for confirmed PostgreSQL effects."""
+        if not chunk_ids:
+            return 0
+        self.client.set_payload(
+            collection_name=self.collection_name,
+            payload={"validity_status": new_status, "validity_note": note},
+            points=Filter(
+                must=[FieldCondition(key="chunk_id", match=MatchAny(any=chunk_ids))]
+            ),
+        )
+        return len(chunk_ids)

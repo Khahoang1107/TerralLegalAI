@@ -80,6 +80,28 @@ export interface DocumentStats {
   qdrant?: Record<string, unknown>;
 }
 
+export interface AmendmentChange {
+  id: string;
+  action: "amend" | "add" | "replace" | "replace_text" | "repeal";
+  article: string;
+  clause?: string;
+  point?: string;
+  evidence_text: string;
+  confidence: number;
+  target_chunk_id: string;
+  target_text_preview: string;
+  method: "rules" | "ai";
+}
+
+export interface AmendmentAnalysis {
+  analysis_id: string;
+  status: "draft" | "confirmed" | "rejected";
+  source_document?: string;
+  target_document?: string;
+  changes: AmendmentChange[];
+  summary?: { detected_references: number; mapped_changes: number; target_chunks: number };
+}
+
 export interface UploadDocumentResponse {
   document_id: string;
   source_name: string;
@@ -399,6 +421,20 @@ export const documentsApi = {
   },
   async getChunks(id: string): Promise<{ id: string; text: string; article?: string; clause?: string; field_type?: string }[]> {
     const { data } = await client.get(`/documents/${id}/chunks`); return data;
+  },
+  async analyzeAmendments(id: string, parentDocumentId: string): Promise<AmendmentAnalysis> {
+    const { data } = await client.post<AmendmentAnalysis>(
+      `/documents/${id}/analyze-amendments`,
+      undefined,
+      { params: { parent_document_id: parentDocumentId } },
+    );
+    return data;
+  },
+  async confirmAmendments(analysisId: string, confirmedChangeIds: string[]): Promise<{ applied: number }> {
+    const { data } = await client.post(`/documents/amendment-analyses/${analysisId}/confirm`, {
+      confirmed_change_ids: confirmedChangeIds,
+    });
+    return data;
   },
   async getOverview(): Promise<any> {
     const { data } = await client.get("/reports/overview");
