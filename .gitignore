@@ -53,3 +53,39 @@ schema_to_khai_thue_phi_nong_nghiep.json
 # Misc
 implementation_plan.md
 RAG_Land_QA_System.md
+
+# Keep automated tests and their results local.
+/backend/tests/
+/.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases and generated processing output.
+*.db
+*.sqlite3
+/data/processed/ocr_text/
+/backend/output.txt
+/backend/app/api/v1/forms_restored.py
+
+# Local scratch files, backups and debug output.
+/tmp/
+/backend_logs*.txt
+/test*_out.*
+/test_chat_out.json
+/test.png
+/state*.json
+/temp*.txt
+/temp*.json
+/temp_page.tsx
+/old_page.tsx
+/page_copy.tsx
+/page_tsx_diffs.txt
+/diff.txt
+/output.txt
+/error_trace.txt
+/db_check.txt
+/form_fields.json
+/form_inspect.json
+/forms_chunks.txt
+/formsview_returns.txt
+*.backup

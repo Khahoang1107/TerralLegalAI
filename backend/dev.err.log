@@ -1,87 +1,0 @@
-INFO:     Started server process [16028]
-INFO:     Waiting for application startup.
-2026-07-01 19:46:46,594 [INFO] backend.app.main: \U0001f680 TerraLegalAI API starting up...
-2026-07-01 19:46:46,594 [INFO] backend.app.main: \U0001f4e6 Initializing RAG Pipeline...
-2026-07-01 19:46:59,666 [INFO] backend.app.main: \U0001f4e6 Initializing Database schema...
-2026-07-01 19:46:59,970 [INFO] backend.app.embedding.vector_store: Connected to Qdrant at localhost:6333
-2026-07-01 19:47:00,217 [INFO] httpx: HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
-2026-07-01 19:47:00,520 [INFO] backend.app.main: \u2705 RAG Pipeline initialized successfully.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-2026-07-01 19:47:44,666 [INFO] backend.app.api.v1.chat: Chat request from user ce66adea-12bf-49ab-9ddd-a1bcac6b7649: '•	Sang tên s\u1ed5 \u0111\u1ecf c\u1ea7n gi\u1ea5y t\u1edd gì?'
-2026-07-01 19:47:44,696 [INFO] backend.app.rag.pipeline: \U0001f50d Query: •	Sang tên s\u1ed5 \u0111\u1ecf c\u1ea7n gi\u1ea5y t\u1edd gì?...
-2026-07-01 19:47:44,696 [INFO] backend.app.embedding.embedding_model: \U0001f504 Loading embedding model: BAAI/bge-m3
-2026-07-01 19:47:44,697 [WARNING] backend.app.embedding.embedding_model: FlagEmbedding không tìm th\u1ea5y, dùng sentence-transformers fallback
-2026-07-01 19:47:44,701 [INFO] sentence_transformers.base.model: No device provided, using cpu
-2026-07-01 19:47:45,481 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:45,496 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/modules.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:45,788 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:45,802 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/config_sentence_transformers.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:45,804 [INFO] sentence_transformers.base.model: Loading SentenceTransformer model from BAAI/bge-m3.
-2026-07-01 19:47:46,094 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-2026-07-01 19:47:46,095 [WARNING] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-2026-07-01 19:47:46,110 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/config_sentence_transformers.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:46,402 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:46,415 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/README.md "HTTP/1.1 200 OK"
-2026-07-01 19:47:46,709 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:46,723 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/modules.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:47,016 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:47,029 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/sentence_bert_config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:47,304 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:47,631 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:47,645 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:48,041 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
-Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|##########| 391/391 [00:00<00:00, 17741.33it/s]
-2026-07-01 19:47:48,319 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3 "HTTP/1.1 200 OK"
-2026-07-01 19:47:48,656 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3/commits/main "HTTP/1.1 200 OK"
-2026-07-01 19:47:48,663 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:48,961 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:48,962 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3/discussions?p=0 "HTTP/1.1 200 OK"
-2026-07-01 19:47:49,270 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3/commits/refs%2Fpr%2F130 "HTTP/1.1 200 OK"
-2026-07-01 19:47:49,270 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:49,577 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:49,678 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/refs%2Fpr%2F130/model.safetensors.index.json "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:49,882 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:49,897 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/tokenizer_config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:49,986 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/refs%2Fpr%2F130/model.safetensors "HTTP/1.1 302 Found"
-2026-07-01 19:47:50,164 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:50,177 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:50,443 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:50,455 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:50,733 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:50,746 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/tokenizer_config.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:51,019 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-2026-07-01 19:47:51,296 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-2026-07-01 19:47:55,237 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3 "HTTP/1.1 200 OK"
-2026-07-01 19:47:55,589 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/BAAI/bge-m3/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
-2026-07-01 19:47:55,604 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/BAAI/bge-m3/5617a9f61b028005a4858fdac845db406aefb181/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
-2026-07-01 19:47:55,925 [INFO] httpx: HTTP Request: GET https://huggingface.co/api/models/BAAI/bge-m3 "HTTP/1.1 200 OK"
-2026-07-01 19:47:55,934 [INFO] backend.app.embedding.embedding_model: Encoding 1 texts (batch_size=32)
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:01<00:00,  1.26s/it]Batches: 100%|##########| 1/1 [00:01<00:00,  1.26s/it]
-2026-07-01 19:47:57,212 [INFO] backend.app.embedding.embedding_model: \u2705 Encoded 1 vectors (dim=1024)
-2026-07-01 19:47:57,350 [INFO] httpx: HTTP Request: POST http://localhost:6333/collections/land_law_chunks/points/query "HTTP/1.1 200 OK"
-2026-07-01 19:47:57,356 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
-2026-07-01 19:48:01,864 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-2026-07-01 19:48:01,868 [INFO] backend.app.rag.pipeline: Gemini finish_reason=FinishReason.STOP | response_chars=2164
-2026-07-01 19:48:01,868 [INFO] backend.app.rag.pipeline: \u2705 Query done in 17171ms | confidence=0.72
-2026-07-01 19:49:09,470 [INFO] backend.app.api.v1.chat: Chat request from user ce66adea-12bf-49ab-9ddd-a1bcac6b7649: '•	Sang tên s\u1ed5 \u0111\u1ecf c\u1ea7n gi\u1ea5y t\u1edd gì?'
-2026-07-01 19:49:09,483 [INFO] backend.app.rag.pipeline: \U0001f50d Query: •	Sang tên s\u1ed5 \u0111\u1ecf c\u1ea7n gi\u1ea5y t\u1edd gì?...
-2026-07-01 19:49:09,483 [INFO] backend.app.embedding.embedding_model: Encoding 1 texts (batch_size=32)
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  4.71it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  4.71it/s]
-2026-07-01 19:49:09,704 [INFO] backend.app.embedding.embedding_model: \u2705 Encoded 1 vectors (dim=1024)
-2026-07-01 19:49:09,759 [INFO] httpx: HTTP Request: POST http://localhost:6333/collections/land_law_chunks/points/query "HTTP/1.1 200 OK"
-2026-07-01 19:49:09,761 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
-2026-07-01 19:49:14,228 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-2026-07-01 19:49:14,230 [INFO] backend.app.rag.pipeline: Gemini finish_reason=FinishReason.STOP | response_chars=2222
-2026-07-01 19:49:14,231 [INFO] backend.app.rag.pipeline: \u2705 Query done in 4748ms | confidence=0.36
-2026-07-01 19:49:25,601 [INFO] backend.app.api.v1.chat: Chat request from user ce66adea-12bf-49ab-9ddd-a1bcac6b7649: '•	Chuy\u1ec3n nh\u01b0\u1ee3ng \u0111\u1ea5t m\u1ea5t bao lâu?'
-2026-07-01 19:49:25,621 [INFO] backend.app.rag.pipeline: \U0001f50d Query: •	Chuy\u1ec3n nh\u01b0\u1ee3ng \u0111\u1ea5t m\u1ea5t bao lâu?...
-2026-07-01 19:49:25,621 [INFO] backend.app.embedding.embedding_model: Encoding 1 texts (batch_size=32)
-Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  6.12it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  6.08it/s]
-2026-07-01 19:49:25,791 [INFO] backend.app.embedding.embedding_model: \u2705 Encoded 1 vectors (dim=1024)
-2026-07-01 19:49:25,836 [INFO] httpx: HTTP Request: POST http://localhost:6333/collections/land_law_chunks/points/query "HTTP/1.1 200 OK"
-2026-07-01 19:49:25,839 [INFO] google_genai.models: AFC is enabled with max remote calls: 10.
-2026-07-01 19:49:30,952 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-2026-07-01 19:49:30,958 [INFO] backend.app.rag.pipeline: Gemini finish_reason=FinishReason.STOP | response_chars=2526
-2026-07-01 19:49:30,958 [INFO] backend.app.rag.pipeline: \u2705 Query done in 5337ms | confidence=0.68
