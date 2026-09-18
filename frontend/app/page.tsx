@@ -7,7 +7,7 @@ import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
 import TestsView from "@/components/admin/TestsView";
-import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, type AmendmentAnalysis, type AuthUser, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
+import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, API_BASE_URL, type AmendmentAnalysis, type AuthUser, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
 import ProjectSidebar, { type LegalProject } from "@/components/chat/ProjectSidebar";
 import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
 import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
@@ -1253,15 +1253,19 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                       <div className="citations-list" style={{ marginTop: "1rem" }}>
                         <p className="citations-heading">Cơ sở pháp lý đối chiếu</p>
                         {uniqueCitations(msg.citations).map((cit, cidx) => (
-                          <div key={cidx} className="citation-box">
-                            <div>
+                          <details key={cidx} className="citation-box">
+                            <summary className="citation-summary" title="Bấm để xem nội dung nguồn đối chiếu">
                               <FileText size={18} />
                               <span>
                                 <strong>{cit.source_name}</strong>
                                 <small>{cit.article ? `${cit.article}` : ''} {cit.clause ? `${cit.clause}` : ''}</small>
                               </span>
+                              <ChevronDown size={16} className="citation-chevron" />
+                            </summary>
+                            <div className="citation-detail">
+                              {cit.text_snippet?.trim() || "Nguồn này chưa có đoạn trích chi tiết để hiển thị."}
                             </div>
-                          </div>
+                          </details>
                         ))}
                       </div>
                     )}
@@ -2207,11 +2211,9 @@ function FormsView() {
       ]);
       const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
       if (originalPreviewImages?.length > 0) {
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
-        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${origin}${src}` : src));
+        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
       } else if (imgs && imgs.length > 0) {
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
-        setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${origin}${src}` : src));
+        setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
       }
       if (blob) {
         setEditPdfUrl(URL.createObjectURL(blob));

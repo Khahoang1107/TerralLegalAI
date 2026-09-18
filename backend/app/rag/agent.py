@@ -151,7 +151,8 @@ def normalize_field_value(field: Dict[str, Any], value: str) -> str:
     Chuẩn hóa giá trị trước khi lưu vào collected_data:
     - Boolean: chuyển về 'có' hoặc 'không'
     - Digit_group: giữ lại chỉ chữ số
-    - String: giữ nguyên
+    - Tên người: xóa khoảng trắng thừa và chuẩn hóa viết hoa từng từ
+    - String khác: giữ nguyên
     """
     if not value or value == "__SKIPPED__":
         return value
@@ -173,6 +174,18 @@ def normalize_field_value(field: Dict[str, Any], value: str) -> str:
         # Chỉ giữ chữ số
         digits_only = re.sub(r"[^0-9]", "", value)
         return digits_only if digits_only else value
+
+    if field_type == "string":
+        normalized_name = _normalize_no_diacritic(str(field.get("name") or "")).lower()
+        is_person_name = bool(re.search(
+            r"\b(ho\s*(va\s*)?ten|ten\s+(nguoi|chu|ca\s*nhan|vo|chong|dai\s*dien))\b",
+            normalized_name,
+        ))
+        if is_person_name:
+            # str.title handles Vietnamese diacritics and fixes accidental
+            # all-caps words such as "Nguyễn Văn AN" without touching email,
+            # identifiers, addresses or organization names.
+            return " ".join(value.split()).title()
 
     return value
 
