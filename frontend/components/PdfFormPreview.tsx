@@ -49,6 +49,7 @@ type AiPred = { label: string; description: string; confidence: number; section:
 type PreviewMode = 'label' | 'add' | 'adjust' | 'remove' | 'merge';
 
 interface PdfFormPreviewProps {
+  initialZoom?: number;
   pageImages: string[];
   zones: Zone[];
   textBlocks?: TextBlock[];
@@ -66,6 +67,7 @@ interface PdfFormPreviewProps {
 }
 
 export default function PdfFormPreview({
+  initialZoom = 1,
   pageImages,
   zones,
   mode,
@@ -84,7 +86,7 @@ export default function PdfFormPreview({
   // Keep a stable design scale. The old ResizeObserver squeezed the document to
   // the panel width, which made small fields difficult to select. Overflow now
   // scrolls horizontally instead of changing the document coordinates/scale.
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(initialZoom);
   // DOCX preview pages are rendered at roughly 150 DPI (A4 ≈ 1,200 px wide).
   // Using 800 px as "100%" still visually compressed the original document.
   const DESIGN_PAGE_WIDTH = 1200;

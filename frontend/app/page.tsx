@@ -4681,6 +4681,7 @@ function FormsView() {
 
                       return (
                         <PdfFormPreview
+                          initialZoom={0.75}
                           pageImages={previewData.page_images || [previewData.preview_url]}
                           zones={editableZones}
                           mode={mode}
