@@ -292,6 +292,7 @@ Yêu cầu:
         is_fallback = False
 
         if is_form_intent and active_form:
+            form_intro_shown = bool(flow_state.get("form_intro_shown") or last_asked_field)
             import time
             start_time = time.time()
             
@@ -445,15 +446,32 @@ Yêu cầu:
             # Lưu last_asked_field để lượt sau biết trường nào vừa được hỏi
             new_last_asked = None
             if not result.is_complete and result.next_field_key:
+                if not form_intro_shown:
+                    asked_field = field_map.get(result.next_field_key, {})
+                    members = get_one_of_members(personal_fields, asked_field)
+                    if members and not asked_field.get("depends_on"):
+                        result.assistant_reply = build_one_of_choice_question(members)
+                    else:
+                        result.assistant_reply = (
+                            f"Để bắt đầu, bạn vui lòng cung cấp thông tin **{get_friendly_name(asked_field)}** nhé?"
+                        )
                 result.assistant_reply, flow_state["introduced_groups"] = prepend_group_introduction(
                     active_form.fields or [], result.next_field_key,
                     result.assistant_reply, flow_state.get("introduced_groups", []),
                 )
+                if not form_intro_shown:
+                    result.assistant_reply = (
+                        f"Vâng, tôi sẽ hỗ trợ bạn điền **{active_form.name}**. "
+                        "Tôi sẽ lần lượt hỏi các thông tin cần thiết để hoàn thiện biểu mẫu."
+                        f"\n\n{result.assistant_reply}"
+                    )
+                    form_intro_shown = True
                 new_last_asked = {
                     "key": result.next_field_key,
                     "name": result.next_field_name or result.next_field_key,
                 }
 
+            flow_state["form_intro_shown"] = form_intro_shown
             # save state — bao gồm invalid_fields để lượt sau biết trường nào cần hỏi lại
             conv_record.state = {
                 "active_form_id": str(active_form.id),
