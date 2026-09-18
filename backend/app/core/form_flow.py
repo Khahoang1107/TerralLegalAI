@@ -387,3 +387,13 @@ def is_valid_one_of_next_field(
         str(member.get("key", "")) == str(candidate_key)
         for member in get_one_of_members(fields, representative)
     )
+
+
+def is_valid_next_question(fields, next_field, candidate_key, data) -> bool:
+    """Enforce question order while allowing an unanswered active alternative."""
+    if not next_field or not candidate_key:
+        return False
+    if candidate_key == next_field.get("key"):
+        return True
+    return (is_valid_one_of_next_field(fields, next_field, candidate_key)
+            and data.get(candidate_key) in (None, ""))

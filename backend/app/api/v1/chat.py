@@ -21,7 +21,7 @@ from backend.app.core.security import get_current_user
 from backend.app.models.user import User
 from backend.app.models.conversation import Conversation, Message
 from backend.app.models.form_schema import FormSchema
-from backend.app.core.form_flow import apply_flow_rules, get_missing_fields, order_fields
+from backend.app.core.form_flow import apply_flow_rules, apply_calculated_fields, get_missing_fields, order_fields, get_one_of_members, build_one_of_choice_question, is_valid_next_question
 import uuid
 
 router = APIRouter()
@@ -297,6 +297,7 @@ Yêu cầu:
             
             # Tích hợp RAG Context lấy kiến thức luật để tự điền biểu mẫu
             rag_context = ""
+            pipeline = None
             try:
                 pipeline = get_rag_pipeline(req)
                 
@@ -338,6 +339,8 @@ Yêu cầu:
             new_invalid_fields: list = []
 
             for extracted in result.extracted_fields:
+                if extracted.key not in field_map or field_map[extracted.key].get("value_source") == "formula":
+                    continue
                 if not extracted.value:
                     continue
                 if extracted.value == "__SKIPPED__":
@@ -366,6 +369,7 @@ Yêu cầu:
             # one-of groups.  The provenance lets a later parent answer reopen
             # only values skipped automatically, never a user's explicit skip.
             flow_state = apply_flow_rules(active_form.fields or [], collected_data, flow_state)
+            apply_calculated_fields(active_form.fields or [], collected_data)
 
             # Kết hợp invalid_fields cũ (chưa được hỏi lại) với mới phát hiện
             # Loại bỏ khỏi invalid_fields những key vừa được điền thành công
@@ -383,6 +387,8 @@ Yêu cầu:
             
             # 1. Tính toán missing_fields thực sự (sau khi đã chạy cascade logic)
             missing_fields = get_missing_fields(personal_fields, collected_data)
+            missing_keys = {f.get("key") for f in missing_fields}
+            invalid_fields = [key for key in invalid_fields if key in missing_keys]
             
             invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
             
@@ -406,7 +412,9 @@ Yêu cầu:
                 missing_names = [get_friendly_name(f) for f in missing_fields]
                 
                 # Kiểm tra xem LLM có đang hỏi đúng trường không (tránh trường hợp LLM hỏi vào trường đã bị SKIP bởi logic ở trên)
-                llm_asked_valid_field = result.next_field_key in [f.get("key") for f in missing_fields]
+                llm_asked_valid_field = is_valid_next_question(
+                    personal_fields, next_field, result.next_field_key, collected_data
+                )
                 
                 if result.is_complete or not llm_asked_valid_field:
                     if result.is_complete:
@@ -419,6 +427,9 @@ Yêu cầu:
                     if next_field:
                         field_name = get_friendly_name(next_field)
                         next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
+                        members = get_one_of_members(personal_fields, next_field)
+                        if members and not next_field.get("depends_on"):
+                            next_reply = build_one_of_choice_question(members)
                     
                     result = FormExtractionResult(
                         extracted_fields=result.extracted_fields,

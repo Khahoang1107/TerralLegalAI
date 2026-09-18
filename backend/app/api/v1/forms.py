@@ -30,6 +30,17 @@ from backend.app.core.config import settings
 
 router = APIRouter(prefix="/forms", tags=["Forms"])
 
+
+def _validate_logic_groups(fields: List[Dict[str, Any]]) -> None:
+    groups: Dict[str, list] = {}
+    for field in fields:
+        group = field.get("require_one_of_group")
+        if group:
+            groups.setdefault(str(group), []).append(field)
+    for members in groups.values():
+        if len(members) < 2 or any(field.get("type") == "boolean" for field in members):
+            raise HTTPException(status_code=422, detail="Nhóm chọn một cần ít nhất hai trường thông tin, không dùng ô tick.")
+
 class FormSchemaCreate(BaseModel):
     name: str
     procedure_type: str
@@ -676,6 +687,8 @@ async def update_form(
     current_user: User = Depends(get_current_user),
 ):
     """Cập nhật tên, loại thủ tục, mô tả và các nhãn (fields) của biểu mẫu."""
+    if data.fields is not None:
+        _validate_logic_groups(data.fields)
     result = await db.execute(select(FormSchema).where(FormSchema.id == form_id))
     form = result.scalars().first()
     if not form:
@@ -1562,6 +1575,7 @@ async def create_visual_form(
             "visual_zones": f.visual_zones,
         })
 
+    _validate_logic_groups(form_fields)
     form = FormSchema(
         name=data.name,
         procedure_type=data.procedure_type,

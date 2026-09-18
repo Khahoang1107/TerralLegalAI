@@ -61,7 +61,7 @@ def is_auto_fill_field(field: Dict[str, Any]) -> bool:
     # heuristic cũ theo tên (ví dụ "Ngày cấp" không được tự nhiên bị coi là
     # ngày tự động nếu admin đã chọn "Người dùng nhập").
     source = field.get("value_source")
-    if source in {"ai_document", "current_date"}:
+    if source in {"ai_document", "current_date", "formula"}:
         return True
     if source == "user_input":
         return False
