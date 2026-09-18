@@ -1006,12 +1006,14 @@ async def preview_pdf_form(
             from fastapi.responses import JSONResponse
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")
             page_images = []
+            page_dimensions = []
             for page in doc:
+                page_dimensions.append({"page": page.number + 1, "width": page.rect.width, "height": page.rect.height})
                 pix = page.get_pixmap(dpi=150)
                 b64 = base64.b64encode(pix.tobytes("png")).decode("utf-8")
                 page_images.append(f"data:image/png;base64,{b64}")
             doc.close()
-            return JSONResponse(content={"page_images": page_images, "total_pages": len(page_images)})
+            return JSONResponse(content={"page_images": page_images, "page_dimensions": page_dimensions, "total_pages": len(page_images)})
 
         return Response(
             content=pdf_bytes,
@@ -1198,12 +1200,14 @@ async def analyze_docx(file: UploadFile = File(...)):
         
         # Convert sang PDF bằng LibreOffice
         pdf_path = os.path.join(temp_dir, f"{temp_id}_marked.pdf")
+        original_pdf_path = os.path.join(temp_dir, f"{temp_id}_raw.pdf")
         import subprocess
         try:
             subprocess.run([
                 "libreoffice", "--headless", "--convert-to", "pdf",
                 "--outdir", os.path.abspath(temp_dir),
-                os.path.abspath(marked_docx_path)
+                os.path.abspath(marked_docx_path),
+                os.path.abspath(raw_path),
             ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail="Không tìm thấy LibreOffice. Vui lòng cài đặt LibreOffice hoặc chạy qua Docker để dùng tính năng này.")
@@ -1249,9 +1253,6 @@ async def analyze_docx(file: UploadFile = File(...)):
                                         "width": x1 - x0,
                                         "height": y1 - y0
                                     })
-                                    # Wipe the colored text with a white rect to hide it in the UI
-                                    rect = fitz.Rect(x0, y0, x1, y1)
-                                    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
                             else:
                                 line_text_parts.append(span.get("text", ""))
                         else:
@@ -1324,12 +1325,16 @@ async def analyze_docx(file: UploadFile = File(...)):
 
         # Render m i trang th nh  nh (PNG) thay v  tr  v  PDF    tr nh l i react-pdf
         page_images = []
-        for page_num, page in enumerate(pdf_doc):
-            pix = page.get_pixmap(dpi=150)
-            img_filename = f"{temp_id}_page_{page_num+1}.png"
-            img_path = os.path.join("data", "uploaded", img_filename)
-            pix.save(img_path)
-            page_images.append(f"/api/v1/forms/preview/{img_filename}")
+        # Detect zones from the marked copy, but show the untouched original so
+        # dot leaders and blank lines remain visible as guides while adjusting.
+        with fitz.open(original_pdf_path) as original_pdf:
+            for page_num, page in enumerate(original_pdf):
+                pix = page.get_pixmap(dpi=150)
+                img_filename = f"{temp_id}_page_{page_num+1}.png"
+                img_path = os.path.join("data", "uploaded", img_filename)
+                pix.save(img_path)
+                page_images.append(f"/api/v1/forms/preview/{img_filename}")
+        pdf_doc.close()
             
         # Clean up file r c
         for p in [marked_docx_path]:

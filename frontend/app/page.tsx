@@ -1576,6 +1576,7 @@ function FormsView() {
   const [editTab, setEditTab] = useState<"fields" | "groups" | "flow">("fields");
   const [editPdfUrl, setEditPdfUrl] = useState<string | null>(null);
   const [editPageImages, setEditPageImages] = useState<string[]>([]);
+  const [editPageDimensions, setEditPageDimensions] = useState<{page: number; width: number; height: number}[]>([]);
   const [editZoom, setEditZoom] = useState<number>(0.5);
   const [editZoomMode, setEditZoomMode] = useState<"a4" | "fit">("a4");
   const [editViewFormat, setEditViewFormat] = useState<"images" | "pdf">("images");
@@ -2203,17 +2204,21 @@ function FormsView() {
     if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
     setEditPdfUrl(null);
     setEditPageImages([]);
+    setEditPageDimensions([]);
     setEditZoom(0.5);
     setEditPdfLoading(true);
     try {
-      const [imgs, blob] = await Promise.all([
-        formsApi.previewImages(form.id, {}, "admin").catch(() => []),
+      const [imagePreview, blob] = await Promise.all([
+        formsApi.previewImagePages(form.id, {}, "admin").catch(() => ({page_images: [], page_dimensions: []})),
         formsApi.previewPdf(form.id, {}, "admin").catch(() => null),
       ]);
       const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
+      const imgs = imagePreview.page_images;
       if (imgs && imgs.length > 0) {
+        setEditPageDimensions(imagePreview.page_dimensions);
         setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
       } else if (originalPreviewImages?.length > 0) {
+        setEditPageDimensions(labelPreviewBackup?.previewData?.page_dimensions || []);
         setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
       }
       if (blob) {
@@ -4127,6 +4132,7 @@ function FormsView() {
                   <PdfFormPreview
                     initialZoom={0.5}
                     pageImages={editPageImages}
+                    pageDimensions={editPageDimensions}
                     zones={editVisualZones}
                     mode={editZoneMode}
                     labeledZones={editLabeledZones}
@@ -4685,6 +4691,7 @@ function FormsView() {
                         <PdfFormPreview
                           initialZoom={0.75}
                           pageImages={previewData.page_images || [previewData.preview_url]}
+                          pageDimensions={previewData.page_dimensions}
                           zones={editableZones}
                           mode={mode}
                           labeledZones={currentLabeledZones}
