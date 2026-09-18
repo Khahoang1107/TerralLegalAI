@@ -495,25 +495,10 @@ Phản hồi phải tuân thủ JSON schema được yêu cầu.
 """
 
         try:
-            config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=FormExtractionResult,
-                temperature=0.1,
-                # Form extraction is a constrained structured-output task. The
-                # deterministic backend still owns order, branches, formulas
-                # and completion, so model reasoning only adds latency here.
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            )
-
-            response = await self.client.aio.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=config
-            )
-
-            if hasattr(response, "parsed") and response.parsed is not None:
-                result = response.parsed
-            else:
+            def parse_response(response) -> FormExtractionResult:
+                """Normalize SDK-parsed and raw JSON responses."""
+                if hasattr(response, "parsed") and response.parsed is not None:
+                    return response.parsed
                 import json
                 text = response.text
                 if text.startswith("```json"):
@@ -522,9 +507,40 @@ Phản hồi phải tuân thủ JSON schema được yêu cầu.
                     text = text[3:]
                 if text.endswith("```"):
                     text = text[:-3]
-                text = text.strip()
-                data = json.loads(text)
-                result = FormExtractionResult.model_validate(data)
+                return FormExtractionResult.model_validate(json.loads(text.strip()))
+
+            async def extract(*, use_thinking: bool) -> FormExtractionResult:
+                config = types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=FormExtractionResult,
+                    temperature=0.1,
+                    # Common form answers use the fast path. Omitting this
+                    # option on retry restores Gemini's normal reasoning.
+                    thinking_config=None if use_thinking else types.ThinkingConfig(thinking_budget=0),
+                )
+                response = await self.client.aio.models.generate_content(
+                    model=self.model, contents=prompt, config=config
+                )
+                return parse_response(response)
+
+            result = await extract(use_thinking=False)
+            field_by_key = {str(field.get("key", "")): field for field in form_fields}
+            invalid_extraction = any(
+                extracted.key not in field_by_key or (
+                    extracted.value not in ("", "__SKIPPED__")
+                    and not is_auto_fill_field(field_by_key[extracted.key])
+                    and not quick_validate_value(
+                        field_by_key[extracted.key],
+                        normalize_field_value(field_by_key[extracted.key], extracted.value),
+                    )
+                )
+                for extracted in result.extracted_fields
+            )
+            # A direct answer that yields nothing, an unknown field, or an
+            # invalid typed value is treated as difficult and retried once.
+            if last_asked_field and (not result.extracted_fields or invalid_extraction):
+                logger.info("Form extraction fast path was ambiguous; retrying with model reasoning")
+                result = await extract(use_thinking=True)
 
             # ── Post-process: fix logical inconsistencies ─────────────────────
             # Rule 1: is_complete=True 但 next_field_key không null → fix
