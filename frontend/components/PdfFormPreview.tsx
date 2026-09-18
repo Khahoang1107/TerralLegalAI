@@ -220,7 +220,7 @@ interface PageCanvasProps {
 }
 
 function PageCanvas({
-  imgUrl, token, pageWidth, scale, pageNumber, pageZones, pageTextBlocks,
+  imgUrl, token, pageWidth, scale: scaleProp, pageNumber, pageZones, pageTextBlocks,
   mode, labeledZones, mergeSelection, activeZoneIdx, onZoneClick, onTextBlockClick, onZonesChange, allZones, readOnly,
   aiPredictions, fieldDetails
 }: PageCanvasProps) {
@@ -237,6 +237,30 @@ function PageCanvas({
     original: Zone;
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Track actual rendered width of the image so bounding boxes stay aligned
+  // regardless of zoom level or container resize.
+  const [renderedWidth, setRenderedWidth] = useState<number>(pageWidth);
+  useLayoutEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) setRenderedWidth(w);
+      }
+    });
+    ro.observe(img);
+    // Also capture the size immediately if image is already loaded
+    if (img.offsetWidth > 0) setRenderedWidth(img.offsetWidth);
+    return () => ro.disconnect();
+  }, [blobUrl, pageWidth]); // measure synchronously after loading or changing zoom
+
+  // Compute scale from the actual rendered pixel width rather than a hard-coded
+  // design constant. scaleProp carries the PDF->design-px ratio; we adjust it
+  // proportionally to how the image has been scaled by CSS.
+  const scale = scaleProp * (renderedWidth / pageWidth);
 
   // Fetch image via blob URL (to pass Bearer token)
   useEffect(() => {
@@ -448,7 +472,7 @@ function PageCanvas({
       onMouseUp={readOnly ? undefined : handleMouseUp}
       onMouseLeave={readOnly ? undefined : handleMouseLeave}
     >
-      <img src={blobUrl} style={{ width: "100%", display: "block", pointerEvents: "none" }} alt={`Page ${pageNumber}`} />
+      <img ref={imgRef} src={blobUrl} style={{ width: "100%", display: "block", pointerEvents: "none" }} alt={`Page ${pageNumber}`} />
 
       {/* Zone overlays */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
