@@ -182,6 +182,7 @@ const baseUrlEnv = process.env.NEXT_PUBLIC_API_URL;
 const baseURL = baseUrlEnv 
   ? (baseUrlEnv.endsWith('/api/v1') ? baseUrlEnv : `${baseUrlEnv.replace(/\/$/, '')}/api/v1`)
   : "http://localhost:8000/api/v1";
+export const API_BASE_URL = baseURL;
 
 const client = axios.create({
   baseURL,

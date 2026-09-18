@@ -242,11 +242,26 @@ function PageCanvas({
   useEffect(() => {
     if (!imgUrl) return;
     const url = resolveApiAssetUrl(imgUrl);
-    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    let disposed = false;
+    let objectUrl: string | undefined;
+    setBlobUrl("");
+    const embedded = url.startsWith("data:") || url.startsWith("blob:");
+    fetch(url, { headers: token && !embedded ? { Authorization: `Bearer ${token}` } : {} })
       .then(res => { if (!res.ok) throw new Error("Status " + res.status); return res.blob(); })
-      .then(blob => setBlobUrl(URL.createObjectURL(blob)))
-      .catch(err => { console.error("Image fetch error:", err); setBlobUrl("ERROR"); });
-    return () => { if (blobUrl && blobUrl !== "ERROR") URL.revokeObjectURL(blobUrl); };
+      .then(blob => {
+        if (disposed) return;
+        objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+      })
+      .catch(err => {
+        if (disposed) return;
+        console.error("Image fetch error:", err);
+        setBlobUrl("ERROR");
+      });
+    return () => {
+      disposed = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
   }, [imgUrl, token]);
 
   const updateZone = useCallback((zoneIdx: string, updater: (zone: Zone) => Zone) => {

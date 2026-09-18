@@ -1593,7 +1593,7 @@ function FormsView() {
   // The advanced editor keeps the same visual tools as step 2.  "view" is
   // deliberately a first-class mode so an administrator can always leave an
   // editing tool and inspect the document without draggable overlays.
-  const [editZoneMode, setEditZoneMode] = useState<"view" | "label" | "add" | "adjust" | "merge" | "remove">("label");
+  const [editZoneMode, setEditZoneMode] = useState<"view" | "label" | "add" | "adjust" | "merge" | "remove">("adjust");
   const [editActiveZoneIdx, setEditActiveZoneIdx] = useState<string | null>(null);
   const [editMergeSelection, setEditMergeSelection] = useState<Set<string>>(new Set());
   const editContainerRef = useRef<HTMLDivElement>(null);
@@ -1949,7 +1949,7 @@ function FormsView() {
       });
       const form = await formsApi.getForm(created.id || created.form_id);
       resetModal();
-      await openEdit(form);
+      await openEdit(form, mode);
       setEditTab("fields");
       showToast("Đã tạo bản nháp. Hãy hoàn thiện Nhóm logic và Luồng AI trong trình biên tập mới.", "success");
     } catch (err: any) {
@@ -2115,7 +2115,7 @@ function FormsView() {
     }
   };
 
-  const openEdit = async (form: any) => {
+  const openEdit = async (form: any, initialMode: "label" | "add" | "adjust" | "merge" | "remove" = "adjust") => {
     setEditSplitPercent(40);
     setEditZoomMode("a4");
     setEditingForm(form);
@@ -2138,7 +2138,8 @@ function FormsView() {
     setEditAdvancedOpen({});
     setEditCollapsedSections({});
     setEditGroupMenuOpen(false);
-    setEditZoneMode("label");
+    setEditZoneMode(initialMode);
+    setEditViewFormat("images");
     setEditActiveZoneIdx(null);
     setEditMergeSelection(new Set());
 
@@ -2210,10 +2211,10 @@ function FormsView() {
         formsApi.previewPdf(form.id, {}, "admin").catch(() => null),
       ]);
       const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
-      if (originalPreviewImages?.length > 0) {
-        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
-      } else if (imgs && imgs.length > 0) {
+      if (imgs && imgs.length > 0) {
         setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
+      } else if (originalPreviewImages?.length > 0) {
+        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
       }
       if (blob) {
         setEditPdfUrl(URL.createObjectURL(blob));
