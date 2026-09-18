@@ -1572,7 +1572,7 @@ function FormsView() {
   const [editTab, setEditTab] = useState<"fields" | "groups" | "flow">("fields");
   const [editPdfUrl, setEditPdfUrl] = useState<string | null>(null);
   const [editPageImages, setEditPageImages] = useState<string[]>([]);
-  const [editZoom, setEditZoom] = useState<number>(1);
+  const [editZoom, setEditZoom] = useState<number>(0.5);
   const [editZoomMode, setEditZoomMode] = useState<"a4" | "fit">("a4");
   const [editViewFormat, setEditViewFormat] = useState<"images" | "pdf">("images");
   const [editPdfLoading, setEditPdfLoading] = useState(false);
@@ -1583,7 +1583,7 @@ function FormsView() {
   const [editAdvancedOpen, setEditAdvancedOpen] = useState<Record<string, boolean>>({});
   const [editCollapsedSections, setEditCollapsedSections] = useState<Record<string, boolean>>({});
   const [editGroupMenuOpen, setEditGroupMenuOpen] = useState(false);
-  const [editSplitPercent, setEditSplitPercent] = useState<number>(50);
+  const [editSplitPercent, setEditSplitPercent] = useState<number>(40);
   const [editIsDraggingSplit, setEditIsDraggingSplit] = useState(false);
   const [editPdfOnly, setEditPdfOnly] = useState(false);
   // The advanced editor keeps the same visual tools as step 2.  "view" is
@@ -2112,6 +2112,8 @@ function FormsView() {
   };
 
   const openEdit = async (form: any) => {
+    setEditSplitPercent(40);
+    setEditZoomMode("a4");
     setEditingForm(form);
     setEditName(form.name || "");
     setEditProcedure(form.procedure_type || "");
@@ -2196,7 +2198,7 @@ function FormsView() {
     if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
     setEditPdfUrl(null);
     setEditPageImages([]);
-    setEditZoom(1);
+    setEditZoom(0.5);
     setEditPdfLoading(true);
     try {
       const [imgs, blob] = await Promise.all([
@@ -2744,6 +2746,20 @@ function FormsView() {
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <button
                       type="button"
+                      onClick={() => setEditSplitPercent(40)}
+                      style={{
+                        padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
+                        border: `1px solid ${editSplitPercent === 40 ? "#4f46e5" : "#cbd5e1"}`,
+                        background: editSplitPercent === 40 ? "#ede9fe" : "#fff",
+                        color: editSplitPercent === 40 ? "#4338ca" : "#64748b",
+                        cursor: "pointer", fontWeight: editSplitPercent === 40 ? 700 : 500
+                      }}
+                      title="Ưu tiên tài liệu xem trước lớn hơn (40% chỉnh sửa : 60% xem)"
+                    >
+                      Rộng 40%
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setEditSplitPercent(50)}
                       style={{
                         padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
@@ -2770,20 +2786,7 @@ function FormsView() {
                     >
                       Rộng 60%
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditSplitPercent(40)}
-                      style={{
-                        padding: "5px 10px", fontSize: "0.72rem", borderRadius: 6,
-                        border: `1px solid ${editSplitPercent === 40 ? "#4f46e5" : "#cbd5e1"}`,
-                        background: editSplitPercent === 40 ? "#ede9fe" : "#fff",
-                        color: editSplitPercent === 40 ? "#4338ca" : "#64748b",
-                        cursor: "pointer", fontWeight: editSplitPercent === 40 ? 700 : 500
-                      }}
-                      title="Ưu tiên tài liệu xem trước lớn hơn (40% chỉnh sửa : 60% xem)"
-                    >
-                      Rộng 40%
-                    </button>
+
                     <button type="button" className="icon-button mobile-only" onClick={closeEdit}><X size={18} /></button>
                   </div>
                 </div>
@@ -4119,6 +4122,7 @@ function FormsView() {
                   />
                 ) : editZoneMode !== "view" && editPageImages.length > 0 ? (
                   <PdfFormPreview
+                    initialZoom={0.5}
                     pageImages={editPageImages}
                     zones={editVisualZones}
                     mode={editZoneMode}
@@ -4646,11 +4650,6 @@ function FormsView() {
                       {step === 3 && (
                         <button type="button" onClick={() => setStep(2)} style={{ padding: "6px 16px", borderRadius: 6, border: "1px solid #93c5fd", background: "#fff", color: "#1d4ed8", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>
                           ← Quay lại bản xem trước
-                        </button>
-                      )}
-                      {step === 2 && labeledCount > 0 && (
-                        <button type="button" onClick={createDraftAndOpenEditor} disabled={uploading} style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#10b981", color: "#fff", cursor: uploading ? "wait" : "pointer", fontWeight: 600, fontSize: "0.85rem", opacity: uploading ? .7 : 1 }}>
-                          {uploading ? "Đang tạo..." : "Mở trình biên tập mới →"}
                         </button>
                       )}
                     </div>
