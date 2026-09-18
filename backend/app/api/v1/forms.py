@@ -28,6 +28,7 @@ from google import genai
 from google.genai import types
 from backend.app.core.config import settings
 from backend.app.core.form_templates import resolve_template_path, writable_template_path
+from backend.app.core.form_template_bindings import bound_template_stream
 
 router = APIRouter(prefix="/forms", tags=["Forms"])
 
@@ -163,72 +164,11 @@ async def upload_form(
 #     Helper: B m tag Jinja2 v o DOCX                              
 
 def _inject_jinja_tags(template_path: str, mapping: Dict[str, str]) -> None:
-    """
-    M  file DOCX t i template_path, d ng regex thay th  c c d i d u ch m/g ch
-    theo th  t  xu t hi n b ng tag Jinja2 t  ng  ng trong mapping.
+    stream = bound_template_stream(template_path, mapping)
+    with open(template_path, "wb") as template_file:
+        template_file.write(stream.getvalue())
 
-    mapping = { "1": "ho_ten", "2": "cmnd" }
-    D i d u ch m l n 1   {{ ho_ten }}, l n 2   {{ cmnd }}, ...
-    """
-    # Detect: ASCII dots/underscores (3+), tabs, checkbox ☐/□,
-    # Unicode ellipsis (U+2026 …), repeated ellipsis (2+ consecutive),
-    # and en/em dash sequences (–—)
-    blank_pattern = re.compile(
-        r'(?:[\._ ](?:&nbsp;|\s)*){3,}'     # ASCII dots/underscores 3+
-        r'|\t+'                             # tabs
-        r'|[\u2610\u25a1]'                  # checkbox ☐ or □
-        r'|(?:\u2026){1,}'                  # Unicode ellipsis … (1+ repeated)
-        r'|(?:\u2025){1,}'                  # Two-dot leader ‥
-        r'|(?:[\u2013\u2014]){2,}'          # EN/EM dash sequences –– ——
-    )
-    doc = docx.Document(template_path)
-    blank_idx = [1]  # Dùng list để nonlocal hoạt động trong nested func
-    CHECKBOX_CHARS = ('\u2610', '\u25a1')  # ☐ or □
 
-    def process_runs(runs):
-        for run in runs:
-            if not blank_pattern.search(run.text):
-                continue
-            new_text = ""
-            last_end = 0
-            for match in blank_pattern.finditer(run.text):
-                start, end = match.span()
-                new_text += run.text[last_end:start]
-                matched = run.text[start:end]
-                key = mapping.get(str(blank_idx[0]))
-                if key:
-                    if matched in CHECKBOX_CHARS:
-                        # Giữ nguyên đúng kích thước ô trên mẫu; chỉ thay ký tự bên trong
-                        # bằng glyph checkbox đã tick. Điều này tránh "[x]" tràn sang ô kế.
-                        new_text += f"{{% if {key} %}}☑{{% else %}}☐{{% endif %}}"
-                    else:
-                        new_text += f"{{{{ {key} }}}}"
-                else:
-                    new_text += matched  # Giữ nguyên nếu chưa map
-                blank_idx[0] += 1
-                last_end = end
-            new_text += run.text[last_end:]
-            run.text = new_text  # Kế thừa nguyên vẹn formatting (bold/italic/font)
-
-    for p in doc.paragraphs:
-        process_runs(p.runs)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                if not cell.text.strip():
-                    key = mapping.get(str(blank_idx[0]))
-                    if key:
-                        if not cell.paragraphs:
-                            p = cell.add_paragraph()
-                        else:
-                            p = cell.paragraphs[0]
-                        p.add_run(f"{{{{ {key} }}}}")
-                    blank_idx[0] += 1
-                else:
-                    for p in cell.paragraphs:
-                        process_runs(p.runs)
-
-    doc.save(template_path)
 
 
 def _predict_labels(full_text: str, manual_zone_ids: Optional[List[str]] = None) -> Dict[str, Dict[str, str]]:
@@ -750,7 +690,7 @@ async def generate_form(
         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX gốc")
         
     try:
-        doc = DocxTemplate(template_path)
+        doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
         
         # Prepare payload with boolean normalization and digit_group splitting
         normalized_payload = prepare_render_payload(form, payload.data)
@@ -867,7 +807,7 @@ async def export_form(
         )
 
     try:
-        doc = DocxTemplate(template_path)
+        doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
         
         if isinstance(payload, str):
             import json
@@ -963,7 +903,7 @@ async def preview_pdf_form(
         _SKIP = {'True', 'False', 'None', 'loop', 'range', 'lipsum'}
         template_vars: set = set()
         try:
-            with _ZipFile(template_path) as _zf:
+            with _ZipFile(bound_template_stream(template_path, form.mapping or {}, form.fields or [])) as _zf:
                 for _zname in _zf.namelist():
                     if _zname.endswith('.xml'):
                         _xml = _zf.read(_zname).decode('utf-8', errors='ignore')
@@ -1011,7 +951,7 @@ async def preview_pdf_form(
                 preview_data[_k] = _v
 
         # ── Step 4: Render ────────────────────────────────────────────────────────
-        doc = DocxTemplate(template_path)
+        doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
         print("DEBUG PREVIEW DATA:", preview_data)
         print("DEBUG TEMPLATE VARS:", template_vars)
         doc.render(preview_data)
@@ -1197,9 +1137,13 @@ async def analyze_docx(file: UploadFile = File(...)):
         for p in doc.paragraphs:
             process_paragraph(p)
             
+        analyzed_cells = set()
         for t in doc.tables:
             for row in t.rows:
                 for cell in row.cells:
+                    if cell._tc in analyzed_cells:
+                        continue
+                    analyzed_cells.add(cell._tc)
                     if not cell.text.strip():
                         # Empty cell blank
                         idx = blank_idx[0]
@@ -1248,29 +1192,7 @@ async def analyze_docx(file: UploadFile = File(...)):
                         blank_types[_bidx] = 'digit_group'
                         _par_digit_groups[_bidx] = _gkey
 
-        for table in doc.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    if not cell.text.strip():
-                        idx = blank_idx[0]
-                        blank_types[idx] = 'text'
-                        g_val = idx // 256
-                        b_val = idx % 256
 
-                        if not cell.paragraphs:
-                            p = cell.add_paragraph()
-                        else:
-                            p = cell.paragraphs[0]
-
-                        r_blank = p.add_run("   ")
-                        r_blank.font.color.rgb = docx.shared.RGBColor(254, g_val, b_val)
-
-                        ai_full_text_parts.append(f" [[{idx}]] ")
-                        blank_idx[0] += 1
-                    else:
-                        for p in cell.paragraphs:
-                            process_paragraph(p)
-                        
         marked_docx_path = os.path.join(temp_dir, f"{temp_id}_marked.docx")
         doc.save(marked_docx_path)
         
