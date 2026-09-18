@@ -499,6 +499,10 @@ Phản hồi phải tuân thủ JSON schema được yêu cầu.
                 response_mime_type="application/json",
                 response_schema=FormExtractionResult,
                 temperature=0.1,
+                # Form extraction is a constrained structured-output task. The
+                # deterministic backend still owns order, branches, formulas
+                # and completion, so model reasoning only adds latency here.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
 
             response = await self.client.aio.models.generate_content(
