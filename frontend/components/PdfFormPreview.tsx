@@ -120,7 +120,7 @@ export default function PdfFormPreview({
       style={{
         width: "100%", flex: 1, minHeight: 0, minWidth: 0, overflow: "auto",
         background: "#e2e8f0",
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+        position: "relative", height: "100%",
         overflowAnchor: "none" // Prevent browser scroll jumps
       }}
     >
