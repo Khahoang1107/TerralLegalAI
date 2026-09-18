@@ -2840,7 +2840,7 @@ function FormsView() {
                     </div>
 
                     {/* Segmented 3-Tab Control */}
-                    <div style={{ display: "flex", background: "#f1f5f9", padding: 3, borderRadius: 8, gap: 4, marginBottom: 14, border: "1px solid #e2e8f0", position: "sticky", top: 0, zIndex: 12, flexShrink: 0 }}>
+                    <div style={{ display: "flex", background: "#e0e7ff", padding: 3, borderRadius: 8, gap: 4, marginBottom: 14, border: "1px solid #a5b4fc", position: "sticky", top: 0, zIndex: 12, flexShrink: 0, boxShadow: "0 3px 10px rgba(30, 41, 59, 0.14)" }}>
                       <button
                         type="button"
                         onClick={() => setEditTab("fields")}
@@ -2903,7 +2903,7 @@ function FormsView() {
                     {editTab === "fields" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         {/* Search & Filter Toolbar */}
-                        <div style={{ position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", paddingBottom: 10, borderBottom: "1px solid #e2e8f0", marginBottom: 2 }}>
+                        <div style={{ position: "sticky", top: 40, zIndex: 11, background: "#eef2ff", padding: "10px", border: "1px solid #a5b4fc", borderBottom: "2px solid #818cf8", borderRadius: "0 0 10px 10px", boxShadow: "0 6px 14px rgba(30, 41, 59, 0.16)", marginBottom: 2 }}>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                             <div style={{ position: "relative", flex: 1 }}>
                               <Search size={14} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
@@ -3288,7 +3288,7 @@ function FormsView() {
                     {/* TAB 2: QUẢN LÝ NHÓM LOGIC & RẼ NHÁNH */}
                     {editTab === "groups" && (
                       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", padding: "8px 0" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#eef2ff", padding: "10px", border: "1px solid #a5b4fc", borderBottom: "2px solid #818cf8", borderRadius: "0 0 10px 10px", boxShadow: "0 6px 14px rgba(30, 41, 59, 0.16)" }}>
                           <div>
                             <h4 style={{ margin: 0, color: "#1e293b", fontSize: "0.92rem", fontWeight: 700 }}>
                               Nhóm Logic & Rẽ nhánh ({editSections.length})
@@ -3721,7 +3721,7 @@ function FormsView() {
                     {/* TAB 3: LUỒNG AI SIMULATION */}
                     {editTab === "flow" && (
                       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                        <div style={{ marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#f8fafc", padding: "8px 0" }}>
+                        <div style={{ marginBottom: 12, position: "sticky", top: 40, zIndex: 11, background: "#eef2ff", padding: "10px", border: "1px solid #a5b4fc", borderBottom: "2px solid #818cf8", borderRadius: "0 0 10px 10px", boxShadow: "0 6px 14px rgba(30, 41, 59, 0.16)" }}>
                           <h4 style={{ margin: 0, color: "#1e293b", fontSize: "0.92rem", fontWeight: 700 }}>
                             Mô phỏng Luồng AI Trò chuyện
                           </h4>
