@@ -10,6 +10,7 @@ from backend.app.core.security import get_current_user
 from backend.app.models.user import User
 from backend.app.models.conversation import Conversation, Message
 from backend.app.api.v1.chat import CitationSchema
+from backend.app.core.form_templates import resolve_template_path
 
 router = APIRouter(prefix="/conversations")
 
@@ -139,16 +140,14 @@ async def export_conversation_form(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy cấu trúc biểu mẫu gốc")
         
-    template_path = f"backend/data/templates/{form_id}.docx"
-    if not os.path.exists(template_path):
-        template_path = "backend/data/templates/default.docx"
-        if not os.path.exists(template_path):
-            raise HTTPException(status_code=404, detail="Không tìm thấy mẫu DOCX")
+    template_path = resolve_template_path(form_id, allow_default=True)
+    if not template_path:
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu DOCX")
             
     try:
         doc = DocxTemplate(template_path)
         doc.render(collected_data)
-        output_dir = "backend/data/exports"
+        output_dir = "data/exports"
         os.makedirs(output_dir, exist_ok=True)
         output_path = f"{output_dir}/{form_id}_{conversation_id}.docx"
         doc.save(output_path)

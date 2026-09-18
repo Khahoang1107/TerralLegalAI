@@ -27,6 +27,7 @@ from docxtpl import DocxTemplate
 from google import genai
 from google.genai import types
 from backend.app.core.config import settings
+from backend.app.core.form_templates import resolve_template_path, writable_template_path
 
 router = APIRouter(prefix="/forms", tags=["Forms"])
 
@@ -137,9 +138,7 @@ async def upload_form(
         await db.refresh(form)
 
         # L u file DOCX g c v o th  m c templates
-        template_dir = "backend/data/templates"
-        os.makedirs(template_dir, exist_ok=True)
-        template_path = os.path.join(template_dir, f"{form.id}.docx")
+        template_path = writable_template_path(str(form.id))
         docx_bytes = await docx_file.read()
         with open(template_path, "wb") as f:
             f.write(docx_bytes)
@@ -719,9 +718,7 @@ async def update_form_template(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
 
-    template_dir = "backend/data/templates"
-    os.makedirs(template_dir, exist_ok=True)
-    template_path = os.path.join(template_dir, f"{form.id}.docx")
+    template_path = writable_template_path(str(form.id))
     
     content = await file.read()
     with open(template_path, "wb") as f:
@@ -748,8 +745,8 @@ async def generate_form(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
         
-    template_path = os.path.join("backend", "data", "templates", f"{form.id}.docx")
-    if not os.path.exists(template_path):
+    template_path = resolve_template_path(str(form.id))
+    if not template_path:
         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX gốc")
         
     try:
@@ -792,8 +789,8 @@ async def save_mapping(
     if not form:
         raise HTTPException(status_code=404, detail="Kh ng t m th y bi u m u")
 
-    template_path = f"backend/data/templates/{form_id}.docx"
-    if not os.path.exists(template_path):
+    template_path = resolve_template_path(form_id)
+    if not template_path:
         raise HTTPException(status_code=404, detail="Kh ng t m th y file DOCX m u")
 
     try:
@@ -862,11 +859,12 @@ async def export_form(
                 detail=f"Thi u c c tr  ng b t bu c: {', '.join(missing)}"
             )
 
-    template_path = f"backend/data/templates/{form_id}.docx"
-    if not os.path.exists(template_path):
-        template_path = "backend/data/templates/default.docx"
-        if not os.path.exists(template_path):
-            raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+    template_path = resolve_template_path(form_id, allow_default=True)
+    if not template_path:
+        raise HTTPException(
+            status_code=404,
+            detail="Không tìm thấy file DOCX gốc của biểu mẫu. Vui lòng tải lại file mẫu.",
+        )
 
     try:
         doc = DocxTemplate(template_path)
@@ -947,11 +945,10 @@ async def preview_pdf_form(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
 
-    template_path = f"backend/data/templates/{form_id}.docx"
-    if not os.path.exists(template_path):
-        template_path = "backend/data/templates/default.docx"
-        if not os.path.exists(template_path):
-            raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
+    # Never overlay the original form's zones onto an unrelated fallback.
+    template_path = resolve_template_path(form_id, allow_default=mode != "admin")
+    if not template_path:
+        raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
 
     try:
         from docxtpl import DocxTemplate, RichText
@@ -1598,9 +1595,7 @@ async def create_visual_form(
         raw_path = os.path.join(temp_dir, f"{data.temp_id}_raw.docx")
         
         if os.path.exists(raw_path):
-            template_dir = "backend/data/templates"
-            os.makedirs(template_dir, exist_ok=True)
-            template_path = os.path.join(template_dir, f"{form.id}.docx")
+            template_path = writable_template_path(str(form.id))
             
             import shutil
             shutil.copy2(raw_path, template_path)
