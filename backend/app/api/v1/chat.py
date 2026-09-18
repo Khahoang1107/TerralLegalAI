@@ -21,7 +21,7 @@ from backend.app.core.security import get_current_user
 from backend.app.models.user import User
 from backend.app.models.conversation import Conversation, Message
 from backend.app.models.form_schema import FormSchema
-from backend.app.core.form_flow import apply_flow_rules, apply_calculated_fields, get_missing_fields, order_fields, get_one_of_members, build_one_of_choice_question, is_valid_next_question
+from backend.app.core.form_flow import apply_flow_rules, apply_calculated_fields, get_missing_fields, order_fields, get_one_of_members, build_one_of_choice_question, is_valid_next_question, prepend_group_introduction
 import uuid
 
 router = APIRouter()
@@ -368,7 +368,9 @@ Yêu cầu:
             # Deterministic flow: applies/reopens dependent branches and settles
             # one-of groups.  The provenance lets a later parent answer reopen
             # only values skipped automatically, never a user's explicit skip.
+            introduced_groups = flow_state.get("introduced_groups", [])
             flow_state = apply_flow_rules(active_form.fields or [], collected_data, flow_state)
+            flow_state["introduced_groups"] = introduced_groups
             apply_calculated_fields(active_form.fields or [], collected_data)
 
             # Kết hợp invalid_fields cũ (chưa được hỏi lại) với mới phát hiện
@@ -443,6 +445,10 @@ Yêu cầu:
             # Lưu last_asked_field để lượt sau biết trường nào vừa được hỏi
             new_last_asked = None
             if not result.is_complete and result.next_field_key:
+                result.assistant_reply, flow_state["introduced_groups"] = prepend_group_introduction(
+                    active_form.fields or [], result.next_field_key,
+                    result.assistant_reply, flow_state.get("introduced_groups", []),
+                )
                 new_last_asked = {
                     "key": result.next_field_key,
                     "name": result.next_field_name or result.next_field_key,

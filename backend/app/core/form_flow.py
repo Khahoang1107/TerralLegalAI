@@ -397,3 +397,21 @@ def is_valid_next_question(fields, next_field, candidate_key, data) -> bool:
         return True
     return (is_valid_one_of_next_field(fields, next_field, candidate_key)
             and data.get(candidate_key) in (None, ""))
+
+
+def prepend_group_introduction(fields, candidate_key, reply, introduced_groups):
+    """Show a configured cluster introduction once, before its first question."""
+    introduced = list(introduced_groups or [])
+    field = next((f for f in fields if f.get("key") == candidate_key), None)
+    if not field or field.get("condition_group_id") or field.get("alternative_group_id"):
+        return reply, introduced
+    group = field.get("section_id")
+    introduction = str(field.get("question_group") or "").strip()
+    if not group or not introduction or str(group) in introduced:
+        return reply, introduced
+    # The backend owns the introduction; avoid doubling it if an older agent
+    # happens to include the exact configured text already.
+    if introduction not in reply:
+        reply = f"{introduction}\n\n{reply}"
+    introduced.append(str(group))
+    return reply, introduced
