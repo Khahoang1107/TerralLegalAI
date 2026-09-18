@@ -1949,7 +1949,7 @@ function FormsView() {
       });
       const form = await formsApi.getForm(created.id || created.form_id);
       resetModal();
-      await openEdit(form, mode);
+      await openEdit(form, mode, activeZoneIdx);
       setEditTab("fields");
       showToast("Đã tạo bản nháp. Hãy hoàn thiện Nhóm logic và Luồng AI trong trình biên tập mới.", "success");
     } catch (err: any) {
@@ -2115,7 +2115,7 @@ function FormsView() {
     }
   };
 
-  const openEdit = async (form: any, initialMode: "label" | "add" | "adjust" | "merge" | "remove" = "adjust") => {
+  const openEdit = async (form: any, initialMode: "label" | "add" | "adjust" | "merge" | "remove" = "adjust", selectedZone: string | null = null) => {
     setEditSplitPercent(40);
     setEditZoomMode("a4");
     setEditingForm(form);
@@ -2140,7 +2140,7 @@ function FormsView() {
     setEditGroupMenuOpen(false);
     setEditZoneMode(initialMode);
     setEditViewFormat("images");
-    setEditActiveZoneIdx(null);
+    setEditActiveZoneIdx(selectedZone);
     setEditMergeSelection(new Set());
 
     // Parse sections from fields
