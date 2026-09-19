@@ -10,6 +10,39 @@ BLANK_PATTERN = re.compile(
     r'(?:[\._ ](?:&nbsp;|\s)*){3,}|\t+|[\u2610\u25a1]'
     r'|\u2026+|\u2025+|[\u2013\u2014]{2,}'
 )
+W_NAMESPACE = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+
+def normalize_docx_symbols(document) -> int:
+    """Convert proprietary Wingdings/Symbol XML elements (<w:sym>) into standard Unicode checkboxes.
+
+    Without this, LibreOffice on Linux falls back to a generic missing glyph which squishes
+    the checkbox horizontally (bị bóp chiều ngang).
+    """
+    from docx.oxml import OxmlElement
+    converted = 0
+    all_paragraphs = list(document.paragraphs)
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                all_paragraphs.extend(cell.paragraphs)
+
+    for p in all_paragraphs:
+        for r in p.runs:
+            syms = r._r.findall(f"{{{W_NAMESPACE}}}sym")
+            for sym in syms:
+                font = sym.attrib.get(f"{{{W_NAMESPACE}}}font", "")
+                char_hex = sym.attrib.get(f"{{{W_NAMESPACE}}}char", "").upper()
+                if "wingdings" in font.lower() or "symbol" in font.lower():
+                    rep = "☐"
+                    if char_hex in ("F0A8", "F0FE", "F052", "F053", "F0A3"):
+                        rep = "☑"
+                    t_elem = OxmlElement("w:t")
+                    t_elem.text = rep
+                    r.font.name = "DejaVu Sans"
+                    r._r.replace(sym, t_elem)
+                    converted += 1
+    return converted
 
 
 def current_date_rule(field):
@@ -129,6 +162,7 @@ def _restore_signing_date(document, fields):
 def bound_template_stream(template_path, mapping, fields=None):
     """Render on a copy, preserving the uploaded template and its existing tags."""
     document = docx.Document(template_path)
+    normalize_docx_symbols(document)
     if fields is not None:
         _restore_signing_date(document, fields)
     if mapping:

@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     libreoffice-writer-nogui \
     fonts-liberation \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages từ builder

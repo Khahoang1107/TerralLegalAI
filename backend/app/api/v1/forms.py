@@ -28,7 +28,7 @@ from google import genai
 from google.genai import types
 from backend.app.core.config import settings
 from backend.app.core.form_templates import resolve_template_path, writable_template_path
-from backend.app.core.form_template_bindings import bound_template_stream, current_date_rule
+from backend.app.core.form_template_bindings import bound_template_stream, current_date_rule, normalize_docx_symbols
 
 router = APIRouter(prefix="/forms", tags=["Forms"])
 
@@ -1161,6 +1161,8 @@ async def analyze_docx(file: UploadFile = File(...)):
             f.write(await file.read())
             
         doc = docx.Document(raw_path)
+        normalize_docx_symbols(doc)
+        doc.save(raw_path)
         # Detect: ASCII dots/underscores (3+), tabs, checkbox ☐,
         # Unicode ellipsis (U+2026 …), repeated ellipsis, en/em dash sequences
         blank_pattern = re.compile(
