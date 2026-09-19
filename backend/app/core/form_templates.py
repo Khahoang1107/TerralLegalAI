@@ -73,6 +73,28 @@ def _is_default_template(path: str) -> bool:
     )
 
 
+def _candidate_search_dirs() -> list[str]:
+    dirs = []
+    if os.getenv("FORM_TEMPLATE_DIR"):
+        dirs.append(os.getenv("FORM_TEMPLATE_DIR"))
+    dirs.extend([
+        TEMPLATE_DIR,
+        LEGACY_TEMPLATE_DIR,
+        os.path.join("data", "templates"),
+        os.path.join("backend", "data", "templates"),
+        os.path.join("data", "uploaded"),
+        os.path.join("backend", "data", "uploaded"),
+    ])
+    seen = set()
+    result = []
+    for d in dirs:
+        norm = os.path.normpath(os.path.abspath(d))
+        if norm not in seen and os.path.isdir(norm):
+            seen.add(norm)
+            result.append(norm)
+    return result
+
+
 def _recover_legacy_template(
     destination: str,
     *,
@@ -89,23 +111,33 @@ def _recover_legacy_template(
         if len(token) >= 3 and token not in {"don", "mau", "so"}
     }
     best: tuple[int, str] | None = None
-    if not os.path.isdir(LEGACY_TEMPLATE_DIR):
-        return None
+    search_dirs = _candidate_search_dirs()
 
-    for filename in os.listdir(LEGACY_TEMPLATE_DIR):
-        if not filename.lower().endswith(".docx") or filename in {"default.docx", "sample.docx"}:
+    for directory in search_dirs:
+        try:
+            entries = os.listdir(directory)
+        except OSError:
             continue
-        candidate = os.path.join(LEGACY_TEMPLATE_DIR, filename)
-        text, variables = _document_signature(candidate)
-        overlap = len(expected_keys & variables)
-        title_hits = sum(token in text for token in name_tokens)
-        # Require both the same document subject and several matching field
-        # bindings before repairing a missing/corrupt persistent template.
-        if overlap < 3 or title_hits < min(3, len(name_tokens)):
-            continue
-        score = overlap * 100 + title_hits
-        if best is None or score > best[0]:
-            best = (score, candidate)
+        for filename in entries:
+            if not filename.lower().endswith(".docx") or filename in {"default.docx", "sample.docx"}:
+                continue
+            candidate = os.path.join(directory, filename)
+            text, variables = _document_signature(candidate)
+            overlap = len(expected_keys & variables)
+            title_hits = sum(token in text for token in name_tokens)
+
+            # Match either variable overlap or strong title tokens (e.g. "bien", "dong")
+            match_condition = (
+                (overlap >= 2)
+                or (overlap >= 1 and title_hits >= 1)
+                or (title_hits >= min(2, len(name_tokens)) and title_hits >= 2)
+            )
+            if not match_condition:
+                continue
+
+            score = overlap * 100 + title_hits * 10
+            if best is None or score > best[0]:
+                best = (score, candidate)
 
     if not best:
         return None
@@ -129,10 +161,12 @@ def resolve_template_path(
     ):
         return destination
 
-    legacy = os.path.join(LEGACY_TEMPLATE_DIR, f"{form_id}.docx")
-    if os.path.exists(legacy) and not _is_default_template(legacy):
-        _copy_atomic(legacy, destination)
-        return destination
+    # Check all known template directories for {form_id}.docx
+    for d in [LEGACY_TEMPLATE_DIR, TEMPLATE_DIR, os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+        candidate = os.path.join(d, f"{form_id}.docx")
+        if os.path.exists(candidate) and not _is_default_template(candidate) and _is_valid_docx(candidate):
+            _copy_atomic(candidate, destination)
+            return destination
 
     recovered = _recover_legacy_template(
         destination,
@@ -142,16 +176,10 @@ def resolve_template_path(
     if recovered:
         return recovered
 
-    # A configured form must never be rendered on the generic fallback: its
-    # saved zones would appear over an unrelated page and could be saved back
-    # accidentally. The default remains available only to metadata-free
-    # legacy callers.
-    if allow_default and not expected_fields and not form_name:
-        persistent_default = os.path.join(TEMPLATE_DIR, "default.docx")
-        if os.path.exists(persistent_default):
-            return persistent_default
-        legacy_default = os.path.join(LEGACY_TEMPLATE_DIR, "default.docx")
-        if os.path.exists(legacy_default):
-            _copy_atomic(legacy_default, persistent_default)
-            return persistent_default
+    # If allowed, fall back to default template
+    if allow_default:
+        for d in [TEMPLATE_DIR, LEGACY_TEMPLATE_DIR, os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+            def_path = os.path.join(d, "default.docx")
+            if os.path.exists(def_path):
+                return def_path
     return None

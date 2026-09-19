@@ -1591,6 +1591,8 @@ function FormsView() {
   const [editSplitPercent, setEditSplitPercent] = useState<number>(40);
   const [editIsDraggingSplit, setEditIsDraggingSplit] = useState(false);
   const [editPdfOnly, setEditPdfOnly] = useState(false);
+  const [editTemplateUploading, setEditTemplateUploading] = useState(false);
+  const [editUploadedFileName, setEditUploadedFileName] = useState<string>("");
   // The advanced editor keeps the same visual tools as step 2.  "view" is
   // deliberately a first-class mode so an administrator can always leave an
   // editing tool and inspect the document without draggable overlays.
@@ -2143,6 +2145,8 @@ function FormsView() {
     setEditViewFormat("images");
     setEditActiveZoneIdx(selectedZone);
     setEditMergeSelection(new Set());
+    setEditUploadedFileName("");
+    setEditTemplateUploading(false);
 
     // Parse sections from fields
     const physical = rawFields.filter((f: any) => !f.is_virtual);
@@ -2231,12 +2235,61 @@ function FormsView() {
     }
   };
 
+  const refreshEditPreview = useCallback(async (formId: string) => {
+    setEditPdfLoading(true);
+    try {
+      const [imagePreview, blob] = await Promise.all([
+        formsApi.previewImagePages(formId, {}, "admin").catch(() => ({ page_images: [], page_dimensions: [] })),
+        formsApi.previewPdf(formId, {}, "admin").catch(() => null),
+      ]);
+      const imgs = imagePreview.page_images;
+      if (imgs && imgs.length > 0) {
+        setEditPageDimensions(imagePreview.page_dimensions || []);
+        setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
+      }
+      if (blob) {
+        if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
+        setEditPdfUrl(URL.createObjectURL(blob));
+      }
+    } catch (e) {
+      console.error("Lỗi làm mới bản xem trước", e);
+    } finally {
+      setEditPdfLoading(false);
+    }
+  }, [editPdfUrl]);
+
+  const handleUploadTemplateFile = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      showToast("Vui lòng chọn tệp Word (.docx)", "error");
+      return;
+    }
+    if (!editingForm?.id) {
+      showToast("Chưa xác định biểu mẫu để tải tệp lên", "error");
+      return;
+    }
+    setEditTemplateUploading(true);
+    try {
+      await formsApi.updateTemplate(editingForm.id, file);
+      setEditUploadedFileName(file.name);
+      showToast(`Đã tải lên tệp "${file.name}"! Đang nạp tài liệu...`, "success");
+      await refreshEditPreview(editingForm.id);
+      showToast("Đã cập nhật bản xem trước tài liệu thành công!", "success");
+    } catch (err: any) {
+      console.error("Lỗi tải lên tệp mẫu:", err);
+      showToast(err?.response?.data?.detail || "Không thể tải lên tệp mẫu", "error");
+    } finally {
+      setEditTemplateUploading(false);
+    }
+  };
+
   const closeEdit = () => {
     setEditingForm(null);
     if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
     setEditPdfUrl(null);
     setEditPageImages([]);
     setEditPdfOnly(false);
+    setEditUploadedFileName("");
+    setEditTemplateUploading(false);
   };
   const returnToLabelPreview = () => {
     const b = labelPreviewBackup;
@@ -2851,6 +2904,95 @@ function FormsView() {
                           onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.background = "#f8fafc"; }}
                         />
                       </div>
+                    </div>
+
+                    {/* Template File Card (Upload & Manage DOCX) */}
+                    <div style={{
+                      background: "#ffffff",
+                      padding: "12px 14px",
+                      borderRadius: 10,
+                      border: "1px solid #e2e8f0",
+                      marginBottom: 12,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                      flexShrink: 0
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <FileText size={15} style={{ color: "#4f46e5" }} />
+                          <label style={{ fontSize: "0.76rem", fontWeight: 700, color: "#334155", margin: 0 }}>
+                            Tệp Word mẫu (.docx)
+                          </label>
+                        </div>
+                        {editPageImages.length > 0 && (
+                          <span style={{ fontSize: "0.68rem", color: "#059669", background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "1px 7px", borderRadius: 10, fontWeight: 600 }}>
+                            ✓ Đã nạp {editPageImages.length} trang
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <label style={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 7,
+                          padding: "8px 12px",
+                          border: "1.5px dashed #cbd5e1",
+                          borderRadius: 7,
+                          background: editUploadedFileName ? "#f0fdf4" : "#f8fafc",
+                          borderColor: editUploadedFileName ? "#86efac" : "#cbd5e1",
+                          cursor: editTemplateUploading ? "not-allowed" : "pointer",
+                          transition: "all 0.15s ease"
+                        }}>
+                          <UploadCloud size={16} style={{ color: editUploadedFileName ? "#16a34a" : "#64748b" }} />
+                          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: editUploadedFileName ? "#15803d" : "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>
+                            {editUploadedFileName || "Tải lên / Thay thế tệp .docx..."}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".docx"
+                            style={{ display: "none" }}
+                            disabled={editTemplateUploading}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleUploadTemplateFile(f);
+                            }}
+                          />
+                        </label>
+
+                        {editingForm?.id && (
+                          <button
+                            type="button"
+                            onClick={() => refreshEditPreview(editingForm.id)}
+                            disabled={editPdfLoading || editTemplateUploading}
+                            title="Làm mới lại bản xem trước từ máy chủ"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              padding: "8px 10px",
+                              borderRadius: 7,
+                              border: "1px solid #cbd5e1",
+                              background: "#fff",
+                              color: "#475569",
+                              fontSize: "0.74rem",
+                              fontWeight: 600,
+                              cursor: (editPdfLoading || editTemplateUploading) ? "not-allowed" : "pointer"
+                            }}
+                          >
+                            <RefreshCw size={13} className={editPdfLoading ? "spin-icon" : ""} />
+                            <span>Làm mới</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {editTemplateUploading && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: "0.72rem", color: "#4f46e5" }}>
+                          <div style={{ width: 12, height: 12, border: "2px solid #c7d2fe", borderTopColor: "#4f46e5", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                          <span>Đang tải lên và kết xuất tài liệu mẫu...</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Segmented 3-Tab Control */}
@@ -4166,6 +4308,13 @@ function FormsView() {
                     fieldDetails={editFieldDetails}
                     onZoneClick={selectEditZone}
                     onZonesChange={updateEditVisualZones}
+                    onModeChange={(m) => {
+                      setEditZoneMode(m);
+                      setEditActiveZoneIdx(null);
+                      if (m !== "merge") setEditMergeSelection(new Set());
+                    }}
+                    onApplyMerge={applyEditMerge}
+                    onRefresh={() => editingForm?.id && refreshEditPreview(editingForm.id)}
                   />
                 ) : editPageImages.length > 0 ? (
                   <div style={{

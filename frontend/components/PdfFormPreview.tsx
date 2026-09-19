@@ -46,7 +46,7 @@ interface TextBlock {
 }
 
 type AiPred = { label: string; description: string; confidence: number; section: string };
-type PreviewMode = 'label' | 'add' | 'adjust' | 'remove' | 'merge';
+type PreviewMode = 'view' | 'label' | 'add' | 'adjust' | 'remove' | 'merge';
 
 interface PdfFormPreviewProps {
   initialZoom?: number;
@@ -64,6 +64,9 @@ interface PdfFormPreviewProps {
   aiPredictions?: Record<string, AiPred>;
   fieldDetails?: Record<string, { num: number; label: string }>;
   pageDimensions?: { page: number; width: number; height: number }[];
+  onModeChange?: (mode: PreviewMode) => void;
+  onApplyMerge?: () => void;
+  onRefresh?: () => void;
 }
 
 export default function PdfFormPreview({
@@ -82,6 +85,9 @@ export default function PdfFormPreview({
   fieldDetails = {},
   textBlocks = [],
   pageDimensions,
+  onModeChange,
+  onApplyMerge,
+  onRefresh,
 }: PdfFormPreviewProps) {
   // Keep a stable design scale. The old ResizeObserver squeezed the document to
   // the panel width, which made small fields difficult to select. Overflow now
@@ -127,10 +133,12 @@ export default function PdfFormPreview({
       <div style={{
         position: "sticky", top: 10, left: 0, zIndex: 30,
         width: "fit-content", margin: "0 auto -38px", height: 38,
-        display: "flex", alignItems: "center", gap: 4,
-        padding: "4px 6px", borderRadius: 8,
-        background: "rgba(15, 23, 42, 0.88)", color: "#fff",
-        boxShadow: "0 3px 10px rgba(0,0,0,0.22)", backdropFilter: "blur(4px)"
+        display: "flex", alignItems: "center", gap: 5,
+        padding: "4px 8px", borderRadius: 8,
+        background: "rgba(15, 23, 42, 0.92)", color: "#fff",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.25)", backdropFilter: "blur(6px)",
+        border: "1px solid rgba(255,255,255,0.15)",
+        flexWrap: "nowrap"
       }}>
         <button
           type="button"
@@ -143,7 +151,7 @@ export default function PdfFormPreview({
           type="button"
           onClick={() => setZoom(1)}
           title="Về kích thước tài liệu 100% (1.200 px)"
-          style={{ minWidth: 58, height: 28, border: 0, borderRadius: 5, background: zoom === 1 ? "#2563eb" : "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+          style={{ minWidth: 52, height: 28, border: 0, borderRadius: 5, background: zoom === 1 ? "#2563eb" : "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
         >{Math.round(zoom * 100)}%</button>
         <button
           type="button"
@@ -152,6 +160,132 @@ export default function PdfFormPreview({
           title="Phóng to"
           style={{ width: 28, height: 28, border: 0, borderRadius: 5, background: "rgba(255,255,255,0.12)", color: "#fff", cursor: zoom >= 2 ? "not-allowed" : "pointer", fontSize: 18 }}
         >+</button>
+
+        {!readOnly && onModeChange && (
+          <>
+            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.2)", margin: "0 2px" }} />
+            
+            <button
+              type="button"
+              onClick={() => onModeChange("label")}
+              title="Dán nhãn: Nhấp vào ô để chọn và sửa nhãn trường ở bảng bên trái"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "label" ? "#3b82f6" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "label" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>🏷</span>
+              <span>Dán nhãn</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onModeChange("add")}
+              title="Thêm vùng: Kéo chuột trên tài liệu để tạo ô điền mới"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "add" ? "#3b82f6" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "add" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>➕</span>
+              <span>Thêm vùng</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onModeChange("adjust")}
+              title="Chỉnh vùng: Kéo khung hoặc các điểm neo để điều chỉnh vị trí/kích thước"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "adjust" ? "#3b82f6" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "adjust" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>↔</span>
+              <span>Chỉnh vùng</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onModeChange("remove")}
+              title="Xóa vùng: Nhấp vào một ô trên tài liệu để xóa"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "remove" ? "#ef4444" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "remove" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>🗑</span>
+              <span>Xóa vùng</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onModeChange("merge")}
+              title="Gộp vùng: Chọn nhiều ô cần dùng chung dữ liệu rồi bấm gộp"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "merge" ? "#8b5cf6" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "merge" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>🔀</span>
+              <span>Gộp{mergeSelection.size > 0 ? ` (${mergeSelection.size})` : ""}</span>
+            </button>
+
+            {mode === "merge" && mergeSelection.size >= 2 && onApplyMerge && (
+              <button
+                type="button"
+                onClick={onApplyMerge}
+                title="Gộp các ô đã chọn thành một trường"
+                style={{
+                  padding: "3px 10px", height: 28, borderRadius: 5, border: 0,
+                  background: "#f59e0b", color: "#fff", cursor: "pointer",
+                  fontSize: "0.76rem", fontWeight: 700
+                }}
+              >
+                Gộp {mergeSelection.size} vùng
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => onModeChange("view")}
+              title="Xem trước tài liệu"
+              style={{
+                padding: "3px 9px", height: 28, borderRadius: 5, border: 0,
+                background: mode === "view" ? "#10b981" : "rgba(255,255,255,0.12)",
+                color: "#fff", cursor: "pointer", fontSize: "0.76rem", fontWeight: mode === "view" ? 700 : 500,
+                display: "inline-flex", alignItems: "center", gap: 4
+              }}
+            >
+              <span>👁</span>
+              <span>Xem trước</span>
+            </button>
+
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                title="Làm mới lại bản xem trước"
+                style={{
+                  padding: "3px 7px", height: 28, borderRadius: 5, border: 0,
+                  background: "rgba(255,255,255,0.12)", color: "#fff", cursor: "pointer",
+                  fontSize: "0.76rem"
+                }}
+              >
+                🔄
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       <div style={{

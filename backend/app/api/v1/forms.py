@@ -659,12 +659,27 @@ async def update_form_template(
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
 
     template_path = writable_template_path(str(form.id))
-    
     content = await file.read()
     with open(template_path, "wb") as f:
         f.write(content)
-        
-    return {"message": "Đã cập nhật file Word mẫu", "form_id": str(form.id)}
+
+    import shutil
+    for d in [os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+        try:
+            os.makedirs(d, exist_ok=True)
+            p = os.path.join(d, f"{form.id}.docx")
+            if os.path.abspath(p) != os.path.abspath(template_path):
+                shutil.copy2(template_path, p)
+        except Exception:
+            pass
+
+    if form.mapping:
+        try:
+            _inject_jinja_tags(template_path, form.mapping)
+        except Exception:
+            pass
+
+    return {"message": "Đã cập nhật file Word mẫu", "form_id": str(form.id), "filename": file.filename}
 
 
 from docxtpl import DocxTemplate
@@ -897,7 +912,7 @@ async def preview_pdf_form(
     # Never overlay the original form's zones onto an unrelated fallback.
     template_path = resolve_template_path(
         form_id,
-        allow_default=mode != "admin",
+        allow_default=True,
         expected_fields=form.fields or [],
         form_name=form.name,
     )
