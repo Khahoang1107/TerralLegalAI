@@ -11,6 +11,7 @@ import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationAp
 import ProjectSidebar, { type LegalProject } from "@/components/chat/ProjectSidebar";
 import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
 import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
+import LegalSnippetViewer, { cleanLegalText } from "@/components/chat/LegalSnippetViewer";
 import {
   AlertCircle, ArrowRight, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
   ExternalLink, Eye, EyeOff, FileCheck2, FileText, GitBranch, Layers, LayoutDashboard, Lock, LogOut, Mail,
@@ -1491,16 +1492,18 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                                     background: "#fafcfb",
                                   }}
                                 >
-                                  <p style={{ margin: "0 0 10px", color: "#405249", fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                                    {cit.text_snippet?.trim() || "Nguồn này chưa có đoạn trích chi tiết để hiển thị."}
-                                  </p>
-                                  <button
-                                    type="button"
-                                    className="citation-detail-btn"
-                                    onClick={() => setActiveCitationModal(cit)}
-                                  >
-                                    <ExternalLink size={13} /> Phóng to toàn văn
-                                  </button>
+                                  <div style={{ maxHeight: 280, overflowY: "auto", borderRadius: 8 }}>
+                                    <LegalSnippetViewer rawText={cit.text_snippet || ""} />
+                                  </div>
+                                  <div style={{ marginTop: 10 }}>
+                                    <button
+                                      type="button"
+                                      className="citation-detail-btn"
+                                      onClick={() => setActiveCitationModal(cit)}
+                                    >
+                                      <ExternalLink size={13} /> Phóng to toàn văn
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1602,8 +1605,8 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
           <div
             className="modal-content"
             style={{
-              maxWidth: 620,
-              width: 'min(620px, 94vw)',
+              maxWidth: 720,
+              width: 'min(720px, 94vw)',
               background: '#ffffff',
               borderRadius: 16,
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -1646,17 +1649,15 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                   </span>
                 )}
               </div>
-              <div style={{ background: '#f8fafb', border: '1px solid #e2e8f0', borderRadius: 8, padding: '14px 16px', maxHeight: 380, overflowY: 'auto' }}>
-                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: '#2d3748', whiteSpace: 'pre-wrap' }}>
-                  {activeCitationModal.text_snippet?.trim() || "Không có đoạn trích chi tiết cho nguồn này."}
-                </p>
+              <div style={{ maxHeight: 440, overflowY: 'auto', borderRadius: 10 }}>
+                <LegalSnippetViewer rawText={activeCitationModal.text_snippet || ""} />
               </div>
               <div style={{ marginTop: 16, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                 <button
                   type="button"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: copiedCitation ? '#e8f5ee' : '#fff', color: copiedCitation ? '#166b45' : '#374151', border: '1px solid', borderColor: copiedCitation ? '#b7e8ce' : '#d1d5db', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}
                   onClick={() => {
-                    const txt = activeCitationModal.text_snippet?.trim() || "";
+                    const txt = cleanLegalText(activeCitationModal.text_snippet?.trim() || "");
                     navigator.clipboard.writeText(txt).then(() => {
                       setCopiedCitation(true);
                       setTimeout(() => setCopiedCitation(false), 2000);
