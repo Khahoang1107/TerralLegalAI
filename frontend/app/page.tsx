@@ -717,32 +717,7 @@ function AppHeader({
   onToggleRightPanel?: () => void;
 }) {
   const initials = userName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
-  const [profileOpen, setProfileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (!profileOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [profileOpen]);
-
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    setProfileOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setProfileOpen(false);
-    }, 250);
-  };
 
   return (
     <>
@@ -772,6 +747,11 @@ function AppHeader({
         </div>
 
         <div className="header-actions">
+          <div className="system-status-pill hide-sm">
+            <span className="pulse-dot" />
+            <span>Hệ thống sẵn sàng</span>
+          </div>
+
           {onToggleRightPanel && (
             <button
               type="button"
@@ -784,161 +764,36 @@ function AppHeader({
             </button>
           )}
 
-          <div
-            className="profile-dropdown-wrap"
-            ref={profileRef}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          <button
+            type="button"
+            className="profile-button-enhanced"
+            onClick={onOpenSettings}
+            title={role === "admin" ? "Tài khoản Quản trị viên" : "Nhấp vào để Mở Cài đặt & Tùy chỉnh"}
           >
-            <button
-              type="button"
-              className={`profile-button-enhanced ${profileOpen ? "active" : ""}`}
-              onClick={() => setProfileOpen(prev => !prev)}
-              aria-haspopup="true"
-              aria-expanded={profileOpen}
-              title={role === "admin" ? "Nhấp hoặc rê chuột để mở tài khoản và đăng xuất" : "Nhấp hoặc rê chuột để mở Tùy chỉnh & Đăng xuất"}
-            >
-              <span className="avatar-ring">
-                <span className="avatar-text">{initials}</span>
-              </span>
-              <div className="profile-name-col hide-sm">
-                <span className="profile-name">{userName}</span>
-                <span className="profile-hint">{role === "admin" ? "Tài khoản quản trị" : "Tùy chỉnh & Cài đặt"}</span>
-              </div>
-              <ChevronDown size={14} className={`profile-chevron ${profileOpen ? "open" : ""}`} />
-            </button>
-
-            {profileOpen && (
-              <div
-                className="profile-dropdown-menu"
-                role="menu"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: 0,
-                  zIndex: 120,
-                  minWidth: 230,
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 14,
-                  boxShadow: "0 12px 28px -4px rgba(15, 23, 42, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.08)",
-                  padding: 6,
-                  textAlign: "left",
-                }}
-              >
-                <div
-                  className="profile-dropdown-user"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 12px",
-                  }}
-                >
-                  <span
-                    className="pdrop-avatar"
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #166b45 0%, #1e40af 100%)",
-                      color: "#ffffff",
-                      fontWeight: 700,
-                      fontSize: 13,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 6px rgba(22, 107, 69, 0.25)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {initials}
-                  </span>
-                  <div
-                    className="pdrop-info"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1,
-                      minWidth: 0,
-                      textAlign: "left",
-                    }}
-                  >
-                    <strong style={{ fontSize: 13.5, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {userName}
-                    </strong>
-                    <span style={{ fontSize: 11.5, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}
-                    </span>
-                  </div>
-                </div>
-                {role !== "admin" && onOpenSettings && (
-                  <>
-                    <div className="profile-dropdown-divider" style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
-                      role="menuitem"
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 9,
-                        padding: "9px 12px",
-                        borderRadius: 8,
-                        border: 0,
-                        background: "transparent",
-                        color: "#334155",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        textAlign: "left",
-                      }}
-                      onClick={() => {
-                        setProfileOpen(false);
-                        onOpenSettings();
-                      }}
-                    >
-                      <Settings size={15} />
-                      <span>Cài đặt & Tùy chỉnh</span>
-                    </button>
-                  </>
-                )}
-                <div className="profile-dropdown-divider" style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
-                <button
-                  type="button"
-                  className="profile-dropdown-item profile-dropdown-logout"
-                  role="menuitem"
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 9,
-                    padding: "9px 12px",
-                    borderRadius: 8,
-                    border: 0,
-                    background: "transparent",
-                    color: "#dc2626",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setShowLogoutConfirm(true);
-                  }}
-                >
-                  <LogOut size={15} />
-                  <span>Đăng xuất</span>
-                </button>
-              </div>
+            <span className="avatar-ring">
+              <span className="avatar-text">{initials}</span>
+            </span>
+            <div className="profile-name-col hide-sm">
+              <span className="profile-name">{userName}</span>
+              <span className="profile-hint">{role === "admin" ? "Quản trị viên" : "Tùy chỉnh & Cài đặt"}</span>
+            </div>
+            {role !== "admin" && onOpenSettings && (
+              <Settings size={15} className="settings-trigger-icon" />
             )}
-          </div>
+          </button>
+
+          <button
+            type="button"
+            className="icon-button logout-btn"
+            onClick={() => setShowLogoutConfirm(true)}
+            title="Đăng xuất"
+          >
+            <LogOut size={17} />
+          </button>
         </div>
       </header>
 
-      {/* Modal xác nhận đăng xuất khi bấm từ dropdown */}
+      {/* Modal xác nhận đăng xuất */}
       {showLogoutConfirm && (
         <div className="dialog-backdrop" onClick={() => setShowLogoutConfirm(false)}>
           <div
