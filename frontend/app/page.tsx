@@ -1033,6 +1033,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
   const [expandedCitations, setExpandedCitations] = useState<Record<string, boolean>>({});
   const [activeCitationModal, setActiveCitationModal] = useState<Citation | null>(null);
   const [copiedCitation, setCopiedCitation] = useState(false);
+  const [deletingConversation, setDeletingConversation] = useState<Conversation | null>(null);
 
   // Project and Right Panel States
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -1154,14 +1155,20 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
     }
   };
 
-  const handleDeleteConversation = async (conversation: Conversation) => {
-    if (!window.confirm(`Xóa cuộc trò chuyện "${conversation.title}"?`)) return;
+  const handleDeleteConversation = (conversation: Conversation) => {
+    setDeletingConversation(conversation);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!deletingConversation) return;
+    const conversation = deletingConversation;
+    setDeletingConversation(null);
 
     try {
       await conversationApi.deleteConversation(conversation.id);
     } catch (err) {
       if (!axios.isAxiosError(err) || err.response?.status !== 404) {
-        window.alert("Không thể xóa cuộc trò chuyện. Vui lòng thử lại.");
+        // Show toast or silently fail
         return;
       }
     }
@@ -1695,6 +1702,53 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
               <button type="submit" className="primary-button" disabled={!renameTitle.trim() || conversationActionLoading}>{conversationActionLoading ? "Đang lưu..." : "Lưu"}</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Delete Conversation Confirmation Modal */}
+      {deletingConversation && (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setDeletingConversation(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 10001, display: 'grid', placeItems: 'center', background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)', padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(420px,94vw)', background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '22px 24px 8px', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Trash2 size={18} style={{ color: '#dc2626' }} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Xóa cuộc trò chuyện</h2>
+                  <p style={{ margin: '3px 0 0', fontSize: 13, color: '#64748b' }}>Hành động này không thể hoàn tác.</p>
+                </div>
+              </div>
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', margin: '12px 0 18px' }}>
+                <p style={{ margin: 0, fontSize: 13, color: '#991b1b', fontWeight: 500 }}>
+                  &ldquo;{deletingConversation.title}&rdquo;
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px' }}>
+              <button
+                type="button"
+                onClick={() => setDeletingConversation(null)}
+                style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteConversation}
+                style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              >
+                <Trash2 size={14} /> Xóa cuộc trò chuyện
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

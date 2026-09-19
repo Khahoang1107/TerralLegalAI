@@ -1,0 +1,393 @@
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc 
+---------------
+TỜ KHAI THUẾ THU NHẬP CÁ NHÂN
+(Áp dụng đối với cá nhân có thu nhập từ chuyển nhượng bất động sản; thu nhập từ nhận thừa kế và nhận quà tặng là bất động sản)
+[01] Kỳ tính thuế: Lần phát sinh: Ngày  [[1]]  tháng  [[2]]  năm [[3]] 
+[02] Lần đầu:  [[4]]                 [03] Bổ sung lần thứ: [[5]]  
+I. THÔNG TIN NGƯỜI CHUYỂN NHƯỢNG, NHẬN THỪA KẾ, QUÀ TẶNG
+[04] Tên người nộp thuế: [[6]] 
+[06] Số CMND/CCCD/Hộ chiếu (trường hợp cá nhân quốc tịch Việt Nam):  [[7]] .
+[06.1] Ngày cấp: [[8]]  [06.2] Nơi cấp: [[9]]  [[10]] 
+[07] Hộ chiếu (trường hợp cá nhân không có quốc tịch Việt Nam):  [[11]] ..
+[07.1] Ngày cấp: [[12]]  [07.2] Nơi cấp: [[13]]  [[14]] 
+[08] Địa chỉ chỗ ở hiện tại:  [[15]]  [[16]] 
+[09] Quận/huyện: [[17]] [10] Tỉnh/Thành phố: [[18]] 
+[11] Điện thoại: [[19]] [12] Email: [[20]] 
+[13] Tên tổ chức, cá nhân khai thay (nếu có): [[21]] 
+[15] Địa chỉ:  [[22]] .. [[23]]  [[24]] 
+[16] Quận/huyện: [[25]] [17] Tỉnh/Thành phố: [[26]] 
+[20] Tên đại lý thuế (nếu có): [[27]] 
+[22] Địa chỉ:  [[28]] .. [[29]] .. [[30]] .
+[23] Quận/huyện: [[31]] [24] Tỉnh/Thành phố: [[32]] 
+[25] Điện thoại: [[33]] [26] Email: [[34]] 
+[27] Hợp đồng đại lý thuế: [28] Số: [[35]] [29] Ngày: [[36]] 
+[30] Giấy tờ về quyền sử dụng đất, quyền sở hữu nhà ở và tài sản gắn liền với đất: 
+ [[37]] . [[38]] ..
+[30.1] Số: [[39]]  [30.2] Do cơ quan: [[40]]  [30.3] Cấp ngày: [[41]] ..
+[31] Hợp đồng mua bán nhà ở, công trình xây dựng hình thành trong tương lai ký với chủ dự án cấp 1, cấp 2 hoặc Sàn giao dịch của chủ dự án: [[42]] .. [[43]]  
+[31.1] Số [[44]] ..[31.2] Ngày: [[45]]  
+[32]Hợp đồng chuyển nhượng trao đổi bất động sản:
+[32.1] Số: [[46]] .. [[47]]  [32.2] Nơi lập [[48]] . [32.3] Ngày lập: [[49]]  [[50]] 
+[32.4] Cơ quan chứng thực  [[51]]  [32.5] Ngày chứng thực: [[52]] 
+II. THÔNG TIN NGƯỜI NHẬN CHUYỂN NHƯỢNG, NHẬN THỪA KẾ, QUÀ TẶNG
+[33] Họ và tên đại diện: [[53]] 
+[35] Số CMND/CCCD/Hộ chiếu (trường hợp chưa có mã số thuế): [[54]] 
+[35.1] Ngày cấp: [[55]]  [35.2] Nơi cấp: [[56]]  [[57]] 
+[36] Văn bản Phân chia di sản thừa kế, quà tặng là Bất động sản
+[36.1] Nơi lập hồ sơ nhận thừa kế, quà tặng:  [[58]] 
+[36.2] Ngày lập:  [[59]] 
+[36.3] Cơ quan chứng thực: [[60]] 
+[36.4] Ngày chứng thực: [[61]] 
+III. LOẠI BẤT ĐỘNG SẢN CHUYỂN NHƯỢNG, NHẬN THỪA KẾ, QUÀ TẶNG
+IV. ĐẶC ĐIỂM BẤT ĐỘNG SẢN CHUYỂN NHƯỢNG, NHẬN THỪA KẾ, QUÀ TẶNG
+[41] Thông tin về đất:
+[41.1] Thửa đất số (Số hiệu thửa đất) [[62]] ; Tờ bản đồ số (số hiệu): [[63]]  [[64]] 
+[41.2] Địa chỉ: [[65]] 
+[41.3] Số nhà [[66]] . Toà nhà [[67]]  Ngõ/hẻm [[68]]  [[69]] đường/phố [[70]]  [[71]] Thôn/xóm/ấp: [[72]] 
+[41.4] Phường/xã: [[73]] 
+[41.5] Quận/huyện: [[74]] 
+[41.6] Tỉnh/thành phố: [[75]] 
+[41.7] Loại đất, vị trí thửa đất (1,2,3,4 [[76]] )
++ Loại đất 1: [[77]] Vị trí 1: [[78]]  Diện tích: [[79]] .m2
++ Loại đất 1: [[80]] Vị trí 2: [[81]]  Diện tích: [[82]] .m2
+ [[83]] 
++ Loại đất 2: [[84]] Vị trí 1: [[85]]  Diện tích: [[86]] .m2
++ Loại đất 2: [[87]] Vị trí 2: [[88]]  Diện tích: [[89]] .m2
+ [[90]] 
+[41.8] Hệ số (nếu có): [[91]] .
+[41.9] Nguồn gốc đất: (Đất được nhà nước giao, cho thuê; Đất nhận chuyển nhượng; nhận thừa kế, hoặc nhận tặng, cho [[92]] ):  [[93]] .. [[94]] .
+[41.10] Giá trị đất thực tế chuyển giao (nếu có):  [[95]] .đồng
+[42] Thông tin về nhà ở, công trình xây dựng
+[42.1] Nhà ở riêng lẻ:
+[42.2] Loại 1: [[96]] Cấp nhà ở [[97]] ..Diện tích sàn xây dựng: [[98]] m2
+[42.3] Loại 2: [[99]] Cấp nhà ở [[100]] ..Diện tích sàn xây dựng: [[101]] m2 
+[42.4] Giá trị nhà thực tế chuyển giao (nếu có): [[102]] đồng 
+[42.5] Nhà ở chung cư:
+[42.6] Chủ dự án: [[103]] [42.7] Địa chỉ dự án, công trình: [[104]] .
+[42.8] Diện tích xây dựng: [[105]] [42.9] Diện tích sàn xây dựng: [[106]] .. [[107]] .m2 
+[42.10] Diện tích sở hữu chung:. [[108]] .m2 [42.11] Diện tích sở hữu riêng:.. [[109]] .m2
+[42.12] Kết cấu: [[110]] [42.13] Số tầng nổi: [[111]] [42.14] Số tầng hầm: [[112]] ..
+[42.15] Năm hoàn công: [[113]] 
+[42.16] Giá trị nhà thực tế chuyển giao (nếu có): [[114]] đồng
+[42.17] Nguồn gốc nhà
+Tự xây dựng  [[115]]        [42.18] Năm hoàn thành (hoặc năm bắt đầu sử dụng nhà):. [[116]] .
+Chuyển nhượng  [[117]]  [42.19] Thời điểm làm giấy tờ chuyển giao nhà: [[118]] 
+[42.20] Công trình xây dựng (trừ nhà ở)
+[42.21] Chủ dự án: [[119]] [42.22] Địa chỉ dự án, công trình [[120]] .
+[42.23] Loại công trình: [[121]] Hạng mục công trình [[122]] Cấp công trình [[123]] 
+[42.24] Diện tích xây dựng: [[124]] [42.25] Diện tích sàn xây dựng: [[125]] .. [[126]] .m2; 
+[42.26] Hệ số (nếu có): [[127]] 
+[42.27] Đơn giá: [[128]] 
+[42.28] Giá trị công trình thực tế chuyển giao (nếu có): [[129]] đồng
+[43] Tài sản gắn liền với đất
+[43.1] Loại tài sản gắn liền với đất: [[130]] 
+[43.2] Giá trị tài sản gắn liền với đất thực tế chuyển giao (nếu có): [[131]]  [[132]] đồng
+V. THU NHẬP TỪ CHUYỂN NHƯỢNG BẤT ĐỘNG SẢN; TỪ NHẬN THỪA KẾ, QUÀ TẶNG LÀ BẤT ĐỘNG SẢN
+[44] Loại thu nhập
+[45] Giá trị chuyển nhượng bất động sản và tài sản khác gắn liền với đất hoặc giá trị bất động sản nhận thừa kế, quà tặng: [[133]]  [[134]]  đồng
+[46] Thuế thu nhập cá nhân phát sinh đối với chuyển nhượng bất động sản ([46]=[45]x2%): [[135]] đồng 
+[47] Thu nhập miễn thuế: [[136]] đồng
+[48] Thuế thu nhập cá nhân được miễn ([48] = [47] x 2%)  [[137]]  [[138]] đồng
+[49] Thuế thu nhập cá nhân phải nộp đối với chuyển nhượng bất động sản:{[49]=([46]-[48])}:  [[139]] đồng
+[50] Thuế thu nhập cá nhân phải nộp đối với nhận thừa kế, quà tặng là bất động sản: 
+{[50]=([45]-[47]-10.000.000) x 10%}: [[140]] .. [[141]]  [[142]] đồng
+[51] Số thuế phải nộp, được miễn của chủ sở hữu (chỉ khai trong trường hợp có đồng sở hữu hoặc chủ sở hữu, đồng sở hữu được miễn thuế theo quy định):
+Đơn vị tiền: Đồng Việt Nam
+VII. HỒ SƠ KÈM THEO GỒM:
+- [[143]] ;
+- [[144]] ;
+Tôi cam đoan những nội dung kê khai là đúng và chịu trách nhiệm trước pháp luật về những nội dung đã khai./.
+Ghi chú: 
+1 [[145]] Hướng dẫn khai Chỉ tiêu [51]:
+(1)Trường hợp người nộp thuế (NNT) không có Đồng sở hữu nếu được miễn toàn bộ số thuế theo quy định về thuế thu nhập cá nhân (TNCN) đối với bất động sản chuyển nhượng, thừa kế, cho tặng thì chỉ tích chọn vào dòng đầu tiên của cột [51.7] hoặc nêu lý do miễn tại cột [51.8] mà không phải kê khai các thông tin khác;
+(2)Trường hợp có Đồng sở hữu (kể cả được miễn thuế hoặc không được miễn) đại diện NNT khai đầy đủ các thông tin trên Chỉ tiêu [51];
+(3)Trường hợp NNT không có Đồng sở hữu nhưng có số thuế TNCN được miễn 1 phần, khai các chỉ tiêu tương ứng: 
+- Đối với số thuế được miễn: NNT khai các chỉ tiêu [51.2], [51.3], [51.4], [51.6] và [51.7] hoặc [51.8]
+- Đối với số thuế phải nộp: NNT khai các chỉ tiêu [51.2], [51.3], [51.4] và chỉ tiêu [51.5].
+(4) Khai chỉ tiêu [51.4]: 
+- Trường hợp có Đồng sở hữu: đại diện NNT khai tỷ lệ sở hữu của Chủ sở hữu và các Đồng sở hữu; 
+- Trường hợp NNT không có Đồng sở hữu mà có phát sinh số thuế được miễn một phần thì NNT tự xác định tỷ lệ sở hữu để làm căn cứ tính số thuế phải nộp, số thuế được miễn thuế TNCN đối với chuyển nhượng, thừa kế, quà tặng là bất động sản. 
+2. Hướng dẫn khai Mục: “ NGƯỜI NỘP THUẾ hoặc ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ”: chỉ khai thay trong trường hợp không phát sinh số thuế được miễn và trước khi ký phải ghi rõ “Khai thay”. Khai thay trong trường hợp tại nội dung Hợp đồng chuyển nhượng bất động sản có nêu người mua phải có trách nhiệm khai thuế TNCN hoặc trường hợp người nộp thuế có ủy quyền cho cá nhân khác theo quy định của Pháp luật.
+5. Khai lệ phí trước bạ/ Miễn lệ phí trước bạ đối với tài sản khác theo quy định của pháp luật về lệ phí trước bạ (trừ tàu thuyền đánh cá, tàu thuyền vận tải thủy nội địa, tàu biển nếu thiếu hồ sơ gốc hoặc đóng mới tại Việt Nam)
+- Trình tự thực hiện:
++ Bước 1: Tổ chức, cá nhân khi đăng ký quyền sử dụng, quyền sở hữu tài sản trừ nhà, đất (bao gồm cả các trường hợp thuộc diện miễn lệ phí trước bạ theo quy định của pháp luật về lệ phí trước bạ) nộp hồ sơ khai lệ phí trước bạ tại cơ quan thuế nơi đăng ký quyền sở hữu, quyền sử dụng hoặc địa điểm do Ủy ban nhân dân cấp tỉnh quyết định.
++ Bước 2. Cơ quan thuế tiếp nhận:
+Cơ quan thuế thực hiện tiếp nhận, giải quyết hồ sơ theo quy định đối sơ hồ sơ được nộp trực tiếp tại cơ quan thuế hoặc hồ sơ được gửi qua đường bưu chính.
+Đối với hồ sơ miễn lệ phí trước bạ thuộc trường hợp chứng minh mối quan hệ trong gia đình theo quy định. Cơ quan thuế có trách nhiệm khai thác thông tin trong Cơ sở dữ liệu quốc gia về dân cư theo quy định tại Điều 84 Thông tư số 80/2021/TT-BTC ngày 29/9/2021 của Bộ Tài chính (đã được sửa đổi, bổ sung tại Thông tư số 43/2023/TT-BTC ngày 27/6/2023 của Bộ Tài chính) để giải quyết thủ tục miễn thuế trước bạ cho người nộp thuế. Trường hợp không thể khai thác thông tin về cư trú của công dân trong Cơ sở dữ liệu quốc gia về dân cư thì người nộp thuế cung cấp các giấy tờ liên quan đến việc xác định đối tượng được miễn thuế theo từng trường hợp.
+- Cách thức thực hiện:
++ Nộp trực tiếp tại trụ sở cơ quan thuế;
++ Hoặc gửi qua hệ thống bưu chính;
++ Nộp qua Cổng thông tin điện tử Quốc gia hoặc Cổng thông tin điện tử của Tổng cục Thuế.
+- Thành phần, số lượng hồ sơ:
+Thành phần hồ sơ gồm:
++ Thành phần hồ sơ ban hành kèm theo Phụ lục 1 Danh mục hồ sơ khai thuế tại Nghị định số 126/2020/NĐ-CP ngày 19/10/2020 của Chính phủ quy định chi tiết một số điều của Luật quản lý thuế, gồm:
+++ Tờ khai lệ phí trước bạ theo mẫu số 02/LPTB tại Phụ lục II ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29/9/2021 của Bộ trưởng Bộ Tài chính hướng dẫn thi hành một số điều của Luật Quản lý thuế và Nghị định số 126/2020/NĐ-CP ngày 19/10/2020 của Chính phủ quy định chi tiết một số điều của Luật quản lý thuế;
+++ Bản sao các Giấy tờ về mua bán, chuyển giao tài sản hợp pháp;
+++ Bản sao Giấy đăng ký quyền sở hữu, sử dụng tài sản của chủ cũ hoặc bản sao Giấy chứng nhận thu hồi đăng ký, biển số xe của cơ quan Công an xác nhận (đối với tài sản đăng ký quyền sở hữu, sử dụng tại Việt Nam từ lần thứ 2 trở đi);
+++ Bản sao các giấy tờ chứng minh tài sản hoặc chủ tài sản thuộc đối tượng được miễn lệ phí trước bạ (nếu có);
+Giấy tờ chứng minh tài sản (hoặc chủ tài sản) thuộc diện miễn lệ phí trước bạ trong một số trường hợp quy định tại Thông tư số 80/2021/TT-BTC. Trường hợp chứng minh mối quan hệ trong gia đình thuộc diện miễn lệ phí trước bạ theo quy định tại Thông tư số 43/2023/TT-BTC (sửa đổi, bổ sung Thông tư số 80/2021/TT-BTC).
+++ Bản sao Giấy chứng nhận chất lượng an toàn kỹ thuật và bảo vệ môi trường do cơ quan Đăng kiểm Việt Nam cấp (đối với ô tô, rơ moóc hoặc sơ mi rơ moóc được kéo bởi ô tô, các loại xe tương tự).
+Số lượng hồ sơ: 01 bộ.
+- Thời hạn giải quyết hồ sơ: Thông báo nộp lệ phí trước bạ trong vòng 01 ngày làm việc kể từ khi nhận đủ hồ sơ hợp lệ.
+- Đối tượng thực hiện thủ tục hành chính: Tổ chức, cá nhân.
+- Cơ quan thực hiện thủ tục hành chính: Chi cục Thuế.
+- Kết quả thực hiện thủ tục hành chính: Thông báo nộp lệ phí trước bạ trong vòng 01 ngày làm việc kể từ khi nhận đủ hồ sơ hợp lệ. Trường hợp hồ sơ không hợp lệ thì Chi cục Thuế trả lại hồ sơ cho người có tài sản.
+- Phí, lệ phí: Không có.
+- Tên mẫu đơn, tờ khai: Tờ khai lệ phí trước bạ mẫu số 02/LPTB tại Phụ lục II ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29/09/2021 của Bộ Tài chính.
+- Yêu cầu, điều kiện thực hiện thủ tục hành chính: Không có.
+- Căn cứ pháp lý thực hiện thủ tục hành chính:
++ Luật Quản lý thuế ngày 13/06/2019;
++ Luật Cư trú ngày 13/11/2020;
++ Nghị định số 104/2022/NĐ-CP ngày 21/12/2022 của Chính phủ sửa đổi, bổ sung một số điều của các nghị định liên quan đến việc nộp, xuất trình sổ hộ khẩu, sổ tạm trú giấy khi thực hiện thủ tục hành chính, cung cấp dịch vụ công;
++ Nghị định số 126/2020/NĐ-CP ngày 19/10/2020 của Chính phủ quy định chi tiết thi hành một số điều của Luật Quản lý thuế;
++ Thông tư số 80/2021/TT-BTC ngày 29/09/2021 của Bộ Tài chính Hướng dẫn thi hành một số điều của Luật Quản lý thuế và Nghị định số 126/2020/NĐ-CP ngày 19 tháng 10 năm 2020 của Chính phủ quy định chi tiết một số điều của Luật Quản lý thuế;
++ Thông tư số 19/2021/TT-BTC ngày 18/3/2021 của Bộ Tài chính hướng dẫn giao dịch điện tử trong lĩnh vực thuế;
++ Thông tư số 43/2023/TT-BTC ngày 27/6/2023 của Bộ Tài chính sửa đổi, bổ sung một số điều của các Thông tư có quy định liên quan đến việc nộp, xuất trình và khai thông tin về đăng ký sổ hộ khẩu, sổ tạm trú hoặc giấy tờ có yêu cầu xác nhận của địa phương nơi cư trú khi thực hiện các chính sách hoặc thủ tục hành chính thuộc lĩnh vực quản lý nhà nước của Bộ Tài chính.
+- Mẫu đơn, mẫu tờ khai kèm theo:
+ [[146]] 
+Mẫu số: 03/BĐS-TNCN
+(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)
+[05] Mã số thuế (nếu có):
+ [[147]] 
+ [[148]] 
+ [[149]] 
+ [[150]] 
+ [[151]] 
+ [[152]] 
+ [[153]] 
+ [[154]] 
+ [[155]] 
+ [[156]] 
+ [[157]] 
+ [[158]] 
+ [[159]] 
+ [[160]] 
+[14] Mã số thuế (nếu có):
+ [[161]] 
+ [[162]] 
+ [[163]] 
+ [[164]] 
+ [[165]] 
+ [[166]] 
+ [[167]] 
+ [[168]] 
+ [[169]] 
+ [[170]] 
+ [[171]] 
+ [[172]] 
+ [[173]] 
+ [[174]] 
+[21] Mã số thuế (nếu có):
+ [[175]] 
+ [[176]] 
+ [[177]] 
+ [[178]] 
+ [[179]] 
+ [[180]] 
+ [[181]] 
+ [[182]] 
+ [[183]] 
+ [[184]] 
+ [[185]] 
+ [[186]] 
+ [[187]] 
+ [[188]] 
+[34] Mã số thuế (nếu có):
+ [[189]] 
+ [[190]] 
+ [[191]] 
+ [[192]] 
+ [[193]] 
+ [[194]] 
+ [[195]] 
+ [[196]] 
+ [[197]] 
+ [[198]] 
+ [[199]] 
+ [[200]] 
+ [[201]] 
+ [[202]] 
+[37] Quyền sử dụng đất và tài sản gắn liền trên đất
+ [[203]] 
+[38] Quyền sở hữu hoặc sử dụng nhà ở
+ [[204]] 
+[39] Quyền thuê đất, thuê mặt nước
+ [[205]] 
+[40] Bất động sản khác
+ [[206]] 
+[44.1] Thu nhập từ chuyển nhượng bất động sản
+ [[207]] 
+[44.2] Thu nhập từ nhận thừa kế, quà tặng
+ [[208]] 
+STT
+Họ và tên
+Mã số thuế
+Tỷ lệ sở hữu (%)
+Số thuế phải nộp 
+Số thuế được miễn
+Lý do cá nhân được miễn với nhà ở, quyền sử dụng đất ở duy nhất
+Lý do miễn khác
+[51.1]
+[51.2]
+[51.3]
+[51.4]
+[51.5]
+[51.6]
+[51.7]
+[51.8]
+1
+ [[209]] 
+ [[210]] 
+ [[211]] 
+ [[212]] 
+ [[213]] 
+ [[214]] 
+ [[215]] 
+2
+ [[216]] 
+ [[217]] 
+ [[218]] 
+ [[219]] 
+ [[220]] 
+ [[221]] 
+ [[222]] 
+ [[223]] .
+ [[224]] 
+ [[225]] 
+ [[226]] 
+ [[227]] 
+ [[228]] 
+ [[229]] 
+ [[230]] 
+
+NHÂN VIÊN ĐẠI LÝ THUẾ
+Họ và tên: [[231]] 
+Chứng chỉ hành nghề số: [[232]] 
+ [[233]] , ngày [[234]] tháng [[235]] năm [[236]] 
+NGƯỜI NỘP THUẾ hoặc 
+ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ 
+(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử)
+ [[237]] 
+Mẫu số: 03/BĐS-TNCN
+(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)
+[05] Mã số thuế (nếu có):
+ [[238]] 
+ [[239]] 
+ [[240]] 
+ [[241]] 
+ [[242]] 
+ [[243]] 
+ [[244]] 
+ [[245]] 
+ [[246]] 
+ [[247]] 
+ [[248]] 
+ [[249]] 
+ [[250]] 
+ [[251]] 
+[14] Mã số thuế (nếu có):
+ [[252]] 
+ [[253]] 
+ [[254]] 
+ [[255]] 
+ [[256]] 
+ [[257]] 
+ [[258]] 
+ [[259]] 
+ [[260]] 
+ [[261]] 
+ [[262]] 
+ [[263]] 
+ [[264]] 
+ [[265]] 
+[21] Mã số thuế (nếu có):
+ [[266]] 
+ [[267]] 
+ [[268]] 
+ [[269]] 
+ [[270]] 
+ [[271]] 
+ [[272]] 
+ [[273]] 
+ [[274]] 
+ [[275]] 
+ [[276]] 
+ [[277]] 
+ [[278]] 
+ [[279]] 
+[34] Mã số thuế (nếu có):
+ [[280]] 
+ [[281]] 
+ [[282]] 
+ [[283]] 
+ [[284]] 
+ [[285]] 
+ [[286]] 
+ [[287]] 
+ [[288]] 
+ [[289]] 
+ [[290]] 
+ [[291]] 
+ [[292]] 
+ [[293]] 
+[37] Quyền sử dụng đất và tài sản gắn liền trên đất
+ [[294]] 
+[38] Quyền sở hữu hoặc sử dụng nhà ở
+ [[295]] 
+[39] Quyền thuê đất, thuê mặt nước
+ [[296]] 
+[40] Bất động sản khác
+ [[297]] 
+[44.1] Thu nhập từ chuyển nhượng bất động sản
+ [[298]] 
+[44.2] Thu nhập từ nhận thừa kế, quà tặng
+ [[299]] 
+STT
+Họ và tên
+Mã số thuế
+Tỷ lệ sở hữu (%)
+Số thuế phải nộp 
+Số thuế được miễn
+Lý do cá nhân được miễn với nhà ở, quyền sử dụng đất ở duy nhất
+Lý do miễn khác
+[51.1]
+[51.2]
+[51.3]
+[51.4]
+[51.5]
+[51.6]
+[51.7]
+[51.8]
+1
+ [[300]] 
+ [[301]] 
+ [[302]] 
+ [[303]] 
+ [[304]] 
+ [[305]] 
+ [[306]] 
+2
+ [[307]] 
+ [[308]] 
+ [[309]] 
+ [[310]] 
+ [[311]] 
+ [[312]] 
+ [[313]] 
+ [[314]] .
+ [[315]] 
+ [[316]] 
+ [[317]] 
+ [[318]] 
+ [[319]] 
+ [[320]] 
+ [[321]] 
+
+NHÂN VIÊN ĐẠI LÝ THUẾ
+Họ và tên: [[322]] 
+Chứng chỉ hành nghề số: [[323]] 
+ [[324]] , ngày [[325]] tháng [[326]] năm [[327]] 
+NGƯỜI NỘP THUẾ hoặc 
+ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ 
+(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử)

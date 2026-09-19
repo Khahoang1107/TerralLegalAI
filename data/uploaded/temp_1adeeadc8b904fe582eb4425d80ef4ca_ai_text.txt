@@ -1,0 +1,108 @@
+CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc
+TỜ KHAI LỆ PHÍ TRƯỚC BẠ
+(Áp dụng đối với nhà, đất)
+[01] Kỳ tính thuế: Theo từng lần phát sinh ngày   [[1]]  tháng  [[2]]  năm  [[3]]  
+[02] Lần đầu:    [[4]] [03]  Bổ sung lần thứ: [[5]]  
+ [[6]] Tổ chức, cá nhân được ủy quyền khai thay cho người nộp thuế 
+[04] Người nộp thuế:.  [[7]] .. 
+[05] Mã số thuế: [[8]]  [[9]] 
+[06] Số CMND/CCCD/Hộ chiếu (trường hợp chưa có mã số thuế):  [[10]] .
+[07] Địa chỉ:  [[11]] ..
+[08] Quận/huyện:  [[12]] .. [09] Tỉnh/Thành phố:  [[13]] 
+[10] Điện thoại: [[14]] [11] Fax: [[15]] [12] Email: [[16]] 
+[13] Đại lý thuế; hoặc Tổ chức, cá nhân được ủy quyền khai thay (nếu có): [[17]] 
+[14] Mã số thuế: 
+[15] Hợp đồng đại lý thuế: Số: [[18]] Ngày [[19]] 
+ĐẶC ĐIỂM NHÀ ĐẤT:
+1. Đất: [[20]] 
+1.1. Thửa đất số (Số hiệu thửa đất):  [[21]] .; Tờ bản đồ số:  [[22]] .. [[23]] 
+1.2. Địa chỉ thửa đất: 
+1.2.1. Số nhà:  [[24]] . [[25]] . Tòa nhà:  [[26]] . [[27]] .. [[28]]  Ngõ/Hẻm:  [[29]] .
+Đường/Phố: [[30]] . Thôn/xóm/ấp:  [[31]] 
+1.2.2. Phường/xã:  [[32]] ..
+1.2.3. Quận/huyện [[33]] .
+1.2.4. Tỉnh/thành phố:  [[34]] 
+1.3. Vị trí thửa đất (mặt tiền đường phố hay ngõ, hẻm):  [[35]] 
+1.4. Mục đích sử dụng đất:  [[36]] ..
+1.5. Diện tích (m2):   [[37]] .
+1.6. Nguồn gốc nhà đất: (đất được Nhà nước giao, cho thuê; đất nhận chuyển nhượng; nhận thừa kế, hoặc nhận tặng cho):  [[38]] . 
+a) Tên tổ chức, cá nhân chuyển giao QSDĐ:
+- Tên tổ chức/cá nhân chuyển giao QSDĐ: [[39]] .
+- Mã số thuế: [[40]] 
+- Số CMND/CCCD/Hộ chiếu (trường hợp chưa có mã số thuế):  [[41]] ..
+- Địa chỉ người giao QSDĐ: [[42]] 
+b) Thời điểm làm giấy tờ chuyển giao QSDĐ ngày [[43]] tháng [[44]] năm [[45]] 
+1.7. Giá trị đất thực tế chuyển giao (nếu có):
+2. Nhà:
+2.1. Thông tin về nhà ở, nhà làm việc, nhà sử dụng cho mục đích khác:
+Cấp nhà:  [[46]]  [[47]]  [[48]]  Loại nhà:  [[49]] Hạng nhà: [[50]] 
+Trường hợp là nhà ở chung cư:
+Chủ dự án: [[51]]  [[52]] Địa chỉ dự án, công trình [[53]] .
+Kết cấu: [[54]]  [[55]] Số tầng nổi: [[56]] Số tầng hầm: [[57]] .
+Diện tích sở hữu chung (m2): [[58]]  [[59]] Diện tích sở hữu riêng (m2): [[60]] ..
+2.2. Diện tích nhà (m2):
+Diện tích xây dựng (m2):  [[61]] ..
+Diện tích sàn xây dựng (m2):  [[62]] 
+2.3. Nguồn gốc nhà: [[63]] 
+a) Tự xây dựng: 
+- Năm hoàn công (hoặc năm bắt đầu sử dụng nhà): [[64]] 
+b) Mua, thừa kế, tặng cho:
+- Thời điểm làm giấy tờ chuyển giao nhà: Ngày [[65]] tháng [[66]] năm [[67]] 
+2.4. Giá trị nhà (đồng): [[68]] 
+3. Giá trị nhà, đất thực tế nhận chuyển nhượng , nhận thừa kế , nhận tặng cho  (đồng):
+ [[69]] 
+4. Tài sản thuộc diện được miễn lệ phí trước bạ (lý do):
+ [[70]] 
+5. Thông tin đồng chủ sở hữu nhà, đất (nếu có):
+6. Giấy tờ có liên quan, gồm:
+- [[71]] 
+- [[72]] 
+Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật về số liệu đã khai./.
+ [[73]] 
+STT
+Tên tổ chức/cá nhân đồng sở hữu
+Mã số thuế
+Số CMND/CCCD/Hộ chiếu (trường hợp chưa có mã số thuế)
+Tỷ lệ sở hữu (%)
+ [[74]] 
+ [[75]] 
+ [[76]] 
+ [[77]] 
+ [[78]] 
+ [[79]] 
+ [[80]] 
+ [[81]] 
+ [[82]] 
+ [[83]] 
+NHÂN VIÊN ĐẠI LÝ THUẾ
+Họ và tên: [[84]] 
+Chứng chỉ hành nghề số: [[85]] 
+ [[86]] , ngày  [[87]]  tháng  [[88]] năm  [[89]]   
+NGƯỜI NỘP THUẾ hoặc 
+ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ hoặc 
+TỔ CHỨC, CÁ NHÂN ĐƯỢC  ỦY QUYỀN KHAI THAY
+(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử)
+STT
+Tên tổ chức/cá nhân đồng sở hữu
+Mã số thuế
+Số CMND/CCCD/Hộ chiếu (trường hợp chưa có mã số thuế)
+Tỷ lệ sở hữu (%)
+ [[90]] 
+ [[91]] 
+ [[92]] 
+ [[93]] 
+ [[94]] 
+ [[95]] 
+ [[96]] 
+ [[97]] 
+ [[98]] 
+ [[99]] 
+NHÂN VIÊN ĐẠI LÝ THUẾ
+Họ và tên: [[100]] 
+Chứng chỉ hành nghề số: [[101]] 
+ [[102]] , ngày  [[103]]  tháng  [[104]] năm  [[105]]   
+NGƯỜI NỘP THUẾ hoặc 
+ĐẠI DIỆN HỢP PHÁP CỦA NGƯỜI NỘP THUẾ hoặc 
+TỔ CHỨC, CÁ NHÂN ĐƯỢC  ỦY QUYỀN KHAI THAY
+(Chữ ký, ghi rõ họ tên; chức vụ và đóng dấu (nếu có)/Ký điện tử)

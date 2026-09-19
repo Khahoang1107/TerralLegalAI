@@ -65,6 +65,19 @@ export default function ProjectSidebar({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [moveMenuId, setMoveMenuId] = useState<string | null>(null);
 
+  // Close context menu when clicking outside
+  useEffect(() => {
+    if (!activeMenuId) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".conversation-menu") && !target.closest(".conversation-menu-trigger") && !target.closest(".project-menu-btn")) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [activeMenuId]);
+
   // New Project Dialog State
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
