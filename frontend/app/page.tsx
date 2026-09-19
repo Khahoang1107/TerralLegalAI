@@ -899,6 +899,9 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
   const [reviewingForm, setReviewingForm] = useState<{form_id: string, collected_data: Record<string, string>} | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [expandedCitations, setExpandedCitations] = useState<Record<string, boolean>>({});
+  const [activeCitationModal, setActiveCitationModal] = useState<Citation | null>(null);
+  const [copiedCitation, setCopiedCitation] = useState(false);
 
   // Project and Right Panel States
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -1252,21 +1255,41 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="citations-list" style={{ marginTop: "1rem" }}>
                         <p className="citations-heading">Cơ sở pháp lý đối chiếu</p>
-                        {uniqueCitations(msg.citations).map((cit, cidx) => (
-                          <details key={cidx} className="citation-box">
-                            <summary className="citation-summary" title="Bấm để xem nội dung nguồn đối chiếu">
-                              <FileText size={18} />
-                              <span>
-                                <strong>{cit.source_name}</strong>
-                                <small>{cit.article ? `${cit.article}` : ''} {cit.clause ? `${cit.clause}` : ''}</small>
-                              </span>
-                              <ChevronDown size={16} className="citation-chevron" />
-                            </summary>
-                            <div className="citation-detail">
-                              {cit.text_snippet?.trim() || "Nguồn này chưa có đoạn trích chi tiết để hiển thị."}
+                        {uniqueCitations(msg.citations).map((cit, cidx) => {
+                          const citKey = `${idx}-${cidx}`;
+                          const isExpanded = !!expandedCitations[citKey];
+                          return (
+                            <div key={cidx} className="citation-box">
+                              <button
+                                type="button"
+                                className="citation-summary"
+                                title="Bấm để xem nội dung nguồn đối chiếu"
+                                onClick={() => setExpandedCitations(prev => ({ ...prev, [citKey]: !prev[citKey] }))}
+                              >
+                                <FileText size={18} />
+                                <span>
+                                  <strong>{cit.source_name}</strong>
+                                  <small>{cit.article ? `${cit.article}` : ''} {cit.clause ? `${cit.clause}` : ''}</small>
+                                </span>
+                                <ChevronDown size={16} className="citation-chevron" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .2s ease', flexShrink: 0 }} />
+                              </button>
+                              {isExpanded && (
+                                <div className="citation-detail">
+                                  <p style={{ margin: '0 0 8px', color: '#405249', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                    {cit.text_snippet?.trim() || "Nguồn này chưa có đoạn trích chi tiết để hiển thị."}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    className="citation-detail-btn"
+                                    onClick={() => setActiveCitationModal(cit)}
+                                  >
+                                    <ExternalLink size={13} /> Xem chi tiết
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          </details>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                     
@@ -1343,6 +1366,85 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
           userRegion={userSettings.region}
         />
       </div>
+
+      {/* Citation Detail Modal */}
+      {activeCitationModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setActiveCitationModal(null)}
+          style={{ zIndex: 200 }}
+        >
+          <div
+            className="modal-content"
+            style={{ maxWidth: 600, padding: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header" style={{ background: 'linear-gradient(135deg,#166b45,#1c4d35)', color: '#fff', borderRadius: '14px 14px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FileText size={20} />
+                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Chi tiết cơ sở pháp lý</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveCitationModal(null)}
+                style={{ background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 8, padding: '6px 8px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px 24px' }}>
+              <div style={{ marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#e8f5ee', color: '#166b45', borderRadius: 20, fontSize: 12.5, fontWeight: 700, border: '1px solid #b7e8ce' }}>
+                  <Scale size={13} /> {activeCitationModal.source_name}
+                </span>
+                {activeCitationModal.article && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#eff6ff', color: '#1d4ed8', borderRadius: 20, fontSize: 12.5, fontWeight: 600, border: '1px solid #bfdbfe' }}>
+                    {activeCitationModal.article}
+                  </span>
+                )}
+                {activeCitationModal.clause && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#f5f3ff', color: '#6d28d9', borderRadius: 20, fontSize: 12.5, fontWeight: 600, border: '1px solid #ddd6fe' }}>
+                    {activeCitationModal.clause}
+                  </span>
+                )}
+                {activeCitationModal.relevance_score != null && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#fefce8', color: '#854d0e', borderRadius: 20, fontSize: 12.5, fontWeight: 600, border: '1px solid #fde68a' }}>
+                    Độ liên quan: {Math.round(activeCitationModal.relevance_score * 100)}%
+                  </span>
+                )}
+              </div>
+              <div style={{ background: '#f8fafb', border: '1px solid #e2e8f0', borderRadius: 8, padding: '14px 16px', maxHeight: 380, overflowY: 'auto' }}>
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: '#2d3748', whiteSpace: 'pre-wrap' }}>
+                  {activeCitationModal.text_snippet?.trim() || "Không có đoạn trích chi tiết cho nguồn này."}
+                </p>
+              </div>
+              <div style={{ marginTop: 16, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: copiedCitation ? '#e8f5ee' : '#fff', color: copiedCitation ? '#166b45' : '#374151', border: '1px solid', borderColor: copiedCitation ? '#b7e8ce' : '#d1d5db', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}
+                  onClick={() => {
+                    const txt = activeCitationModal.text_snippet?.trim() || "";
+                    navigator.clipboard.writeText(txt).then(() => {
+                      setCopiedCitation(true);
+                      setTimeout(() => setCopiedCitation(false), 2000);
+                    });
+                  }}
+                >
+                  {copiedCitation ? <Check size={14} /> : <Paperclip size={14} />}
+                  {copiedCitation ? "Đã sao chép" : "Sao chép trích đoạn"}
+                </button>
+                <button
+                  type="button"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: '#166b45', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  onClick={() => setActiveCitationModal(null)}
+                >
+                  <X size={14} /> Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review Form Modal */}
       {reviewingForm && (
