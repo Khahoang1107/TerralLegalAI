@@ -225,6 +225,7 @@ async def _execute_chat(
             form_intent_markers = (
                 "điền mẫu", "điền biểu mẫu", "điền đơn", "kê khai", "tạo đơn",
                 "làm đơn", "xuất đơn", "điền form", "tạo biểu mẫu", "mở biểu mẫu",
+                "điền tờ khai", "làm tờ khai", "tạo tờ khai", "tờ khai", "khai trước bạ",
             )
             needs_form_router = any(marker in normalized_question for marker in form_intent_markers)
 
