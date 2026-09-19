@@ -28,7 +28,7 @@ from google import genai
 from google.genai import types
 from backend.app.core.config import settings
 from backend.app.core.form_templates import resolve_template_path, writable_template_path
-from backend.app.core.form_template_bindings import bound_template_stream
+from backend.app.core.form_template_bindings import bound_template_stream, current_date_rule
 
 router = APIRouter(prefix="/forms", tags=["Forms"])
 
@@ -285,8 +285,8 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
             "current_date_year": str(today.year),
         }
         for field in form.fields:
-            if isinstance(field, dict) and field.get("auto_rule") in date_values:
-                normalized[field.get("key", "")] = date_values[field["auto_rule"]]
+            if isinstance(field, dict) and current_date_rule(field) in date_values:
+                normalized[field.get("key", "")] = date_values[current_date_rule(field)]
 
     mst_nnt_value = ""
     mst_agent_value = ""

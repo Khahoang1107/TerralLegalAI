@@ -2418,6 +2418,12 @@ function FormsView() {
         const res = { ...field };
         res.display_order = (idx + 1) * 100;
         res.is_auto_fill = ["ai_document", "current_date", "formula"].includes(res.value_source) || res.is_auto_fill || false;
+        if (res.value_source === "current_date" && !res.auto_rule) {
+          const normalizedName = String(res.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          res.auto_rule = /\b(thang|month)\b/.test(normalizedName) ? "current_date_month"
+            : /\b(nam|year)\b/.test(normalizedName) ? "current_date_year"
+            : "current_date_day";
+        }
         
         const sec = editSections.find(s => s.id === (res.section_id || res.condition_group_id || res.alternative_group_id));
         if (sec) {
@@ -3250,7 +3256,15 @@ function FormsView() {
                                         value={field.value_source || "user_input"}
                                         onChange={(e) => {
                                           const val = e.target.value;
-                                          setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, value_source: val, is_auto_fill: val !== "user_input" } : item));
+                                          setEditFields(prev => prev.map(item => item.key === field.key ? {
+                                            ...item,
+                                            value_source: val,
+                                            is_auto_fill: val !== "user_input",
+                                            auto_rule: val === "current_date" ? (item.auto_rule || (() => {
+                                              const name = String(item.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                                              return /\b(thang|month)\b/.test(name) ? "current_date_month" : /\b(nam|year)\b/.test(name) ? "current_date_year" : "current_date_day";
+                                            })()) : null,
+                                          } : item));
                                         }}
                                         style={{ padding: "3px 6px", fontSize: "0.72rem", border: "1px solid #10b981", borderRadius: 4, background: "#ecfdf5", color: "#065f46" }}
                                       >
@@ -3259,6 +3273,17 @@ function FormsView() {
                                         <option value="current_date">Tự lấy ngày lập đơn</option>
                                         <option value="formula">Tự tính theo công thức</option>
                                       </select>
+                                      {field.value_source === "current_date" && (
+                                        <select
+                                          value={field.auto_rule || "current_date_day"}
+                                          onChange={(e) => setEditFields(prev => prev.map(item => item.key === field.key ? { ...item, auto_rule: e.target.value } : item))}
+                                          style={{ padding: "3px 6px", fontSize: "0.72rem", border: "1px solid #10b981", borderRadius: 4, background: "#ecfdf5", color: "#065f46" }}
+                                        >
+                                          <option value="current_date_day">Ngày</option>
+                                          <option value="current_date_month">Tháng</option>
+                                          <option value="current_date_year">Năm</option>
+                                        </select>
+                                      )}
 
                                       {field.value_source === "formula" && (
                                         <input

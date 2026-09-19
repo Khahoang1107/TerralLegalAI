@@ -1,6 +1,7 @@
 """Bind Word blanks and restore unbound signing dates in existing templates."""
 import io
 import re
+import unicodedata
 
 import docx
 
@@ -9,6 +10,24 @@ BLANK_PATTERN = re.compile(
     r'(?:[\._ ](?:&nbsp;|\s)*){3,}|\t+|[\u2610\u25a1]'
     r'|\u2026+|\u2025+|[\u2013\u2014]{2,}'
 )
+
+
+def current_date_rule(field):
+    """Return an explicit rule, or infer one for older current-date fields."""
+    rule = field.get('auto_rule')
+    if rule in {'current_date_day', 'current_date_month', 'current_date_year'}:
+        return rule
+    if field.get('value_source') != 'current_date':
+        return None
+    name = unicodedata.normalize('NFD', str(field.get('name') or ''))
+    name = ''.join(char for char in name if unicodedata.category(char) != 'Mn').lower()
+    if re.search(r'\b(thang|month)\b', name):
+        return 'current_date_month'
+    if re.search(r'\b(nam|year)\b', name):
+        return 'current_date_year'
+    if re.search(r'\b(ngay|day)\b', name):
+        return 'current_date_day'
+    return None
 
 
 def _paragraphs(document, include_empty=False):
@@ -44,7 +63,7 @@ def _replace_spans(paragraph, changes):
 
 def _restore_signing_date(document, fields):
     by_rule = {
-        field.get('auto_rule'): field for field in fields
+        current_date_rule(field): field for field in fields
         if isinstance(field, dict) and field.get('key')
     }
     rules = {
