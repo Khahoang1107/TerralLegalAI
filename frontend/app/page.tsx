@@ -809,34 +809,121 @@ function AppHeader({
             </button>
 
             {profileOpen && (
-              <div className="profile-dropdown-menu" role="menu">
-                <div className="profile-dropdown-user">
-                  <span className="pdrop-avatar">{initials}</span>
-                  <div className="pdrop-info">
-                    <strong>{userName}</strong>
-                    <span>{role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}</span>
-                  </div>
-                </div>
-                {role !== "admin" && onOpenSettings && <>
-                  <div className="profile-dropdown-divider" />
-                  <button
-                    type="button"
-                    className="profile-dropdown-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      onOpenSettings();
+              <div
+                className="profile-dropdown-menu"
+                role="menu"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  zIndex: 120,
+                  minWidth: 230,
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 14,
+                  boxShadow: "0 12px 28px -4px rgba(15, 23, 42, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.08)",
+                  padding: 6,
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  className="profile-dropdown-user"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 12px",
+                  }}
+                >
+                  <span
+                    className="pdrop-avatar"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #166b45 0%, #1e40af 100%)",
+                      color: "#ffffff",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 6px rgba(22, 107, 69, 0.25)",
+                      flexShrink: 0,
                     }}
                   >
-                    <Settings size={15} />
-                    <span>Cài đặt & Tùy chỉnh</span>
-                  </button>
-                </>}
-                <div className="profile-dropdown-divider" />
+                    {initials}
+                  </span>
+                  <div
+                    className="pdrop-info"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      minWidth: 0,
+                      textAlign: "left",
+                    }}
+                  >
+                    <strong style={{ fontSize: 13.5, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {userName}
+                    </strong>
+                    <span style={{ fontSize: 11.5, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}
+                    </span>
+                  </div>
+                </div>
+                {role !== "admin" && onOpenSettings && (
+                  <>
+                    <div className="profile-dropdown-divider" style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      role="menuitem"
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 9,
+                        padding: "9px 12px",
+                        borderRadius: 8,
+                        border: 0,
+                        background: "transparent",
+                        color: "#334155",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onOpenSettings();
+                      }}
+                    >
+                      <Settings size={15} />
+                      <span>Cài đặt & Tùy chỉnh</span>
+                    </button>
+                  </>
+                )}
+                <div className="profile-dropdown-divider" style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
                 <button
                   type="button"
                   className="profile-dropdown-item profile-dropdown-logout"
                   role="menuitem"
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 9,
+                    padding: "9px 12px",
+                    borderRadius: 8,
+                    border: 0,
+                    background: "transparent",
+                    color: "#dc2626",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
                   onClick={() => {
                     setProfileOpen(false);
                     setShowLogoutConfirm(true);
@@ -854,13 +941,42 @@ function AppHeader({
       {/* Modal xác nhận đăng xuất khi bấm từ dropdown */}
       {showLogoutConfirm && (
         <div className="dialog-backdrop" onClick={() => setShowLogoutConfirm(false)}>
-          <div className="confirm-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-modal-icon logout-icon">
+          <div
+            className="confirm-modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: "min(420px, 92vw)",
+              background: "#ffffff",
+              borderRadius: 18,
+              padding: "26px 24px",
+              textAlign: "center",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 25px 45px rgba(15, 23, 42, 0.25)",
+            }}
+          >
+            <div
+              className="confirm-modal-icon logout-icon"
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: "#fee2e2",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+                boxShadow: "0 4px 12px rgba(220, 38, 38, 0.15)",
+              }}
+            >
               <AlertCircle size={28} />
             </div>
-            <h3>Xác nhận đăng xuất</h3>
-            <p>Bạn có chắc chắn muốn đăng xuất khỏi hệ thống <strong>TerraLegalAI</strong>?</p>
-            <div className="confirm-modal-actions">
+            <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700, color: "#0f172a" }}>Xác nhận đăng xuất</h3>
+            <p style={{ margin: "0 0 22px", fontSize: 14, color: "#64748b", lineHeight: 1.55 }}>
+              Bạn có chắc chắn muốn đăng xuất khỏi hệ thống <strong>TerraLegalAI</strong>?
+            </p>
+            <div className="confirm-modal-actions" style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               <button
                 type="button"
                 className="secondary-button"
