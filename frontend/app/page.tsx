@@ -1390,23 +1390,101 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                           const citKey = `${idx}-${cidx}`;
                           const isExpanded = !!expandedCitations[citKey];
                           return (
-                            <div key={cidx} className="citation-box">
-                              <button
-                                type="button"
+                            <div
+                              key={cidx}
+                              className="citation-box"
+                              style={{
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                border: "1px solid #cbe0d4",
+                                borderLeft: "3px solid var(--green)",
+                                borderRadius: 8,
+                                background: "#ffffff",
+                                marginBottom: 8,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <div
                                 className="citation-summary"
-                                title="Bấm để xem nội dung nguồn đối chiếu"
-                                onClick={() => setExpandedCitations(prev => ({ ...prev, [citKey]: !prev[citKey] }))}
+                                title="Bấm để xem chi tiết đoạn trích cơ sở pháp lý"
+                                onClick={() => setActiveCitationModal(cit)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 12,
+                                  padding: "11px 14px",
+                                  width: "100%",
+                                  cursor: "pointer",
+                                }}
                               >
-                                <FileText size={18} />
-                                <span>
-                                  <strong>{cit.source_name}</strong>
-                                  <small>{cit.article ? `${cit.article}` : ''} {cit.clause ? `${cit.clause}` : ''}</small>
+                                <FileText size={18} style={{ color: "var(--green)", flexShrink: 0 }} />
+                                <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                                  <strong style={{ fontSize: 13.5, color: "#1e3629" }}>{cit.source_name}</strong>
+                                  {(cit.article || cit.clause) && (
+                                    <small style={{ color: "#5f7367", fontSize: 11.5 }}>
+                                      {cit.article ? `${cit.article}` : ""} {cit.clause ? `${cit.clause}` : ""}
+                                    </small>
+                                  )}
                                 </span>
-                                <ChevronDown size={16} className="citation-chevron" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .2s ease', flexShrink: 0 }} />
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedCitations(prev => ({ ...prev, [citKey]: !prev[citKey] }));
+                                  }}
+                                  title={isExpanded ? "Thu gọn trích đoạn" : "Xem nhanh trích đoạn bên dưới"}
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    padding: "4px 6px",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <ChevronDown
+                                    size={16}
+                                    style={{
+                                      color: "#64748b",
+                                      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                                      transition: "transform 0.2s ease",
+                                    }}
+                                  />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveCitationModal(cit);
+                                  }}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    padding: "5px 12px",
+                                    background: "#eaf3ed",
+                                    color: "#166b45",
+                                    border: "1px solid #b7e8ce",
+                                    borderRadius: 6,
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <ExternalLink size={12} /> Xem chi tiết
+                                </button>
+                              </div>
                               {isExpanded && (
-                                <div className="citation-detail">
-                                  <p style={{ margin: '0 0 8px', color: '#405249', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                <div
+                                  className="citation-detail"
+                                  style={{
+                                    padding: "12px 14px 14px",
+                                    borderTop: "1px solid #dfebe3",
+                                    background: "#fafcfb",
+                                  }}
+                                >
+                                  <p style={{ margin: "0 0 10px", color: "#405249", fontSize: 12.5, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                                     {cit.text_snippet?.trim() || "Nguồn này chưa có đoạn trích chi tiết để hiển thị."}
                                   </p>
                                   <button
@@ -1414,7 +1492,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
                                     className="citation-detail-btn"
                                     onClick={() => setActiveCitationModal(cit)}
                                   >
-                                    <ExternalLink size={13} /> Xem chi tiết
+                                    <ExternalLink size={13} /> Phóng to toàn văn
                                   </button>
                                 </div>
                               )}
@@ -1501,13 +1579,30 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
       {/* Citation Detail Modal */}
       {activeCitationModal && (
         <div
-          className="modal-backdrop"
+          className="dialog-backdrop"
           onClick={() => setActiveCitationModal(null)}
-          style={{ zIndex: 200 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 10000,
+            padding: 16,
+          }}
         >
           <div
             className="modal-content"
-            style={{ maxWidth: 600, padding: 0 }}
+            style={{
+              maxWidth: 620,
+              width: 'min(620px, 94vw)',
+              background: '#ffffff',
+              borderRadius: 16,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              overflow: 'hidden',
+              padding: 0,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header" style={{ background: 'linear-gradient(135deg,#166b45,#1c4d35)', color: '#fff', borderRadius: '14px 14px 0 0' }}>
