@@ -552,17 +552,25 @@ def _overlay_form_controls(
             if target_type == "rectangle":
                 checkbox_page.draw_rect(box, color=None, fill=(1, 1, 1), overlay=True)
                 checkbox_page.draw_rect(box, color=(0, 0, 0), width=0.8, overlay=True)
-                checkbox_page.insert_text(
-                    fitz.Point(box.x0 + 2, box.y1 - 1.5), "X",
-                    fontname="hebo", fontsize=min(8, box.height * 0.55),
+                x_font_size = min(9.0, max(5.5, box.height * 0.75))
+                checkbox_page.insert_textbox(
+                    box, "X", fontname="hebo",
+                    fontsize=x_font_size, align=1,
                     color=(0, 0, 0), overlay=True,
                 )
             else:
-                # Paint inside the existing glyph only; never resize/reflow it.
-                mark = fitz.Rect(box.x0 - 0.5, box.y0 + 4, box.x1 + 0.5, box.y1 - 3)
+                # Blank the glyph area and draw a crisp, perfectly-proportioned checkbox with X
+                center_x = (box.x0 + box.x1) / 2
+                center_y = (box.y0 + box.y1) / 2
+                size = min(box.width, box.height)
+                if size < 7.0 or size > 16.0:
+                    size = 9.5
+                sq_box = fitz.Rect(center_x - size / 2, center_y - size / 2, center_x + size / 2, center_y + size / 2)
+                checkbox_page.draw_rect(sq_box, color=None, fill=(1, 1, 1), overlay=True)
+                checkbox_page.draw_rect(sq_box, color=(0, 0, 0), width=0.7, overlay=True)
                 checkbox_page.insert_textbox(
-                    mark, "X", fontname="hebo",
-                    fontsize=max(4.5, min(6, mark.height * 0.8)), align=1,
+                    sq_box, "X", fontname="hebo",
+                    fontsize=max(5.0, size * 0.75), align=1,
                     color=(0, 0, 0), overlay=True,
                 )
 
@@ -576,6 +584,71 @@ def _overlay_form_controls(
     pdf.save(pdf_path + ".overlay")
     pdf.close()
     os.replace(pdf_path + ".overlay", pdf_path)
+
+
+def _populate_table_data(doc: Any, payload: dict, form: FormSchema) -> None:
+    """Điền dữ liệu danh sách (đồng sở hữu, ...) vào bảng Word."""
+    import re
+    entries = []
+    for person_idx in range(1, 10):
+        p_name = ""
+        p_mst = ""
+        p_cmnd = ""
+        p_ty_le = ""
+        for k, v in payload.items():
+            if not v or v == "__SKIPPED__":
+                continue
+            k_lower = str(k).lower()
+            v_str = str(v).strip()
+            
+            is_this_idx = (f" {person_idx}" in k_lower or f"_{person_idx}" in k_lower or f"{person_idx}" in k_lower)
+            if person_idx == 1 and not is_this_idx:
+                has_any_num = bool(re.search(r"\d", k_lower))
+                if not has_any_num:
+                    is_this_idx = True
+
+            if is_this_idx:
+                if any(w in k_lower for w in ["tên", "người", "tổ chức", "chu_so_huu"]) and any(w in k_lower for w in ["đồng sở hữu", "dsh", "đồng"]):
+                    p_name = v_str
+                elif "mst" in k_lower or "mã số thuế" in k_lower or "ma_so_thue" in k_lower:
+                    p_mst = v_str
+                elif any(w in k_lower for w in ["cmnd", "cccd", "hộ chiếu", "hc"]):
+                    p_cmnd = v_str
+                elif any(w in k_lower for w in ["tỷ lệ", "ty le", "ty_le", "phần trăm", "%"]):
+                    p_ty_le = v_str if "%" in v_str else f"{v_str}%"
+
+        if p_name or p_mst or p_cmnd or p_ty_le:
+            entries.append({
+                "stt": str(person_idx),
+                "name": p_name,
+                "mst": p_mst,
+                "cmnd": p_cmnd,
+                "ty_le": p_ty_le
+            })
+
+    if not entries:
+        return
+
+    for table in doc.tables:
+        header_text = " ".join(c.text.lower() for c in table.rows[0].cells) if table.rows else ""
+        if "đồng sở hữu" in header_text or ("sở hữu" in header_text and "tỷ lệ" in header_text):
+            for idx, entry in enumerate(entries):
+                row_idx = idx + 1
+                if row_idx < len(table.rows):
+                    row = table.rows[row_idx]
+                else:
+                    row = table.add_row()
+                
+                cols = len(row.cells)
+                if cols >= 5:
+                    vals = [entry["stt"], entry["name"], entry["mst"], entry["cmnd"], entry["ty_le"]]
+                    for c_idx, val in enumerate(vals):
+                        cell = row.cells[c_idx]
+                        cell.text = val
+                        if cell.paragraphs:
+                            p = cell.paragraphs[0]
+                            if c_idx in (0, 4):
+                                p.alignment = 1
 
 
 
@@ -712,6 +785,7 @@ async def generate_form(
         # Prepare payload with boolean normalization and digit_group splitting
         normalized_payload = prepare_render_payload(form, payload.data)
         doc.render(normalized_payload)
+        _populate_table_data(doc, payload.data, form)
         
         file_stream = io.BytesIO()
         doc.save(file_stream)
@@ -844,6 +918,7 @@ async def export_form(
         payload_dict = prepare_render_payload(form, payload_dict)
             
         doc.render(payload_dict)
+        _populate_table_data(doc, payload_dict, form)
         
         temp_id = f"export_{uuid.uuid4().hex}"
         temp_dir = os.path.join("data", "exports")
@@ -963,9 +1038,22 @@ async def preview_pdf_form(
 
         for _tvar in template_vars:
             _label = _tvar_to_label.get(_tvar, _tvar)  # e.g. ngay_viet_don
-            # Accept value by template var name OR by friendly name
             _val = normalized.get(_tvar) or normalized.get(_label) or ''
-            if _val not in ('', None, False):
+            
+            # Check if this variable belongs to an MST or digit-box field whose values are overlaid into boxes
+            is_digit_box = False
+            for _f in fields_list:
+                if isinstance(_f, dict):
+                    fkey = _f.get("key", "")
+                    fname = (_f.get("name", "") or "").lower()
+                    ftype = _f.get("type", "")
+                    if (_tvar == fkey or _label == _f.get("name")) and (ftype == "digit_group" or "mã số thuế" in fname):
+                        is_digit_box = True
+                        break
+
+            if is_digit_box and mode != "template":
+                preview_data[_tvar] = " "  # Do not spill the number string before the boxes
+            elif _val not in ('', None, False):
                 preview_data[_tvar] = _val
             else:
                 if mode == "template":
@@ -984,6 +1072,7 @@ async def preview_pdf_form(
         print("DEBUG PREVIEW DATA:", preview_data)
         print("DEBUG TEMPLATE VARS:", template_vars)
         doc.render(preview_data)
+        _populate_table_data(doc, payload, form)
 
         temp_id = f"preview_{uuid.uuid4().hex}"
         temp_dir = os.path.join("data", "exports")

@@ -400,6 +400,13 @@ Yêu cầu:
             # Form hoàn thành khi không còn field nào trong missing_fields VÀ không có invalid_fields
             all_personal_filled = len(missing_fields) == 0 and not invalid_fields
             
+            
+            invalid_missing = [f for f in missing_fields if f.get("key") in invalid_fields]
+            
+            # 2. Đánh giá lại is_complete
+            # Form hoàn thành khi không còn field nào trong missing_fields VÀ không có invalid_fields
+            all_personal_filled = len(missing_fields) == 0 and not invalid_fields
+            
             if all_personal_filled:
                 logger.info("Ground-truth check: all personal fields filled → forcing is_complete=True")
                 from backend.app.rag.agent import FormExtractionResult
@@ -430,11 +437,19 @@ Yêu cầu:
                     next_reply = result.assistant_reply
                     if next_field:
                         field_name = get_friendly_name(next_field)
-                        next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
+                        field_type = str(next_field.get("type", "string")).lower()
+                        if field_type in ("boolean", "checkbox"):
+                            fn_lower = field_name.strip().lower()
+                            if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
+                                next_reply = f"Bạn cho biết: **{field_name}**? (Có / Không)"
+                            else:
+                                next_reply = f"Trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
+                        else:
+                            next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
                         members = get_one_of_members(personal_fields, next_field)
                         if members and not next_field.get("depends_on"):
                             next_reply = build_one_of_choice_question(members)
-                    
+
                     result = FormExtractionResult(
                         extracted_fields=result.extracted_fields,
                         is_complete=False,
@@ -455,9 +470,18 @@ Yêu cầu:
                     elif asked_field.get("is_virtual") or str(asked_field.get("key", "")).startswith("section_condition_"):
                         result.assistant_reply = asked_field.get("name") or asked_field.get("description") or "Bạn vui lòng chọn một phương án phù hợp nhé?"
                     else:
-                        result.assistant_reply = (
-                            f"Để bắt đầu, bạn vui lòng cung cấp thông tin **{get_friendly_name(asked_field)}** nhé?"
-                        )
+                        field_name = get_friendly_name(asked_field)
+                        field_type = str(asked_field.get("type", "string")).lower()
+                        if field_type in ("boolean", "checkbox"):
+                            fn_lower = field_name.strip().lower()
+                            if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
+                                result.assistant_reply = f"Để bắt đầu, bạn cho biết: **{field_name}**? (Có / Không)"
+                            else:
+                                result.assistant_reply = f"Để bắt đầu, trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
+                        else:
+                            result.assistant_reply = (
+                                f"Để bắt đầu, bạn vui lòng cung cấp thông tin **{field_name}** nhé?"
+                            )
                 result.assistant_reply, flow_state["introduced_groups"] = prepend_group_introduction(
                     active_form.fields or [], result.next_field_key,
                     result.assistant_reply, flow_state.get("introduced_groups", []),

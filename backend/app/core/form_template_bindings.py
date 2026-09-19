@@ -131,7 +131,7 @@ def bound_template_stream(template_path, mapping, fields=None):
     document = docx.Document(template_path)
     if fields is not None:
         _restore_signing_date(document, fields)
-    else:
+    if mapping:
         # Initial binding uses the same single table pass as blank detection.
         index = 0
         for paragraph in _paragraphs(document, include_empty=True):
