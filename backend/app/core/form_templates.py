@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import tempfile
 import unicodedata
 import zipfile
 
@@ -17,8 +18,22 @@ def writable_template_path(form_id: str) -> str:
     return os.path.join(TEMPLATE_DIR, f"{form_id}.docx")
 
 
+def _copy_atomic(source: str, destination: str) -> None:
+    """Replace a template only after a complete copy exists beside it."""
+    directory = os.path.dirname(destination) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".template-", suffix=".docx", dir=directory)
+    os.close(fd)
+    try:
+        shutil.copy2(source, temporary)
+        os.replace(temporary, destination)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+
+
 def _normalize(value: str) -> str:
-    value = unicodedata.normalize("NFD", value or "")
+    value = unicodedata.normalize("NFD", (value or "").replace("Đ", "D").replace("đ", "d"))
     return " ".join(
         re.sub(r"[^a-z0-9]+", " ", "".join(
             char for char in value if unicodedata.category(char) != "Mn"
@@ -40,6 +55,14 @@ def _document_signature(path: str) -> tuple[str, set[str]]:
         return text, variables
     except (OSError, zipfile.BadZipFile):
         return "", set()
+
+
+def _is_valid_docx(path: str) -> bool:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return "word/document.xml" in archive.namelist()
+    except (OSError, zipfile.BadZipFile):
+        return False
 
 
 def _is_default_template(path: str) -> bool:
@@ -86,7 +109,7 @@ def _recover_legacy_template(
 
     if not best:
         return None
-    shutil.copy2(best[1], destination)
+    _copy_atomic(best[1], destination)
     return destination
 
 
@@ -99,12 +122,16 @@ def resolve_template_path(
 ) -> str | None:
     """Resolve a template and migrate a repository-era file into the volume."""
     destination = writable_template_path(form_id)
-    if os.path.exists(destination) and not _is_default_template(destination):
+    if (
+        os.path.exists(destination)
+        and _is_valid_docx(destination)
+        and not _is_default_template(destination)
+    ):
         return destination
 
     legacy = os.path.join(LEGACY_TEMPLATE_DIR, f"{form_id}.docx")
     if os.path.exists(legacy) and not _is_default_template(legacy):
-        shutil.copy2(legacy, destination)
+        _copy_atomic(legacy, destination)
         return destination
 
     recovered = _recover_legacy_template(
@@ -115,12 +142,16 @@ def resolve_template_path(
     if recovered:
         return recovered
 
-    if allow_default:
+    # A configured form must never be rendered on the generic fallback: its
+    # saved zones would appear over an unrelated page and could be saved back
+    # accidentally. The default remains available only to metadata-free
+    # legacy callers.
+    if allow_default and not expected_fields and not form_name:
         persistent_default = os.path.join(TEMPLATE_DIR, "default.docx")
         if os.path.exists(persistent_default):
             return persistent_default
         legacy_default = os.path.join(LEGACY_TEMPLATE_DIR, "default.docx")
         if os.path.exists(legacy_default):
-            shutil.copy2(legacy_default, persistent_default)
+            _copy_atomic(legacy_default, persistent_default)
             return persistent_default
     return None
