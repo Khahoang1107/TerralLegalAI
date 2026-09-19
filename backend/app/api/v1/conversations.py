@@ -140,7 +140,12 @@ async def export_conversation_form(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy cấu trúc biểu mẫu gốc")
         
-    template_path = resolve_template_path(form_id, allow_default=True)
+    template_path = resolve_template_path(
+        form_id,
+        allow_default=True,
+        expected_fields=form.fields or [],
+        form_name=form.name,
+    )
     if not template_path:
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu DOCX")
             

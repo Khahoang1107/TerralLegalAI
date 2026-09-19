@@ -685,7 +685,9 @@ async def generate_form(
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
         
-    template_path = resolve_template_path(str(form.id))
+    template_path = resolve_template_path(
+        str(form.id), expected_fields=form.fields or [], form_name=form.name
+    )
     if not template_path:
         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX gốc")
         
@@ -729,7 +731,9 @@ async def save_mapping(
     if not form:
         raise HTTPException(status_code=404, detail="Kh ng t m th y bi u m u")
 
-    template_path = resolve_template_path(form_id)
+    template_path = resolve_template_path(
+        form_id, expected_fields=form.fields or [], form_name=form.name
+    )
     if not template_path:
         raise HTTPException(status_code=404, detail="Kh ng t m th y file DOCX m u")
 
@@ -799,7 +803,12 @@ async def export_form(
                 detail=f"Thi u c c tr  ng b t bu c: {', '.join(missing)}"
             )
 
-    template_path = resolve_template_path(form_id, allow_default=True)
+    template_path = resolve_template_path(
+        form_id,
+        allow_default=True,
+        expected_fields=form.fields or [],
+        form_name=form.name,
+    )
     if not template_path:
         raise HTTPException(
             status_code=404,
@@ -886,7 +895,12 @@ async def preview_pdf_form(
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
 
     # Never overlay the original form's zones onto an unrelated fallback.
-    template_path = resolve_template_path(form_id, allow_default=mode != "admin")
+    template_path = resolve_template_path(
+        form_id,
+        allow_default=mode != "admin",
+        expected_fields=form.fields or [],
+        form_name=form.name,
+    )
     if not template_path:
         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
 
