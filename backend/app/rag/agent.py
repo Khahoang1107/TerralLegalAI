@@ -207,7 +207,12 @@ class FormExtractionResult(BaseModel):
 
 def get_friendly_name(field: Dict[str, Any]) -> str:
     """Helper: Return description (if available and not just instruction), else format name/key."""
-    desc = field.get("description", "")
+    desc = str(field.get("description") or "")
+    if desc.startswith("Chọn một phương án:") or desc.startswith("Câu hỏi điều kiện:"):
+        name = field.get("name")
+        if name and not str(name).startswith("section_condition_"):
+            return str(name).strip()
+
     if desc and not desc.startswith("Nhập thông tin"):
         return desc.replace(" [TU_DONG_DIEN]", "").strip()
 

@@ -452,6 +452,8 @@ Yêu cầu:
                     members = get_one_of_members(personal_fields, asked_field)
                     if members and not asked_field.get("depends_on"):
                         result.assistant_reply = build_one_of_choice_question(members)
+                    elif asked_field.get("is_virtual") or str(asked_field.get("key", "")).startswith("section_condition_"):
+                        result.assistant_reply = asked_field.get("name") or asked_field.get("description") or "Bạn vui lòng chọn một phương án phù hợp nhé?"
                     else:
                         result.assistant_reply = (
                             f"Để bắt đầu, bạn vui lòng cung cấp thông tin **{get_friendly_name(asked_field)}** nhé?"

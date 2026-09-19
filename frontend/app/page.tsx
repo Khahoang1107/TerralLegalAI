@@ -2836,16 +2836,18 @@ function FormsView() {
         const genQuestion = sec.mode === "yes_no"
           ? `Bạn có ${sec.name.trim()} không?`
           : `Bạn cần khai báo một trong các thông tin sau: ${options.join(", ").replace(/, ([^,]*)$/, " hoặc $1")}. Bạn muốn cung cấp thông tin nào?`;
+        const firstMemberIdx = physicalFields.findIndex(f => members.some(m => m.key === f.key));
+        const condOrder = firstMemberIdx >= 0 ? (firstMemberIdx + 1) * 100 - 10 : 9999;
         return {
           key: `section_condition_${sec.id}`,
           name: sec.question.trim() || genQuestion,
-          description: sec.mode === "one_of" ? `Chọn một phương án: ${sec.name.trim()}` : `Câu hỏi điều kiện: ${sec.name.trim()}?`,
+          description: sec.question.trim() || genQuestion,
           required: true,
           type: sec.mode === "one_of" ? "choice" : "boolean",
           options: sec.mode === "one_of" ? options : undefined,
           value_source: "user_input",
           is_virtual: true,
-          display_order: 10,
+          display_order: condOrder,
         };
       });
 

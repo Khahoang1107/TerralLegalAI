@@ -132,14 +132,45 @@ def order_fields(fields: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     New visual forms persist ``display_order``. Older forms retain their existing
     JSON-array order unless their labels explicitly contain a numeric [n] prefix.
+    Virtual condition fields (section_condition_*) are dynamically anchored right
+    before their first member field if their stored display_order is unconfigured or <= 10.
     """
+    field_list = list(fields)
+
+    # Determine the minimum display_order of physical fields belonging to each section
+    member_min_orders: Dict[str, int] = {}
+    for f in field_list:
+        if not f.get("is_virtual"):
+            raw_order = f.get("display_order")
+            try:
+                ord_val = int(raw_order) if raw_order is not None else None
+            except (TypeError, ValueError):
+                ord_val = None
+            if ord_val is not None:
+                sec_id = f.get("section_id") or f.get("alternative_group_id") or f.get("condition_group_id")
+                dep = f.get("depends_on")
+                dep_key = dep.get("field") if isinstance(dep, dict) else None
+                if sec_id:
+                    member_min_orders[str(sec_id)] = min(member_min_orders.get(str(sec_id), 999999), ord_val)
+                if dep_key:
+                    member_min_orders[str(dep_key)] = min(member_min_orders.get(str(dep_key), 999999), ord_val)
+
     decorated = []
-    for index, field in enumerate(fields):
+    for index, field in enumerate(field_list):
         raw_order = field.get("display_order")
         try:
             display_order = int(raw_order) if raw_order is not None else None
         except (TypeError, ValueError):
             display_order = None
+
+        key_str = str(field.get("key", ""))
+        # If virtual section condition was assigned static low order (e.g. <= 10), relocate before its members
+        if (field.get("is_virtual") or key_str.startswith("section_condition_")) and (display_order is None or display_order <= 10):
+            sec_id = key_str.replace("section_condition_", "")
+            target_order = member_min_orders.get(sec_id) or member_min_orders.get(key_str)
+            if target_order and target_order > 10:
+                display_order = target_order - 1
+
         label_order = _label_order(str(field.get("name", "")))
         # Do not make an unlabelled old field jump ahead of the stored Admin order.
         key = (0, display_order, index) if display_order is not None else ((1, label_order, index) if label_order else (2, (), index))
