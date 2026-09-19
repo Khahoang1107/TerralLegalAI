@@ -718,6 +718,19 @@ function AppHeader({
 }) {
   const initials = userName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   return (
     <>
@@ -764,32 +777,179 @@ function AppHeader({
             </button>
           )}
 
-          <button
-            type="button"
-            className="profile-button-enhanced"
-            onClick={onOpenSettings}
-            title={role === "admin" ? "Tài khoản Quản trị viên" : "Nhấp vào để Mở Cài đặt & Tùy chỉnh"}
-          >
-            <span className="avatar-ring">
-              <span className="avatar-text">{initials}</span>
-            </span>
-            <div className="profile-name-col hide-sm">
-              <span className="profile-name">{userName}</span>
-              <span className="profile-hint">{role === "admin" ? "Quản trị viên" : "Tùy chỉnh & Cài đặt"}</span>
-            </div>
-            {role !== "admin" && onOpenSettings && (
-              <Settings size={15} className="settings-trigger-icon" />
-            )}
-          </button>
+          {/* Account button with popover options menu */}
+          <div ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
+            <button
+              type="button"
+              className="profile-button-enhanced"
+              onClick={() => setMenuOpen(prev => !prev)}
+              title="Nhấp để mở menu tài khoản và cài đặt"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "4px 10px 4px 6px",
+                background: menuOpen ? "#f0fdf4" : "#f8fafc",
+                borderColor: menuOpen ? "#86efac" : "#e2e8f0",
+                cursor: "pointer",
+              }}
+            >
+              <span className="avatar-ring">
+                <span className="avatar-text">{initials}</span>
+              </span>
+              <div className="profile-name-col hide-sm">
+                <span className="profile-name">{userName}</span>
+                <span className="profile-hint">{role === "admin" ? "Quản trị viên" : "Tùy chỉnh & Cài đặt"}</span>
+              </div>
+              <ChevronDown
+                size={14}
+                style={{
+                  color: "#64748b",
+                  transition: "transform 0.2s ease",
+                  transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  marginLeft: 2,
+                }}
+              />
+            </button>
 
-          <button
-            type="button"
-            className="icon-button logout-btn"
-            onClick={() => setShowLogoutConfirm(true)}
-            title="Đăng xuất"
-          >
-            <LogOut size={17} />
-          </button>
+            {/* Hộp thoại lựa chọn: Cài đặt & Đăng xuất */}
+            {menuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  width: 240,
+                  background: "#ffffff",
+                  borderRadius: 14,
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 12px 32px -4px rgba(15, 23, 42, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.08)",
+                  padding: "8px",
+                  zIndex: 9999,
+                  textAlign: "left",
+                }}
+              >
+                {/* User Info Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 10px 12px",
+                    borderBottom: "1px solid #f1f5f9",
+                    marginBottom: 6,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #166b45 0%, #15803d 100%)",
+                      color: "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {initials}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 13.5,
+                        color: "#0f172a",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {userName}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: "#64748b",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        marginTop: 1,
+                      }}
+                    >
+                      {role === "admin" ? "Quản trị viên" : "Hồ sơ Công dân"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 1: Cài đặt & Tùy chỉnh */}
+                {role !== "admin" && onOpenSettings && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpenSettings();
+                    }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "9px 12px",
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: "#334155",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <Settings size={16} style={{ color: "#64748b", flexShrink: 0 }} />
+                    <span>Cài đặt & Tùy chỉnh</span>
+                  </button>
+                )}
+
+                {/* Option 2: Đăng xuất */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "9px 12px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#dc2626",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.15s ease",
+                    marginTop: 2,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#fee2e2")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <LogOut size={16} style={{ color: "#dc2626", flexShrink: 0 }} />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
