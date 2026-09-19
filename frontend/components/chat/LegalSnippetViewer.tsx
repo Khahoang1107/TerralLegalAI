@@ -12,13 +12,23 @@ export function cleanLegalText(raw: string): string {
 
   // 1. Khắc phục các lỗi dính chữ (ligature) và lỗi font OCR tiếng Việt
   text = text
-    .replace(/ffl[íiìỉĩị]t\s*đai/gi, "đất đai")
-    .replace(/ffl[íiìỉĩị]t/gi, "đất")
-    .replace(/đất\s*ffl[íiìỉĩị]t/gi, "đất đai")
-    .replace(/quyền\s*sử\s*dụng\s*ffl[íiìỉĩị]t/gi, "quyền sử dụng đất")
-    .replace(/thủ\s*tục\s*ffl[íiìỉĩị]t/gi, "thủ tục đất")
-    .replace(/[øo]la\s*đình/gi, "gia đình")
-    .replace(/[øo]la/gi, "gia")
+    .replace(/ffl[l1íiìỉĩị]*t\s*đai/gi, "đất đai")
+    .replace(/ffl[l1íiìỉĩị]*t/gi, "đất")
+    .replace(/đất\s*ffl[l1íiìỉĩị]*t/gi, "đất đai")
+    .replace(/quyền\s*sử\s*dụng\s*ffl[l1íiìỉĩị]*t/gi, "quyền sử dụng đất")
+    .replace(/thủ\s*tục\s*ffl[l1íiìỉĩị]*t/gi, "thủ tục đất")
+    .replace(/fflấy/gi, "giấy")
+    .replace(/[øo][1la]\s*đình/gi, "gia đình")
+    .replace(/[øo][1la]/gi, "gia")
+    .replace(/Cấp\s*đồi/gi, "Cấp đổi")
+    .replace(/gắn\s*liên\b/gi, "gắn liền")
+    .replace(/Nghị\s*định\s*sô\b/gi, "Nghị định số")
+    .replace(/yêu\s*câu\b/gi, "yêu cầu")
+    .replace(/ghi\s*đây\s*đủ\b/gi, "ghi đầy đủ")
+    .replace(/quyen\s*sử\s*dung\b/gi, "quyền sử dụng")
+    .replace(/tải\s*sản\b/gi, "tài sản")
+    .replace(/thửa\s*đắt\b/gi, "thửa đất")
+    .replace(/đo\s*đạc\s*đề\b/gi, "đo đạc để")
     .replace(/dât\s*dai/gi, "đất đai")
     .replace(/dất\s*đai/gi, "đất đai")
     .replace(/cơ\s*quan\s*có\s*thẩm\s*quy[êe]n/gi, "cơ quan có thẩm quyền")
@@ -29,14 +39,21 @@ export function cleanLegalText(raw: string): string {
   // 2. Chuẩn hóa khoảng trắng và dòng trống
   text = text.replace(/[ \t]+/g, " ");
 
-  // 3. Tách dòng và lọc các từ rác / nhiễu OCR (như chữ "lời", số trang lẻ đứng một mình)
+  // 3. Tách dòng và lọc các từ rác / nhiễu OCR (như chữ "lời", "lði", số trang lẻ đứng một mình)
   const lines = text.split("\n");
   const filteredLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
-    // Bỏ qua các dòng rác OCR như "lời", "lòi", "trang 1"
-    if (trimmed === "lời" || trimmed === "lòi" || /^[0-9]+$/.test(trimmed) || /^trang\s+[0-9]+$/i.test(trimmed)) {
+    // Bỏ qua các dòng rác OCR như "lời", "lði", "lòi", "trang 1"
+    if (
+      trimmed === "lời" ||
+      trimmed === "lði" ||
+      trimmed === "lòi" ||
+      trimmed === "lơi" ||
+      /^[0-9]+$/.test(trimmed) ||
+      /^trang\s+[0-9]+$/i.test(trimmed)
+    ) {
       continue;
     }
     filteredLines.push(lines[i]);
