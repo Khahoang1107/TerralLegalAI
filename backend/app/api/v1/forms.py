@@ -308,14 +308,15 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                     val = normalized.get(field.get("name", ""), "")
                 
                 if isinstance(val, str) and val:
+                    clean_digits = re.sub(r"\D", "", val)
                     if idx is not None:
-                        # Trích xuất ký tự tại vị trí idx
-                        if idx < len(val):
-                            normalized[fkey] = val[idx]
+                        # Trích xuất ký tự số tại vị trí idx (bỏ qua dấu chấm, gạch ngang)
+                        if idx < len(clean_digits):
+                            normalized[fkey] = clean_digits[idx]
                         else:
                             normalized[fkey] = " "
                     else:
-                        normalized[fkey] = val
+                        normalized[fkey] = clean_digits
                         
                     # Không phụ thuộc vào tên key do AI sinh ra (có thể là
                     # "Mã số thuế" hoặc group_key bị gõ sai). Xác định nguồn
@@ -323,9 +324,9 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                     field_name = str(field.get("name") or "").lower()
                     is_agent_mst = "đại lý" in field_name or "dai ly" in field_name
                     if is_agent_mst:
-                        mst_agent_value = mst_agent_value or val
+                        mst_agent_value = mst_agent_value or clean_digits
                     else:
-                        mst_nnt_value = mst_nnt_value or val
+                        mst_nnt_value = mst_nnt_value or clean_digits
 
     # ── Fill mst_N_I variables for templates with digit-box MST fields ──────────
     # Group 1,3 = ma_so_thue (người nộp thuế)
@@ -333,7 +334,8 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
     # Some templates use all 6 groups for both, so we fill all permutations.
 
     def _fill_mst_groups(mst_str: str, *group_nums):
-        digits = (mst_str or "").strip().ljust(13)
+        clean_str = re.sub(r"\D", "", (mst_str or ""))
+        digits = clean_str.strip().ljust(13)
         # Các textbox của mẫu 04/TK-SDDPNN được Word ghi trong XML theo thứ
         # tự khác với vị trí trái→phải trên trang. Đây chỉ là ánh xạ trình bày
         # cho các tag mst_N_I, không ảnh hưởng dữ liệu/AI.
@@ -461,14 +463,18 @@ def _collect_digit_group_values(form: FormSchema, payload: dict) -> list[str]:
 
 def _collect_boolean_control_values(form: FormSchema, payload: dict) -> list[bool]:
     """Return only checkboxes physically present on the Word/PDF template."""
+    from backend.app.core.form_flow import order_fields
     true_values = {"có", "co", "yes", "true", "1", "x", "☑", "rồi", "đúng"}
     values: list[bool] = []
-    for field in form.fields or []:
-        if not isinstance(field, dict) or field.get("type") != "boolean":
+    for field in order_fields(form.fields or []):
+        if not isinstance(field, dict):
             continue
-        # section_condition_* controls the interview flow; it is not a box on
-        # the original government form and must not shift the PDF box order.
-        if str(field.get("key") or "").startswith("section_condition_"):
+        ftype = str(field.get("type") or "").lower()
+        if ftype not in ("boolean", "checkbox"):
+            continue
+        # section_condition_* and virtual fields control the interview flow;
+        # they are not physical boxes on the government form and must not shift the PDF box order.
+        if field.get("is_virtual") or str(field.get("key") or "").startswith("section_condition_"):
             continue
         value = payload.get(field.get("key"), payload.get(field.get("name"), False))
         if isinstance(value, str):
@@ -498,7 +504,7 @@ def _overlay_form_controls(
         rectangles = [drawing["rect"] for drawing in control_page.get_drawings()]
         square_rows: list[list[Any]] = []
         squares = sorted(
-            (rect for rect in rectangles if 12 <= rect.width <= 20 and 12 <= rect.height <= 20),
+            (rect for rect in rectangles if 8 <= rect.width <= 25 and 8 <= rect.height <= 25 and abs(rect.width - rect.height) <= 6),
             key=lambda rect: (rect.y0, rect.x0),
         )
         for square in squares:
@@ -559,7 +565,8 @@ def _overlay_form_controls(
                     color=(0, 0, 0), overlay=True,
                 )
             else:
-                # Blank the glyph area and draw a crisp, perfectly-proportioned checkbox with X
+                # Blank the original glyph area completely first to remove any background glyph
+                checkbox_page.draw_rect(box, color=None, fill=(1, 1, 1), overlay=True)
                 center_x = (box.x0 + box.x1) / 2
                 center_y = (box.y0 + box.y1) / 2
                 size = min(box.width, box.height)
@@ -664,6 +671,9 @@ async def get_form(
     form = result.scalars().first()
     if not form:
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
+    from backend.app.core.form_flow import order_fields
+    if form.fields and isinstance(form.fields, list):
+        form.fields = order_fields(form.fields)
     return form
 
 
@@ -947,6 +957,11 @@ async def export_form(
             except FileNotFoundError:
                 raise HTTPException(status_code=500, detail="Không tìm thấy LibreOffice. Vui lòng cài đặt LibreOffice hoặc chạy qua Docker để dùng tính năng xuất PDF.")
             if os.path.exists(output_pdf):
+                _overlay_form_controls(
+                    output_pdf,
+                    _collect_digit_group_values(form, payload_dict),
+                    _collect_boolean_control_values(form, payload_dict),
+                )
                 return FileResponse(
                     output_pdf,
                     media_type="application/pdf",
@@ -1166,7 +1181,7 @@ async def analyze_docx(file: UploadFile = File(...)):
         # Detect: ASCII dots/underscores (3+), tabs, checkbox ☐,
         # Unicode ellipsis (U+2026 …), repeated ellipsis, en/em dash sequences
         blank_pattern = re.compile(
-            r'(?:[\._ ](?:&nbsp;|\s)*){3,}'  # ASCII dots/underscores 3+
+            r'(?:[\._](?:&nbsp;|\s)*){3,}'  # ASCII dots/underscores 3+ (require dots or underscores)
             r'|\t+'                             # tabs
             r'|[\u2610\u25a1]'                  # checkbox ☐ or □
             r'|(?:\u2026){1,}'                  # Unicode ellipsis … (1+ repeated)

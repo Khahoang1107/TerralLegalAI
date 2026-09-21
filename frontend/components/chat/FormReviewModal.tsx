@@ -124,7 +124,12 @@ export default function FormReviewModal({ formId, initialData, onClose }: FormRe
   // lớp hiển thị để người dùng nhập một lần; payload vẫn giữ nguyên key cũ.
   const displayFields = (() => {
     const groups = new Set<string>();
-    return (formSchema?.fields || []).filter((field: any) => {
+    const fields = (formSchema?.fields || []).slice().sort((a: any, b: any) => {
+      const ordA = a.display_order ?? 9999;
+      const ordB = b.display_order ?? 9999;
+      return ordA - ordB;
+    });
+    return fields.filter((field: any) => {
       if (field.type !== "digit_group") return true;
       const groupKey = field.group_key || field.name || field.key;
       if (groups.has(groupKey)) return false;

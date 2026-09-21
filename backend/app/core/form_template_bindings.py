@@ -7,7 +7,7 @@ import docx
 
 
 BLANK_PATTERN = re.compile(
-    r'(?:[\._ ](?:&nbsp;|\s)*){3,}|\t+|[\u2610\u25a1]'
+    r'(?:[\._](?:&nbsp;|\s)*){3,}|\t+|[\u2610\u25a1]'
     r'|\u2026+|\u2025+|[\u2013\u2014]{2,}'
 )
 W_NAMESPACE = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"

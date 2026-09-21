@@ -2388,18 +2388,20 @@ function FormsView() {
       const firstMember = members[0];
       return { id: `section_condition_${section.id}`, name: section.question.trim(), beforeField: firstMember?.id || "" };
     });
-    const allVirtualConditions = [...virtualConditions.filter(condition => condition.name.trim()), ...sectionConditions];
-    const virtualFields = allVirtualConditions.map((condition, index) => ({
-      key: condition.id,
-      name: condition.name.trim(),
-      description: `Câu hỏi điều kiện: ${condition.name.trim()}?`,
-      required: true,
-      type: "boolean",
-      value_source: "user_input",
-      is_virtual: true,
-      display_order: ((labeledList.find(field => field.id === condition.beforeField)?.num || 1) * 100) - 1 - index,
-    }));
-    const fields = [...virtualFields, ...labeledList.map(f => {
+    const virtualFields = allVirtualConditions.map((condition, index) => {
+      const anchorNum = labeledList.find(field => field.id === condition.beforeField)?.num;
+      return {
+        key: condition.id,
+        name: condition.name.trim(),
+        description: `Câu hỏi điều kiện: ${condition.name.trim()}?`,
+        required: true,
+        type: "boolean",
+        value_source: "user_input",
+        is_virtual: true,
+        display_order: anchorNum ? (anchorNum * 100) - 10 - index : 9999,
+      };
+    });
+    const rawFields = [...virtualFields, ...labeledList.map(f => {
       const zone = editableZones?.find((z: any) => String(z.idx) === f.blankIdx);
       const isCheckbox = zone?.field_type === 'checkbox';
       const suggested = zone?.suggested_label || zone?.ai_label || "";
@@ -2454,6 +2456,7 @@ function FormsView() {
       }
       return base;
     })];
+    const fields = rawFields.sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999));
     const payload = {
       name: formName,
       procedure_type: procedureType,
@@ -2919,7 +2922,7 @@ function FormsView() {
         return res;
       });
 
-      const fieldsToSave = [...virtualConditions, ...nonVirtual];
+      const fieldsToSave = [...virtualConditions, ...nonVirtual].sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999));
 
       await formsApi.updateForm(editingForm.id, { 
         name: editName.trim(), 

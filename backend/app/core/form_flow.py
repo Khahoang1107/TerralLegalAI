@@ -151,10 +151,14 @@ def order_fields(fields: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
             sec_id = f.get("section_id") or f.get("alternative_group_id") or f.get("condition_group_id")
             dep = f.get("depends_on")
             dep_key = dep.get("field") if isinstance(dep, dict) else None
+            derived = f.get("derived_from")
+            derived_key = derived.get("field") if isinstance(derived, dict) else None
             if sec_id:
                 member_min_orders[str(sec_id)] = min(member_min_orders.get(str(sec_id), 999999), ord_val)
             if dep_key:
                 member_min_orders[str(dep_key)] = min(member_min_orders.get(str(dep_key), 999999), ord_val)
+            if derived_key:
+                member_min_orders[str(derived_key)] = min(member_min_orders.get(str(derived_key), 999999), ord_val)
 
     decorated = []
     for index, field in enumerate(field_list):
@@ -171,7 +175,7 @@ def order_fields(fields: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
             target_order = member_min_orders.get(sec_id) or member_min_orders.get(key_str)
             if target_order is not None:
                 display_order = target_order - 1
-            elif display_order is None or display_order <= 10:
+            elif display_order is None or display_order < 100:
                 display_order = 9999
         elif display_order is None:
             display_order = (index + 1) * 100
@@ -333,6 +337,9 @@ def get_missing_fields(fields: Iterable[Dict[str, Any]], data: Dict[str, Any]) -
     """Return the deterministic next questions, including an unmet one-of group."""
     ordered = order_fields(fields)
     field_by_name = {str(f.get("name", "")): f for f in ordered}
+    for f in ordered:
+        if f.get("key"):
+            field_by_name[str(f.get("key"))] = f
     groups: Dict[str, List[Dict[str, Any]]] = {}
     for field in ordered:
         if field.get("require_one_of_group"):
