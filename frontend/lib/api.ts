@@ -146,6 +146,7 @@ export interface EvaluationRun {
 }
 
 export interface EvaluationRunRequest {
+  test_case_ids?: string[];
   max_questions?: number;
   procedure_group?: string;
   level?: number;

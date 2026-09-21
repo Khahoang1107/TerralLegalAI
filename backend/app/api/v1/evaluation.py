@@ -72,6 +72,7 @@ class EvaluationRunResponse(BaseModel):
 
 
 class EvaluationRunRequest(BaseModel):
+    test_case_ids: Optional[list[str]] = Field(None, description="Danh sách các test case id cụ thể muốn chạy")
     max_questions: int = Field(200, ge=1, le=200, description="Số câu hỏi tối đa trong lần chạy này")
     procedure_group: Optional[str] = Field(None, description="Chỉ đánh giá một nhóm thủ tục")
     level: Optional[int] = Field(None, ge=1, le=4, description="Chỉ đánh giá câu hỏi ở mức độ nhất định")
@@ -336,6 +337,8 @@ async def run_evaluation(
 
     # Lấy test cases
     stmt = select(TestCase)
+    if payload.test_case_ids:
+        stmt = stmt.where(TestCase.id.in_(payload.test_case_ids))
     if payload.procedure_group:
         stmt = stmt.where(TestCase.procedure_group == payload.procedure_group)
     if payload.level:

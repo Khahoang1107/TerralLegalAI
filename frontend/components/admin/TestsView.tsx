@@ -25,6 +25,9 @@ import {
   X,
   Sparkles,
   Trash2,
+  Zap,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 export default function TestsView() {
@@ -41,6 +44,7 @@ export default function TestsView() {
   const [levelFilter, setLevelFilter] = useState<number | "all">("all");
   const [procFilter, setProcFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "pass" | "fail" | "pending">("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Run Controls
   const [runMaxQuestions, setRunMaxQuestions] = useState<number>(20);
@@ -116,20 +120,45 @@ export default function TestsView() {
     });
   }, [cases, statusFilter, query]);
 
+  // Selection Helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedIds(filteredBank.map((x) => x.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const selectFirstN = (n: number) => {
+    setSelectedIds(filteredBank.slice(0, n).map((x) => x.id));
+  };
+
   // Actions
-  const runEvaluation = async () => {
+  const runEvaluation = async (overrideIds?: string[]) => {
+    const idsToRun = overrideIds || (selectedIds.length > 0 ? selectedIds : undefined);
+    const count = idsToRun ? idsToRun.length : runMaxQuestions;
     setBusy(true);
     try {
       const out = await evaluationApi.runEvaluation({
-        max_questions: runMaxQuestions,
-        procedure_group: runProcedure === "all" ? undefined : runProcedure,
-        level: runLevel === "all" ? undefined : Number(runLevel),
+        test_case_ids: idsToRun,
+        max_questions: count,
+        procedure_group: idsToRun ? undefined : (runProcedure === "all" ? undefined : runProcedure),
+        level: idsToRun ? undefined : (runLevel === "all" ? undefined : Number(runLevel)),
         use_ragas: runUseRagas,
-        notes: `Đánh giá ${runUseRagas ? "RAGAS" : "Heuristic"} (${runMaxQuestions} câu)`,
+        notes: idsToRun
+          ? `Đánh giá ${idsToRun.length} câu đã chọn (${runUseRagas ? "RAGAS" : "Heuristic"})`
+          : `Đánh giá ${runUseRagas ? "RAGAS" : "Heuristic"} (${count} câu)`,
       });
       setNotice(
-        `Đã khởi chạy đánh giá ${out.total_questions || runMaxQuestions} câu. Hệ thống đang xử lý...`
+        `Đã khởi chạy đánh giá ${out.total_questions || count} câu. Hệ thống đang xử lý...`
       );
+      setActiveTab("evaluate");
       setTimeout(async () => {
         const updatedRuns = await evaluationApi.getResults();
         setRuns(updatedRuns);
@@ -225,12 +254,29 @@ export default function TestsView() {
     setBusy(true);
     try {
       await evaluationApi.clearAllTestCases();
+      setSelectedIds([]);
       setNotice("Đã xóa sạch bộ câu hỏi và các lần chạy cũ. Bây giờ bạn có thể nạp hoặc test mẻ mới.");
       setSelectedRun(null);
       setCases([]);
       await load();
     } catch {
       setNotice("Xóa thất bại. Vui lòng kiểm tra lại quyền admin.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteSingleCase = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này khỏi bộ kiểm thử?")) return;
+    setBusy(true);
+    try {
+      await evaluationApi.deleteTestCase(id);
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
+      setNotice("Đã xóa câu hỏi khỏi bộ kiểm thử.");
+      await load();
+    } catch {
+      setNotice("Xóa câu hỏi thất bại.");
     } finally {
       setBusy(false);
     }
@@ -471,6 +517,64 @@ export default function TestsView() {
               background: "#fff",
             }}
           >
+            {selectedIds.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  color: "#1e40af",
+                  padding: "10px 16px",
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  fontSize: 13,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Zap size={16} color="#2563eb" />
+                  <span>
+                    <strong>Chế độ chọn lọc tiết kiệm Token:</strong> Đang chọn{" "}
+                    <strong>{selectedIds.length}</strong> câu hỏi từ ngân hàng để kiểm thử.
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#dc2626",
+                      cursor: "pointer",
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      padding: 0,
+                    }}
+                  >
+                    Bỏ chọn
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("bank")}
+                    style={{
+                      background: "#2563eb",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: "4px 10px",
+                    }}
+                  >
+                    Quản lý danh sách đã chọn →
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div
               style={{
                 display: "flex",
@@ -497,81 +601,100 @@ export default function TestsView() {
                   flexWrap: "wrap",
                 }}
               >
-                {/* Max questions selector */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
-                    Số câu:
-                  </label>
-                  <select
-                    value={runMaxQuestions}
-                    onChange={(e) => setRunMaxQuestions(Number(e.target.value))}
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      fontSize: 13,
-                      background: "#fff",
-                    }}
-                  >
-                    <option value={10}>10 câu (Test nhanh)</option>
-                    <option value={25}>25 câu (Mẫu chuẩn)</option>
-                    <option value={50}>50 câu (Nửa bộ)</option>
-                    <option value={items.length || 115}>
-                      Toàn bộ ({items.length || 115} câu)
-                    </option>
-                  </select>
-                </div>
+                {/* Max questions selector (hidden or disabled if selectedIds > 0) */}
+                {selectedIds.length === 0 ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
+                        Số câu:
+                      </label>
+                      <select
+                        value={runMaxQuestions}
+                        onChange={(e) => setRunMaxQuestions(Number(e.target.value))}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          fontSize: 13,
+                          background: "#fff",
+                        }}
+                      >
+                        <option value={5}>5 câu (Test cực nhanh)</option>
+                        <option value={10}>10 câu (Test nhanh)</option>
+                        <option value={25}>25 câu (Mẫu chuẩn)</option>
+                        <option value={50}>50 câu (Nửa bộ)</option>
+                        <option value={items.length || 115}>
+                          Toàn bộ ({items.length || 115} câu)
+                        </option>
+                      </select>
+                    </div>
 
-                {/* Level selector */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
-                    Độ khó:
-                  </label>
-                  <select
-                    value={runLevel}
-                    onChange={(e) =>
-                      setRunLevel(e.target.value === "all" ? "all" : Number(e.target.value))
-                    }
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      fontSize: 13,
-                      background: "#fff",
-                    }}
-                  >
-                    <option value="all">Tất cả mức độ</option>
-                    <option value={1}>Level 1: Cơ bản</option>
-                    <option value={2}>Level 2: Đời thường</option>
-                    <option value={3}>Level 3: Bẫy / Khó</option>
-                  </select>
-                </div>
+                    {/* Level selector */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
+                        Độ khó:
+                      </label>
+                      <select
+                        value={runLevel}
+                        onChange={(e) =>
+                          setRunLevel(e.target.value === "all" ? "all" : Number(e.target.value))
+                        }
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          fontSize: 13,
+                          background: "#fff",
+                        }}
+                      >
+                        <option value="all">Tất cả mức độ</option>
+                        <option value={1}>Level 1: Cơ bản</option>
+                        <option value={2}>Level 2: Đời thường</option>
+                        <option value={3}>Level 3: Bẫy / Khó</option>
+                      </select>
+                    </div>
 
-                {/* Procedure Selector */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
-                    Thủ tục:
-                  </label>
-                  <select
-                    value={runProcedure}
-                    onChange={(e) => setRunProcedure(e.target.value)}
+                    {/* Procedure Selector */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <label style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>
+                        Thủ tục:
+                      </label>
+                      <select
+                        value={runProcedure}
+                        onChange={(e) => setRunProcedure(e.target.value)}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          fontSize: 13,
+                          background: "#fff",
+                        }}
+                      >
+                        <option value="all">Tất cả nhóm</option>
+                        <option value="chuyen_nhuong">Chuyển nhượng</option>
+                        <option value="tang_cho">Tặng cho</option>
+                        <option value="bien_dong">ĐK Biến động</option>
+                        <option value="tach_hop_thua">Tách / Hợp thửa</option>
+                        <option value="cap_doi_cap_lai">Cấp đổi / Cấp lại</option>
+                        <option value="cau_hoi_kho">Câu hỏi khó / Bẫy</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <span
                     style={{
-                      padding: "6px 10px",
+                      background: "#f0fdf4",
+                      border: "1px solid #bbf7d0",
+                      color: "#15803d",
+                      padding: "5px 12px",
                       borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      fontSize: 13,
-                      background: "#fff",
+                      fontSize: 12.5,
+                      fontWeight: 600,
                     }}
                   >
-                    <option value="all">Tất cả nhóm</option>
-                    <option value="chuyen_nhuong">Chuyển nhượng</option>
-                    <option value="tang_cho">Tặng cho</option>
-                    <option value="bien_dong">ĐK Biến động</option>
-                    <option value="tach_hop_thua">Tách / Hợp thửa</option>
-                    <option value="cap_doi_cap_lai">Cấp đổi / Cấp lại</option>
-                    <option value="cau_hoi_kho">Câu hỏi khó / Bẫy</option>
-                  </select>
-                </div>
+                    Đang chọn {selectedIds.length} câu tùy chỉnh
+                  </span>
+                )}
 
                 {/* Toggle RAGAS */}
                 <label
@@ -596,7 +719,7 @@ export default function TestsView() {
                 <button
                   className="primary-button"
                   disabled={!items.length || busy}
-                  onClick={runEvaluation}
+                  onClick={() => runEvaluation()}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -611,7 +734,10 @@ export default function TestsView() {
                     </>
                   ) : (
                     <>
-                      <TestTube2 size={16} /> Bắt đầu đánh giá
+                      <TestTube2 size={16} />{" "}
+                      {selectedIds.length > 0
+                        ? `Đánh giá ${selectedIds.length} câu đã chọn`
+                        : "Bắt đầu đánh giá"}
                     </>
                   )}
                 </button>
@@ -1333,63 +1459,268 @@ export default function TestsView() {
             </div>
           </div>
 
-          {/* Test Case Cards List */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {filteredBank.map((tc, i) => (
-              <div
-                key={tc.id}
+          {/* Selection & Batch Action Toolbar */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <label
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "80px 1fr auto",
-                  alignItems: "flex-start",
-                  gap: 16,
-                  padding: "16px",
-                  borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  background: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#1e293b",
                 }}
               >
-                {/* ID & Level Badge */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: "#166b45" }}>
-                    TC-{String(i + 1).padStart(3, "0")}
-                  </span>
-                  {getLevelBadge(tc.level)}
-                </div>
+                <input
+                  type="checkbox"
+                  checked={filteredBank.length > 0 && selectedIds.length === filteredBank.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      selectAll();
+                    } else {
+                      clearSelection();
+                    }
+                  }}
+                  style={{ width: 17, height: 17, accentColor: "#166b45", cursor: "pointer" }}
+                />
+                Chọn tất cả ({filteredBank.length} câu)
+              </label>
 
-                {/* Question & Expected Answer */}
-                <div>
-                  <strong style={{ fontSize: 14, color: "#0f172a", display: "block" }}>
-                    {tc.question}
-                  </strong>
-                  <p style={{ margin: "6px 0 4px", fontSize: 12.5, color: "#334155", lineHeight: 1.5 }}>
-                    <strong>Đáp án chuẩn:</strong> {tc.expected_answer}
-                  </p>
-                  <span style={{ fontSize: 11.5, color: "#64748b" }}>
-                    📜 Căn cứ: <em>{tc.source_doc || "Chưa gắn nguồn"}</em>
-                  </span>
-                </div>
-
-                {/* Procedure Badge */}
-                <div>
-                  <span
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => selectFirstN(3)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                  title="Chọn nhanh 3 câu đầu để test cực nhanh và siêu tiết kiệm token"
+                >
+                  ⚡ Chọn 3 câu đầu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectFirstN(5)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                  title="Chọn nhanh 5 câu đầu để test"
+                >
+                  ⚡ Chọn 5 câu đầu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectFirstN(10)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                  title="Chọn nhanh 10 câu đầu để test"
+                >
+                  ⚡ Chọn 10 câu đầu
+                </button>
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearSelection}
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
                       padding: "4px 10px",
-                      borderRadius: 12,
-                      fontSize: 11.5,
+                      borderRadius: 6,
+                      border: "1px solid #fecaca",
+                      background: "#fff",
+                      fontSize: 12,
+                      cursor: "pointer",
                       fontWeight: 600,
-                      background: "#f1f5f9",
-                      color: "#475569",
-                      border: "1px solid #e2e8f0",
+                      color: "#dc2626",
                     }}
                   >
-                    {getProcedureLabel(tc.procedure_group)}
-                  </span>
-                </div>
+                    Bỏ chọn ({selectedIds.length})
+                  </button>
+                )}
               </div>
-            ))}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 12.5, color: "#475569" }}>
+                Đã chọn: <strong style={{ color: "#166b45" }}>{selectedIds.length}</strong> / {filteredBank.length} câu
+              </span>
+              <button
+                type="button"
+                className="primary-button"
+                disabled={selectedIds.length === 0 || busy}
+                onClick={() => runEvaluation(selectedIds)}
+                style={{
+                  padding: "6px 14px",
+                  fontSize: 12.5,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontWeight: 700,
+                  opacity: selectedIds.length === 0 ? 0.5 : 1,
+                  cursor: selectedIds.length === 0 ? "not-allowed" : "pointer",
+                }}
+              >
+                <Zap size={14} /> Chạy test {selectedIds.length} câu đã chọn (Ít hao Token)
+              </button>
+            </div>
+          </div>
+
+          {/* Test Case Cards List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filteredBank.map((tc, i) => {
+              const isSelected = selectedIds.includes(tc.id);
+              return (
+                <div
+                  key={tc.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "32px 80px 1fr auto",
+                    alignItems: "flex-start",
+                    gap: 16,
+                    padding: "16px",
+                    borderRadius: 8,
+                    border: isSelected ? "2px solid #166b45" : "1px solid #e2e8f0",
+                    background: isSelected ? "#f0fdf4" : "#fff",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {/* Checkbox */}
+                  <div style={{ paddingTop: 2 }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(tc.id)}
+                      style={{
+                        width: 18,
+                        height: 18,
+                        accentColor: "#166b45",
+                        cursor: "pointer",
+                      }}
+                      title="Chọn/bỏ chọn câu hỏi này"
+                    />
+                  </div>
+
+                  {/* ID & Level Badge */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontWeight: 800, fontSize: 13, color: "#166b45" }}>
+                      TC-{String(i + 1).padStart(3, "0")}
+                    </span>
+                    {getLevelBadge(tc.level)}
+                  </div>
+
+                  {/* Question & Expected Answer */}
+                  <div>
+                    <strong style={{ fontSize: 14, color: "#0f172a", display: "block" }}>
+                      {tc.question}
+                    </strong>
+                    <p style={{ margin: "6px 0 4px", fontSize: 12.5, color: "#334155", lineHeight: 1.5 }}>
+                      <strong>Đáp án chuẩn:</strong> {tc.expected_answer}
+                    </p>
+                    <span style={{ fontSize: 11.5, color: "#64748b" }}>
+                      📜 Căn cứ: <em>{tc.source_doc || "Chưa gắn nguồn"}</em>
+                    </span>
+                  </div>
+
+                  {/* Actions & Procedure Badge */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "4px 10px",
+                        borderRadius: 12,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        background: isSelected ? "#e2f8e8" : "#f1f5f9",
+                        color: "#475569",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      {getProcedureLabel(tc.procedure_group)}
+                    </span>
+
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => runEvaluation([tc.id])}
+                        disabled={busy}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: "1px solid #b7e8ce",
+                          background: "#e8f5ed",
+                          color: "#166b45",
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                        title="Chạy đánh giá riêng duy nhất câu này để test nhanh nhất"
+                      >
+                        <Zap size={12} /> Test riêng
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => deleteSingleCase(tc.id, e)}
+                        disabled={busy}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "4px 7px",
+                          borderRadius: 6,
+                          border: "1px solid #fecaca",
+                          background: "#fff",
+                          color: "#dc2626",
+                          fontSize: 11.5,
+                          cursor: "pointer",
+                        }}
+                        title="Xóa câu hỏi này khỏi bộ kiểm thử"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
