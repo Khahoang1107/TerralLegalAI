@@ -457,6 +457,10 @@ export const evaluationApi = {
   async deleteTestCase(id: string): Promise<void> {
     await client.delete(`/evaluation/test-cases/${id}`);
   },
+  async clearAllTestCases(): Promise<{ message: string; deleted: number }> {
+    const { data } = await client.delete("/evaluation/test-cases");
+    return data;
+  },
   async updateTestCase(id: string, payload: TestCaseCreate): Promise<TestCase> {
     const { data } = await client.put<TestCase>(`/evaluation/test-cases/${id}`, payload); return data;
   },

@@ -24,6 +24,7 @@ import {
   Check,
   X,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 
 export default function TestsView() {
@@ -214,6 +215,27 @@ export default function TestsView() {
     }
   };
 
+  const clearAll = async () => {
+    if (
+      !window.confirm(
+        "Bạn có chắc chắn muốn XÓA TOÀN BỘ câu hỏi và các lần chạy đánh giá cũ? Thao tác này sẽ làm sạch bộ kiểm thử để bạn nạp lại số lượng ít hơn."
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      await evaluationApi.clearAllTestCases();
+      setNotice("Đã xóa sạch bộ câu hỏi và các lần chạy cũ. Bây giờ bạn có thể nạp hoặc test mẻ mới.");
+      setSelectedRun(null);
+      setCases([]);
+      await load();
+    } catch {
+      setNotice("Xóa thất bại. Vui lòng kiểm tra lại quyền admin.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Helper Labels & Badges
   const getLevelBadge = (lvl?: number) => {
     switch (Number(lvl)) {
@@ -307,7 +329,22 @@ export default function TestsView() {
             kết hợp quy trình Chuyên gia pháp lý phê duyệt (Human-in-the-loop).
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {items.length > 0 && (
+            <button
+              className="secondary-button"
+              onClick={clearAll}
+              disabled={busy}
+              style={{
+                color: "#dc2626",
+                borderColor: "#fecaca",
+                background: "#fff",
+              }}
+              title="Xóa toàn bộ câu hỏi và kết quả để nạp mẻ mới"
+            >
+              <Trash2 size={16} /> Xóa tất cả ({items.length})
+            </button>
+          )}
           <button className="secondary-button" onClick={() => input.current?.click()}>
             <FileUp size={16} /> Nhập CSV
           </button>

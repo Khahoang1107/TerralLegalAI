@@ -254,6 +254,22 @@ async def create_test_case(
     )
 
 
+@router.delete("/evaluation/test-cases", status_code=200)
+async def clear_all_test_cases(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Xóa tất cả test cases và các lần chạy đánh giá."""
+    if current_user.role not in ("admin",):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được xóa test cases")
+    from sqlalchemy import delete
+    await db.execute(delete(EvaluationCaseResult))
+    await db.execute(delete(EvaluationRun))
+    result = await db.execute(delete(TestCase))
+    await db.commit()
+    return {"message": "Đã xóa toàn bộ test cases và lịch sử đánh giá", "deleted": result.rowcount}
+
+
 @router.delete("/evaluation/test-cases/{test_case_id}", status_code=204)
 async def delete_test_case(
     test_case_id: str,
