@@ -695,6 +695,12 @@ function PageCanvas({
               : `Vùng mới - nhấp để dán nhãn`;
           }
 
+          const isCheckbox = zone.field_type === 'checkbox' || (zone.width > 0 && zone.height > 0 && zone.width / zone.height < 0.6);
+          const zoneSize = isCheckbox ? Math.max(zone.width, zone.height, 13) : null;
+          const renderWidth = zoneSize ? zoneSize * scale : zone.width * scale;
+          const renderHeight = zoneSize ? zoneSize * scale : zone.height * scale;
+          const renderTop = zoneSize && zone.height > zoneSize ? (zone.y + (zone.height - zoneSize) / 2) * scale : zone.y * scale;
+
           return (
             <div
               key={`zone_${zone.idx}_${i}`}
@@ -705,9 +711,9 @@ function PageCanvas({
               style={{
                 position: "absolute",
                 left: zone.x * scale,
-                top: zone.y * scale,
-                width: zone.width * scale,
-                height: zone.height * scale,
+                top: renderTop,
+                width: renderWidth,
+                height: renderHeight,
                 border: `2px solid ${borderColor}`,
                 backgroundColor: bgColor,
                 cursor,

@@ -166,31 +166,68 @@ def bound_template_stream(template_path, mapping, fields=None):
     if fields is not None:
         _restore_signing_date(document, fields)
     if mapping:
-        # Initial binding uses the same single table pass as blank detection.
-        index = 0
-        for paragraph in _paragraphs(document, include_empty=True):
-            for run in paragraph.runs:
-                matches = list(BLANK_PATTERN.finditer(run.text))
-                changes = []
-                for match in matches:
-                    index += 1
-                    key = mapping.get(str(index))
-                    if key and re.fullmatch(r'\w+', key):
-                        replacement = (
-                            f'{{% if {key} %}}☑{{% else %}}☐{{% endif %}}'
-                            if match.group() in ('☐', '□') else f'{{{{ {key} }}}}'
-                        )
-                        start, end = match.span()
-                        matched = match.group()
-                        if matched.strip():
-                            start += len(matched) - len(matched.lstrip())
-                            end -= len(matched) - len(matched.rstrip())
-                        changes.append((start, end, replacement))
-                text = run.text
-                for start, end, replacement in reversed(changes):
-                    text = text[:start] + replacement + text[end:]
-                if changes:
-                    run.text = text
+        # Check if this document already has tags from mapping.
+        # If the template was already injected with Jinja tags, re-applying
+        # mapping by blank-index will recount only the remaining unmapped blanks,
+        # shifting indices and corrupting unmapped lines (e.g. turning the 2nd line
+        # of 'Nội dung biến động' into {{ field_9003 }} 'Nơi tiếp nhận hồ sơ').
+        all_text = " ".join(p.text for p in _paragraphs(document, include_empty=False))
+        existing_tags = set(re.findall(r'\{\{\s*(\w+)\s*\}\}', all_text))
+        mapped_keys = set(mapping.values()) if mapping else set()
+        already_bound = bool(mapped_keys and len(mapped_keys & existing_tags) >= 1)
+
+        if not already_bound:
+            # Initial binding uses the same single table pass as blank detection.
+            index = 0
+            for paragraph in _paragraphs(document, include_empty=True):
+                for run in paragraph.runs:
+                    matches = list(BLANK_PATTERN.finditer(run.text))
+                    changes = []
+                    for match in matches:
+                        index += 1
+                        key = mapping.get(str(index))
+                        if key and re.fullmatch(r'\w+', key):
+                            replacement = (
+                                f'{{% if {key} %}}☑{{% else %}}☐{{% endif %}}'
+                                if match.group() in ('☐', '□') else f'{{{{ {key} }}}}'
+                            )
+                            start, end = match.span()
+                            matched = match.group()
+                            if matched.strip():
+                                start += len(matched) - len(matched.lstrip())
+                                end -= len(matched) - len(matched.rstrip())
+                            changes.append((start, end, replacement))
+                    text = run.text
+                    for start, end, replacement in reversed(changes):
+                        text = text[:start] + replacement + text[end:]
+                    if changes:
+                        run.text = text
+
+    # Self-healing: if a header tag like "Kính gửi" accidentally appears
+    # inside "2. Nội dung biến động" (from earlier blank-shifting on disk), remove it.
+    kinh_gui_tag = None
+    for p in document.paragraphs:
+        if 'kính gửi' in p.text.lower():
+            m = re.search(r'\{\{\s*(\w+)\s*\}\}', p.text)
+            if m:
+                kinh_gui_tag = m.group(1)
+                break
+    if kinh_gui_tag:
+        in_noi_dung = False
+        for p in document.paragraphs:
+            p_lower = p.text.lower()
+            if 'nội dung biến động' in p_lower:
+                in_noi_dung = True
+                continue
+            if in_noi_dung:
+                if any(h in p_lower for h in ['giấy tờ liên quan', '3.', 'cam đoan']):
+                    in_noi_dung = False
+                    continue
+                if kinh_gui_tag in p.text:
+                    for r in p.runs:
+                        if kinh_gui_tag in r.text:
+                            r.text = re.sub(r'\{\{\s*' + kinh_gui_tag + r'\s*\}\}', '', r.text)
+
     stream = io.BytesIO()
     document.save(stream)
     stream.seek(0)

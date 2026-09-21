@@ -1365,13 +1365,21 @@ async def analyze_docx(file: UploadFile = File(...)):
                                 idx = g * 256 + b
                                 if 0 < idx <= total_blanks:
                                     x0, y0, x1, y1 = span.get("bbox", (0, 0, 0, 0))
+                                    w = x1 - x0
+                                    h = y1 - y0
+                                    if blank_types.get(idx) == 'checkbox' or (h > 0 and w / h < 0.6):
+                                        sq_size = max(12.0, min(16.0, h))
+                                        center_y = (y0 + y1) / 2
+                                        y0 = center_y - sq_size / 2
+                                        w = sq_size
+                                        h = sq_size
                                     zones.append({
                                         "idx": idx,
                                         "page": page_num + 1,
                                         "x": x0,
                                         "y": y0,
-                                        "width": x1 - x0,
-                                        "height": y1 - y0
+                                        "width": w,
+                                        "height": h
                                     })
                             else:
                                 line_text_parts.append(span.get("text", ""))
