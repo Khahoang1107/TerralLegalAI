@@ -2388,6 +2388,7 @@ function FormsView() {
       const firstMember = members[0];
       return { id: `section_condition_${section.id}`, name: section.question.trim(), beforeField: firstMember?.id || "" };
     });
+    const allVirtualConditions = [...sectionConditions, ...virtualConditions];
     const virtualFields = allVirtualConditions.map((condition, index) => {
       const anchorNum = labeledList.find(field => field.id === condition.beforeField)?.num;
       return {
