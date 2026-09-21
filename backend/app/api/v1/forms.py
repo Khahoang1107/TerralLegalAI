@@ -260,7 +260,7 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
                     
     normalized = {}
     for k, v in payload_dict.items():
-        is_boolean = field_types.get(k) == "boolean"
+        is_boolean = field_types.get(k) in ("boolean", "checkbox")
         
         if isinstance(v, str) and v == "__SKIPPED__":
             normalized[k] = ""
@@ -476,11 +476,25 @@ def _collect_boolean_control_values(form: FormSchema, payload: dict) -> list[boo
         # they are not physical boxes on the government form and must not shift the PDF box order.
         if field.get("is_virtual") or str(field.get("key") or "").startswith("section_condition_"):
             continue
-        value = payload.get(field.get("key"), payload.get(field.get("name"), False))
+        value = payload.get(field.get("key"))
+        if value is None:
+            value = payload.get(field.get("name"))
+        if value is None:
+            value = False
+        is_true = False
         if isinstance(value, str):
-            values.append(value.strip().casefold() in true_values)
+            is_true = value.strip().casefold() in true_values
         else:
-            values.append(bool(value))
+            is_true = bool(value)
+        if not is_true:
+            dep = field.get("depends_on")
+            if dep and isinstance(dep, dict) and dep.get("field"):
+                parent_val = payload.get(dep["field"])
+                expected_val = dep.get("value")
+                if parent_val is not None and expected_val is not None:
+                    if str(parent_val).strip().casefold() == str(expected_val).strip().casefold():
+                        is_true = True
+        values.append(is_true)
     return values
 
 
@@ -533,13 +547,39 @@ def _overlay_form_controls(
         # Word checkboxes may be exported as Wingdings/private-use glyphs
         # instead of vector rectangles. Treat every small checkbox glyph as a
         # control and merge it with vector boxes by visual position.
+        # Use character-level scan via rawjson to isolate individual glyphs even
+        # when punctuation (e.g. commas) is immediately attached without whitespace.
+        import json as _json
+        try:
+            raw = _json.loads(control_page.get_text("rawjson"))
+            for block in raw.get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        for char in span.get("chars", []):
+                            ch = char.get("c", "")
+                            if not ch:
+                                continue
+                            is_checkbox_glyph = (
+                                ch in {"☐", "☑", "□", "■", "☒", "✓", "✔"}
+                                or any(0xE000 <= ord(x) <= 0xF8FF for x in ch)
+                            )
+                            if is_checkbox_glyph:
+                                bounds = fitz.Rect(char.get("bbox"))
+                                if bounds.width <= 25 and bounds.height <= 25:
+                                    checkbox_targets.append((page_index, control_page, bounds, "glyph"))
+        except Exception:
+            pass
+
         for word in control_page.get_text("words"):
             text = str(word[4])
             bounds = fitz.Rect(word[:4])
-            is_checkbox_glyph = text in {"☐", "☑", "□", "■"} or any(
-                0xE000 <= ord(char) <= 0xF8FF for char in text
+            is_checkbox_glyph = (
+                text in {"☐", "☑", "□", "■", "☒", "✓", "✔"}
+                or any(0xE000 <= ord(char) <= 0xF8FF for char in text)
             )
-            if is_checkbox_glyph and bounds.width <= 22 and bounds.height <= 25:
+            if is_checkbox_glyph and bounds.width <= 25 and bounds.height <= 25:
                 checkbox_targets.append((page_index, control_page, bounds, "glyph"))
 
     checkbox_targets.sort(key=lambda item: (item[0], item[2].y0, item[2].x0))
@@ -596,6 +636,19 @@ def _overlay_form_controls(
 def _populate_table_data(doc: Any, payload: dict, form: FormSchema) -> None:
     """Điền dữ liệu danh sách (đồng sở hữu, ...) vào bảng Word."""
     import re
+    key_to_meta: dict[str, dict] = {}
+    if form and isinstance(form.fields, list):
+        for f in form.fields:
+            if isinstance(f, dict):
+                fkey = str(f.get("key") or "").lower().strip()
+                fname = str(f.get("name") or "").lower().strip()
+                fgk = str(f.get("group_key") or "").lower().strip()
+                meta = {"name": fname, "group_key": fgk, "type": str(f.get("type") or "")}
+                if fkey:
+                    key_to_meta[fkey] = meta
+                if fname:
+                    key_to_meta[fname] = meta
+
     entries = []
     for person_idx in range(1, 10):
         p_name = ""
@@ -605,23 +658,33 @@ def _populate_table_data(doc: Any, payload: dict, form: FormSchema) -> None:
         for k, v in payload.items():
             if not v or v == "__SKIPPED__":
                 continue
-            k_lower = str(k).lower()
+            k_str = str(k).lower().strip()
             v_str = str(v).strip()
-            
-            is_this_idx = (f" {person_idx}" in k_lower or f"_{person_idx}" in k_lower or f"{person_idx}" in k_lower)
-            if person_idx == 1 and not is_this_idx:
-                has_any_num = bool(re.search(r"\d", k_lower))
-                if not has_any_num:
-                    is_this_idx = True
+            meta = key_to_meta.get(k_str, {})
+            fname = meta.get("name", "")
+            search_str = f"{k_str} {fname} {meta.get('group_key', '')}".strip()
 
-            if is_this_idx:
-                if any(w in k_lower for w in ["tên", "người", "tổ chức", "chu_so_huu"]) and any(w in k_lower for w in ["đồng sở hữu", "dsh", "đồng"]):
+            # Determine person index: look for digits in fname or search_str
+            idx_match = re.search(r"(?:đồng sở hữu|dsh|sh|người)\s*(\d+)", search_str)
+            if not idx_match:
+                idx_match = re.search(r"(\d+)", fname)
+            
+            if idx_match:
+                item_person_idx = int(idx_match.group(1))
+            else:
+                if any(w in search_str for w in ["đồng sở hữu", "dsh", "tỷ lệ sh", "ty le sh"]):
+                    item_person_idx = 1
+                else:
+                    item_person_idx = -1
+
+            if item_person_idx == person_idx:
+                if any(w in search_str for w in ["tên", "người", "tổ chức", "chu_so_huu"]) and any(w in search_str for w in ["đồng sở hữu", "dsh", "đồng"]):
                     p_name = v_str
-                elif "mst" in k_lower or "mã số thuế" in k_lower or "ma_so_thue" in k_lower:
+                elif any(w in search_str for w in ["mst", "mã số thuế", "ma_so_thue"]):
                     p_mst = v_str
-                elif any(w in k_lower for w in ["cmnd", "cccd", "hộ chiếu", "hc"]):
+                elif any(w in search_str for w in ["cmnd", "cccd", "hộ chiếu", "hc"]):
                     p_cmnd = v_str
-                elif any(w in k_lower for w in ["tỷ lệ", "ty le", "ty_le", "phần trăm", "%"]):
+                elif any(w in search_str for w in ["tỷ lệ", "ty le", "ty_le", "phần trăm", "%"]):
                     p_ty_le = v_str if "%" in v_str else f"{v_str}%"
 
         if p_name or p_mst or p_cmnd or p_ty_le:
@@ -632,9 +695,6 @@ def _populate_table_data(doc: Any, payload: dict, form: FormSchema) -> None:
                 "cmnd": p_cmnd,
                 "ty_le": p_ty_le
             })
-
-    if not entries:
-        return
 
     for table in doc.tables:
         header_text = " ".join(c.text.lower() for c in table.rows[0].cells) if table.rows else ""
@@ -656,6 +716,12 @@ def _populate_table_data(doc: Any, payload: dict, form: FormSchema) -> None:
                             p = cell.paragraphs[0]
                             if c_idx in (0, 4):
                                 p.alignment = 1
+
+            # Blank out any remaining unused template rows in this co-owner table
+            for unused_row in table.rows[len(entries) + 1:]:
+                for cell in unused_row.cells:
+                    cell.text = ""
+
 
 
 
