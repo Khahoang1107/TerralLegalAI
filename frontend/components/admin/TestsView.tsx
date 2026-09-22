@@ -26,6 +26,7 @@ import {
   Sparkles,
   Trash2,
   Zap,
+  Edit3,
   CheckSquare,
   Square,
 } from "lucide-react";
@@ -64,6 +65,14 @@ export default function TestsView() {
   const [newSource, setNewSource] = useState("");
   const [newProcedure, setNewProcedure] = useState("chuyen_nhuong");
   const [newLevel, setNewLevel] = useState<number>(1);
+
+  // Edit Modal State (Expert edit)
+  const [editingCase, setEditingCase] = useState<TestCase | null>(null);
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editAnswer, setEditAnswer] = useState("");
+  const [editSource, setEditSource] = useState("");
+  const [editProcedure, setEditProcedure] = useState("chuyen_nhuong");
+  const [editLevel, setEditLevel] = useState<number>(1);
 
   const input = useRef<HTMLInputElement>(null);
 
@@ -297,6 +306,38 @@ export default function TestsView() {
       setShowAdd(false);
       setNotice("Đã thêm test case mới vào bộ kiểm thử.");
       await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openEditModal = (tc: TestCase, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingCase(tc);
+    setEditQuestion(tc.question);
+    setEditAnswer(tc.expected_answer);
+    setEditSource(tc.source_doc || "");
+    setEditProcedure(tc.procedure_group || "chuyen_nhuong");
+    setEditLevel(Number(tc.level) || 1);
+  };
+
+  const saveEditTestCase = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingCase) return;
+    setBusy(true);
+    try {
+      await evaluationApi.updateTestCase(editingCase.id, {
+        question: editQuestion,
+        expected_answer: editAnswer,
+        source_doc: editSource,
+        procedure_group: editProcedure,
+        level: editLevel,
+      });
+      setNotice(`Đã cập nhật câu hỏi TC-${editingCase.id.slice(0, 6)} thành công.`);
+      setEditingCase(null);
+      await load();
+    } catch {
+      setNotice("Cập nhật câu hỏi thất bại. Vui lòng kiểm tra lại quyền admin.");
     } finally {
       setBusy(false);
     }
@@ -1859,6 +1900,28 @@ export default function TestsView() {
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <button
                         type="button"
+                        onClick={(e) => openEditModal(tc, e)}
+                        disabled={busy}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          background: "#fff",
+                          color: "#334155",
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                        title="Chuyên gia chỉnh sửa câu hỏi, đáp án chuẩn, căn cứ luật"
+                      >
+                        <Edit3 size={12} /> Sửa
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => runEvaluation([tc.id])}
                         disabled={busy}
                         style={{
@@ -2293,6 +2356,114 @@ export default function TestsView() {
                 </button>
                 <button className="primary-button" disabled={busy}>
                   Lưu câu hỏi
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT TEST CASE (CHUYÊN GIA CHỈNH SỬA CÂU HỎI & ĐÁP ÁN)             */}
+      {/* ========================================================================= */}
+      {editingCase && (
+        <div className="modal-backdrop">
+          <form
+            className="modal-content"
+            style={{ maxWidth: 640, borderRadius: 12 }}
+            onSubmit={saveEditTestCase}
+          >
+            <div className="modal-header">
+              <h2 style={{ fontSize: 17, fontWeight: 700 }}>Chuyên gia chỉnh sửa câu hỏi & Đáp án chuẩn</h2>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setEditingCase(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <label>
+                Câu hỏi của công dân *
+                <input
+                  required
+                  value={editQuestion}
+                  onChange={(e) => setEditQuestion(e.target.value)}
+                  placeholder="Ví dụ: Hồ sơ chuyển nhượng gồm những gì?"
+                />
+              </label>
+              <label>
+                Đáp án chuẩn (Ground truth do chuyên gia thẩm định) *
+                <textarea
+                  required
+                  rows={4}
+                  value={editAnswer}
+                  onChange={(e) => setEditAnswer(e.target.value)}
+                  placeholder="Nêu các căn cứ và nội dung bắt buộc..."
+                />
+              </label>
+              <label>
+                Căn cứ pháp lý / Nguồn luật
+                <input
+                  value={editSource}
+                  onChange={(e) => setEditSource(e.target.value)}
+                  placeholder="Ví dụ: Nghị định 101/2024/NĐ-CP, Điều 12"
+                />
+              </label>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                }}
+              >
+                <label>
+                  Nhóm thủ tục
+                  <select
+                    value={editProcedure}
+                    onChange={(e) => setEditProcedure(e.target.value)}
+                  >
+                    <option value="chuyen_nhuong">Chuyển nhượng</option>
+                    <option value="tang_cho">Tặng cho</option>
+                    <option value="bien_dong">ĐK Biến động</option>
+                    <option value="cap_doi">Cấp đổi / Cấp lại</option>
+                    <option value="tach_hop_thua">Tách / Hợp thửa</option>
+                    <option value="cau_hoi_kho">Câu hỏi khó / Bẫy</option>
+                  </select>
+                </label>
+
+                <label>
+                  Mức độ khó (Level)
+                  <select
+                    value={editLevel}
+                    onChange={(e) => setEditLevel(Number(e.target.value))}
+                  >
+                    <option value={1}>Level 1: Cơ bản</option>
+                    <option value={2}>Level 2: Đời thường</option>
+                    <option value={3}>Level 3: Bẫy / Khó</option>
+                  </select>
+                </label>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                  marginTop: 18,
+                }}
+              >
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setEditingCase(null)}
+                >
+                  Hủy
+                </button>
+                <button className="primary-button" disabled={busy}>
+                  Lưu thay đổi
                 </button>
               </div>
             </div>
