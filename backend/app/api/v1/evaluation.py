@@ -84,6 +84,10 @@ class TestCaseUpdate(TestCaseCreate):
     pass
 
 
+class TestCaseBulkDelete(BaseModel):
+    ids: list[str] = Field(..., description="Danh sách test case id cần xóa")
+
+
 class ManualReviewRequest(BaseModel):
     status: str = Field(..., pattern="^(pass|fail|pending)$")
     note: str = Field("", max_length=4000)
@@ -271,6 +275,31 @@ async def clear_all_test_cases(
     return {"message": "Đã xóa toàn bộ test cases và lịch sử đánh giá", "deleted": result.rowcount}
 
 
+@router.post("/evaluation/test-cases/bulk-delete", status_code=200)
+async def bulk_delete_test_cases(
+    payload: TestCaseBulkDelete,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Xóa nhiều test cases đã chọn theo danh sách ID."""
+    if current_user.role not in ("admin",):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được xóa test cases")
+
+    if not payload.ids:
+        return {"message": "Không có câu hỏi nào được chọn", "deleted": 0}
+
+    from sqlalchemy import delete
+    # Xóa kết quả đánh giá liên quan trước để tránh lỗi Foreign Key
+    await db.execute(
+        delete(EvaluationCaseResult).where(EvaluationCaseResult.test_case_id.in_(payload.ids))
+    )
+    result = await db.execute(
+        delete(TestCase).where(TestCase.id.in_(payload.ids))
+    )
+    await db.commit()
+    return {"message": f"Đã xóa thành công {result.rowcount} câu hỏi", "deleted": result.rowcount}
+
+
 @router.delete("/evaluation/test-cases/{test_case_id}", status_code=204)
 async def delete_test_case(
     test_case_id: str,
@@ -285,6 +314,10 @@ async def delete_test_case(
     if not tc:
         raise HTTPException(status_code=404, detail="Không tìm thấy test case")
 
+    from sqlalchemy import delete
+    await db.execute(
+        delete(EvaluationCaseResult).where(EvaluationCaseResult.test_case_id == test_case_id)
+    )
     await db.delete(tc)
     await db.commit()
 

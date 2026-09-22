@@ -462,6 +462,10 @@ export const evaluationApi = {
     const { data } = await client.delete("/evaluation/test-cases");
     return data;
   },
+  async bulkDeleteTestCases(ids: string[]): Promise<{ message: string; deleted: number }> {
+    const { data } = await client.post("/evaluation/test-cases/bulk-delete", { ids });
+    return data;
+  },
   async updateTestCase(id: string, payload: TestCaseCreate): Promise<TestCase> {
     const { data } = await client.put<TestCase>(`/evaluation/test-cases/${id}`, payload); return data;
   },

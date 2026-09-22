@@ -67,6 +67,19 @@ export default function TestsView() {
 
   const input = useRef<HTMLInputElement>(null);
 
+  // Drag-to-select and range-select states
+  const isDragging = useRef(false);
+  const dragMode = useRef<"select" | "deselect">("select");
+  const lastClickedIndex = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, []);
+
   // Initial Load
   const load = async () => {
     try {
@@ -137,6 +150,51 @@ export default function TestsView() {
 
   const selectFirstN = (n: number) => {
     setSelectedIds(filteredBank.slice(0, n).map((x) => x.id));
+  };
+
+  const handleItemMouseDown = (index: number, id: string, e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // Don't drag if clicking buttons or links
+    if (target.closest("button") || target.closest("a")) return;
+
+    if (e.shiftKey && lastClickedIndex.current !== null) {
+      // Shift + Click: Select range
+      const start = Math.min(lastClickedIndex.current, index);
+      const end = Math.max(lastClickedIndex.current, index);
+      const rangeIds = filteredBank.slice(start, end + 1).map((x) => x.id);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        rangeIds.forEach((rid) => next.add(rid));
+        return Array.from(next);
+      });
+      lastClickedIndex.current = index;
+      return;
+    }
+
+    // Start mouse drag selection
+    isDragging.current = true;
+    lastClickedIndex.current = index;
+    const currentlySelected = selectedIds.includes(id);
+    const mode = currentlySelected ? "deselect" : "select";
+    dragMode.current = mode;
+
+    setSelectedIds((prev) =>
+      mode === "select"
+        ? (prev.includes(id) ? prev : [...prev, id])
+        : prev.filter((x) => x !== id)
+    );
+  };
+
+  const handleItemMouseEnter = (id: string) => {
+    if (!isDragging.current) return;
+    const mode = dragMode.current;
+    setSelectedIds((prev) => {
+      if (mode === "select") {
+        return prev.includes(id) ? prev : [...prev, id];
+      } else {
+        return prev.filter((x) => x !== id);
+      }
+    });
   };
 
   // Actions
@@ -277,6 +335,28 @@ export default function TestsView() {
       await load();
     } catch {
       setNotice("Xóa câu hỏi thất bại.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteSelectedCases = async () => {
+    if (selectedIds.length === 0) return;
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn XÓA ${selectedIds.length} câu hỏi đã chọn? Thao tác này không thể hoàn tác.`
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await evaluationApi.bulkDeleteTestCases(selectedIds);
+      setNotice(`Đã xóa thành công ${res.deleted} câu hỏi khỏi bộ kiểm thử.`);
+      setSelectedIds([]);
+      await load();
+    } catch {
+      setNotice("Xóa các câu hỏi đã chọn thất bại. Vui lòng thử lại.");
     } finally {
       setBusy(false);
     }
@@ -1459,6 +1539,53 @@ export default function TestsView() {
             </div>
           </div>
 
+          {/* Quick Selection Guide Banner */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+              background: "#f0fdf4",
+              border: "1px dashed #86efac",
+              borderRadius: 8,
+              padding: "8px 14px",
+              marginBottom: 12,
+              fontSize: 12.5,
+              color: "#166534",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Sparkles size={15} color="#16a34a" />
+              <span>
+                <strong>Thao tác kéo chọn nhanh:</strong> Nhấp giữ chuột và <strong>kéo lướt</strong> qua các câu hỏi để chọn / bỏ chọn liên tục. Hoặc giữ phím <strong>Shift + Click</strong> để chọn dải nhiều câu.
+              </span>
+            </div>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={busy}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#dc2626",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  textDecoration: "underline",
+                }}
+                title="Xóa toàn bộ 115 câu hỏi và kết quả để nạp mẻ mới"
+              >
+                <Trash2 size={13} /> Xóa toàn bộ ({items.length} câu)
+              </button>
+            )}
+          </div>
+
           {/* Selection & Batch Action Toolbar */}
           <div
             style={{
@@ -1501,7 +1628,7 @@ export default function TestsView() {
                 Chọn tất cả ({filteredBank.length} câu)
               </label>
 
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={() => selectFirstN(3)}
@@ -1517,7 +1644,7 @@ export default function TestsView() {
                   }}
                   title="Chọn nhanh 3 câu đầu để test cực nhanh và siêu tiết kiệm token"
                 >
-                  ⚡ Chọn 3 câu đầu
+                  ⚡ Chọn 3 câu
                 </button>
                 <button
                   type="button"
@@ -1534,7 +1661,7 @@ export default function TestsView() {
                   }}
                   title="Chọn nhanh 5 câu đầu để test"
                 >
-                  ⚡ Chọn 5 câu đầu
+                  ⚡ Chọn 5 câu
                 </button>
                 <button
                   type="button"
@@ -1551,7 +1678,7 @@ export default function TestsView() {
                   }}
                   title="Chọn nhanh 10 câu đầu để test"
                 >
-                  ⚡ Chọn 10 câu đầu
+                  ⚡ Chọn 10 câu
                 </button>
                 {selectedIds.length > 0 && (
                   <button
@@ -1560,12 +1687,12 @@ export default function TestsView() {
                     style={{
                       padding: "4px 10px",
                       borderRadius: 6,
-                      border: "1px solid #fecaca",
+                      border: "1px solid #cbd5e1",
                       background: "#fff",
                       fontSize: 12,
                       cursor: "pointer",
                       fontWeight: 600,
-                      color: "#dc2626",
+                      color: "#64748b",
                     }}
                   >
                     Bỏ chọn ({selectedIds.length})
@@ -1574,10 +1701,35 @@ export default function TestsView() {
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontSize: 12.5, color: "#475569" }}>
                 Đã chọn: <strong style={{ color: "#166b45" }}>{selectedIds.length}</strong> / {filteredBank.length} câu
               </span>
+
+              {selectedIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={deleteSelectedCases}
+                  disabled={busy}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 6,
+                    border: "1px solid #fecaca",
+                    background: "#fee2e2",
+                    color: "#dc2626",
+                    fontSize: 12.5,
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                  title="Xóa vĩnh viễn các câu hỏi đang được chọn khỏi bộ kiểm thử"
+                >
+                  <Trash2 size={14} /> Xóa {selectedIds.length} câu đã chọn
+                </button>
+              )}
+
               <button
                 type="button"
                 className="primary-button"
@@ -1594,7 +1746,29 @@ export default function TestsView() {
                   cursor: selectedIds.length === 0 ? "not-allowed" : "pointer",
                 }}
               >
-                <Zap size={14} /> Chạy test {selectedIds.length} câu đã chọn (Ít hao Token)
+                <Zap size={14} /> Chạy test {selectedIds.length} câu đã chọn
+              </button>
+
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={busy}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #fecaca",
+                  background: "#fff",
+                  color: "#dc2626",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+                title="Xóa toàn bộ câu hỏi trong hệ thống"
+              >
+                <Trash2 size={13} /> Xóa tất cả ({items.length})
               </button>
             </div>
           </div>
@@ -1606,27 +1780,36 @@ export default function TestsView() {
               return (
                 <div
                   key={tc.id}
+                  onMouseDown={(e) => handleItemMouseDown(i, tc.id, e)}
+                  onMouseEnter={() => handleItemMouseEnter(tc.id)}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "32px 80px 1fr auto",
+                    gridTemplateColumns: "36px 80px 1fr auto",
                     alignItems: "flex-start",
                     gap: 16,
                     padding: "16px",
                     borderRadius: 8,
                     border: isSelected ? "2px solid #166b45" : "1px solid #e2e8f0",
                     background: isSelected ? "#f0fdf4" : "#fff",
-                    transition: "all 0.15s ease",
+                    boxShadow: isSelected ? "0 2px 8px rgba(22, 107, 69, 0.08)" : "none",
+                    transition: "border 0.15s ease, background 0.15s ease",
+                    cursor: "pointer",
+                    userSelect: isDragging.current ? "none" : "auto",
                   }}
                 >
                   {/* Checkbox */}
-                  <div style={{ paddingTop: 2 }}>
+                  <div
+                    style={{ paddingTop: 2, display: "flex", justifyContent: "center" }}
+                    title={isSelected ? "Bỏ chọn câu này" : "Chọn câu này"}
+                  >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(tc.id)}
+                      onClick={(e) => e.stopPropagation()}
                       style={{
-                        width: 18,
-                        height: 18,
+                        width: 19,
+                        height: 19,
                         accentColor: "#166b45",
                         cursor: "pointer",
                       }}
@@ -2114,6 +2297,90 @@ export default function TestsView() {
               </div>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Sticky Floating Action Bar for Selected Items */}
+      {selectedIds.length > 0 && activeTab === "bank" && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#0f172a",
+            color: "#fff",
+            padding: "10px 22px",
+            borderRadius: 50,
+            boxShadow: "0 12px 30px -4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25)",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            zIndex: 999,
+            border: "1px solid #334155",
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+            Đã chọn: <strong style={{ color: "#4ade80", fontSize: 14 }}>{selectedIds.length}</strong> / {filteredBank.length} câu
+          </span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => runEvaluation(selectedIds)}
+              disabled={busy}
+              style={{
+                background: "#166b45",
+                color: "#fff",
+                border: "none",
+                padding: "7px 16px",
+                borderRadius: 20,
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Zap size={14} /> Chạy test {selectedIds.length} câu
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelectedCases}
+              disabled={busy}
+              style={{
+                background: "#dc2626",
+                color: "#fff",
+                border: "none",
+                padding: "7px 16px",
+                borderRadius: 20,
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Trash2 size={14} /> Xóa {selectedIds.length} câu
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              style={{
+                background: "transparent",
+                color: "#cbd5e1",
+                border: "1px solid #475569",
+                padding: "7px 14px",
+                borderRadius: 20,
+                fontSize: 12,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Bỏ chọn
+            </button>
+          </div>
         </div>
       )}
     </>
