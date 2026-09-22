@@ -9,8 +9,10 @@ import uuid
 import re
 import subprocess
 import zipfile
+import unicodedata
+from urllib.parse import quote
 from datetime import datetime
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from backend.app.core.database import get_db
 from backend.app.models.form_schema import FormSchema
 from backend.app.models.form_submission import FormSubmission
@@ -384,6 +386,79 @@ def prepare_render_payload(form: FormSchema, payload_dict: dict) -> dict:
 
     print("DEBUG NORMALIZED:", normalized)
     return normalized
+
+
+def _build_render_context(
+    form: FormSchema,
+    payload: dict,
+    template_path: str,
+    mode: str = "user",
+    is_docx_export: bool = False,
+) -> dict:
+    """Tạo context đầy đủ cho docxtpl render, ánh xạ hai chiều giữa key và friendly name."""
+    import re as _re
+    from zipfile import ZipFile as _ZipFile
+
+    normalized = prepare_render_payload(form, payload)
+
+    _var_pat = _re.compile(r'\{\{\s*(\w+)\s*\}\}')
+    _SKIP = {'True', 'False', 'None', 'loop', 'range', 'lipsum'}
+    template_vars: set = set()
+    try:
+        with _ZipFile(bound_template_stream(template_path, form.mapping or {}, form.fields or [])) as _zf:
+            for _zname in _zf.namelist():
+                if _zname.endswith('.xml'):
+                    _xml = _zf.read(_zname).decode('utf-8', errors='ignore')
+                    for _m in _var_pat.finditer(_xml):
+                        _v = _m.group(1)
+                        if not _v.startswith('_') and _v not in _SKIP:
+                            template_vars.add(_v)
+    except Exception:
+        pass
+
+    fields_list = form.fields or []
+    _tvar_to_label: dict = {}
+    _friendly_to_tvar: dict = {}
+    for _f in fields_list:
+        _fkey = _f.get('key', '') if isinstance(_f, dict) else getattr(_f, 'key', '')
+        _fname = _f.get('name', '') if isinstance(_f, dict) else getattr(_f, 'name', '')
+        if _fkey:
+            _tvar_to_label[_fkey] = _fname or _fkey
+        if _fname and _fkey and _fkey != _fname:
+            _friendly_to_tvar[_fname] = _fkey
+
+    context_data: dict = {}
+
+    for _tvar in template_vars:
+        _label = _tvar_to_label.get(_tvar, _tvar)
+        _val = normalized.get(_tvar) or normalized.get(_label) or ''
+
+        is_digit_box = False
+        for _f in fields_list:
+            if isinstance(_f, dict):
+                fkey = _f.get("key", "")
+                fname = (_f.get("name", "") or "").lower()
+                ftype = _f.get("type", "")
+                if (_tvar == fkey or _label == _f.get("name")) and (ftype == "digit_group" or "mã số thuế" in fname):
+                    is_digit_box = True
+                    break
+
+        if is_digit_box and not is_docx_export and mode != "template":
+            context_data[_tvar] = " "
+        elif _val not in ('', None, False):
+            context_data[_tvar] = _val
+        else:
+            if mode == "template":
+                context_data[_tvar] = f"[[ {_label} ]]"
+            else:
+                context_data[_tvar] = "............"
+
+    for _k, _v in normalized.items():
+        _tk = _friendly_to_tvar.get(_k, _k)
+        if _tk not in context_data and _k not in context_data:
+            context_data[_k] = _v
+
+    return context_data
 
 
 def _render_checkbox_inside_first_visual_box(docx_path: str, checked: bool) -> None:
@@ -858,17 +933,28 @@ async def generate_form(
     try:
         doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
         
-        # Prepare payload with boolean normalization and digit_group splitting
-        normalized_payload = prepare_render_payload(form, payload.data)
-        doc.render(normalized_payload)
+        # Build robust render context mapping both keys and labels
+        render_context = _build_render_context(
+            form=form,
+            payload=payload.data,
+            template_path=template_path,
+            mode="user",
+            is_docx_export=True,
+        )
+        doc.render(render_context)
         _populate_table_data(doc, payload.data, form)
         
         file_stream = io.BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
         
+        clean_form_name = form.name or "Bieu_mau"
+        safe_ascii = re.sub(r'[^\w\-.]', '_', unicodedata.normalize('NFKD', clean_form_name).encode('ASCII', 'ignore').decode('ASCII')).strip('_') or "bieu_mau"
+        encoded_filename = quote(f"{clean_form_name}.docx")
+        content_disposition = f"attachment; filename=\"{safe_ascii}.docx\"; filename*=utf-8''{encoded_filename}"
+
         headers = {
-            'Content-Disposition': f'attachment; filename="{form.name.replace(" ", "_")}.docx"',
+            'Content-Disposition': content_disposition,
             'Access-Control-Expose-Headers': 'Content-Disposition'
         }
         return StreamingResponse(
@@ -878,7 +964,7 @@ async def generate_form(
         )
     except Exception as e:
         logger.error(f"Error generating DOCX: {e}")
-        raise HTTPException(status_code=500, detail="Lỗi khi tạo văn bản")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi tạo văn bản: {str(e)}")
 
 @router.post("/{form_id}/save-mapping")
 async def save_mapping(
@@ -990,10 +1076,16 @@ async def export_form(
         else:
             payload_dict = payload
         
-        # Prepare payload with boolean normalization and digit_group splitting
-        payload_dict = prepare_render_payload(form, payload_dict)
+        # Prepare render context with boolean normalization, digit_group and key/label mapping
+        render_dict = _build_render_context(
+            form=form,
+            payload=payload_dict,
+            template_path=template_path,
+            mode="user",
+            is_docx_export=(format.lower() == "docx"),
+        )
             
-        doc.render(payload_dict)
+        doc.render(render_dict)
         _populate_table_data(doc, payload_dict, form)
         
         temp_id = f"export_{uuid.uuid4().hex}"
@@ -1076,82 +1168,19 @@ async def preview_pdf_form(
         raise HTTPException(status_code=404, detail="Không tìm thấy file DOCX mẫu")
 
     try:
-        from docxtpl import DocxTemplate, RichText
-        import re as _re
-        from zipfile import ZipFile as _ZipFile
+        from docxtpl import DocxTemplate
 
-        # Prepare payload with boolean normalization and digit_group splitting
-        normalized = prepare_render_payload(form, payload)
-
-        # ── Step 1: Scan template XML to find ALL actual Jinja2 variable names ──
-        _var_pat = _re.compile(r'\{\{\s*(\w+)\s*\}\}')
-        _SKIP = {'True', 'False', 'None', 'loop', 'range', 'lipsum'}
-        template_vars: set = set()
-        try:
-            with _ZipFile(bound_template_stream(template_path, form.mapping or {}, form.fields or [])) as _zf:
-                for _zname in _zf.namelist():
-                    if _zname.endswith('.xml'):
-                        _xml = _zf.read(_zname).decode('utf-8', errors='ignore')
-                        for _m in _var_pat.finditer(_xml):
-                            _v = _m.group(1)
-                            if not _v.startswith('_') and _v not in _SKIP:
-                                template_vars.add(_v)
-        except Exception:
-            pass
-
-        # ── Step 2: Build reverse lookup: template_var → friendly display label ──
-        # form.fields may have { "name": "ngay_viet_don", "key": "field_9003" }
-        # If key != name, the template uses "key" (e.g. field_9003) but we want
-        # to show the friendly "name" (ngay_viet_don) in the highlight label.
-        fields_list = form.fields or []
-        _tvar_to_label: dict = {}  # field_9003 → ngay_viet_don
-        _friendly_to_tvar: dict = {}  # ngay_viet_don → field_9003
-        for _f in fields_list:
-            _fkey  = _f.get('key',  '') if isinstance(_f, dict) else getattr(_f, 'key',  '')
-            _fname = _f.get('name', '') if isinstance(_f, dict) else getattr(_f, 'name', '')
-            if _fkey:
-                _tvar_to_label[_fkey] = _fname or _fkey
-            if _fname and _fkey and _fkey != _fname:
-                _friendly_to_tvar[_fname] = _fkey
-
-        # ── Step 3: Build explicit context ────────────────────────────────────────
-        preview_data: dict = {}
-
-        for _tvar in template_vars:
-            _label = _tvar_to_label.get(_tvar, _tvar)  # e.g. ngay_viet_don
-            _val = normalized.get(_tvar) or normalized.get(_label) or ''
-            
-            # Check if this variable belongs to an MST or digit-box field whose values are overlaid into boxes
-            is_digit_box = False
-            for _f in fields_list:
-                if isinstance(_f, dict):
-                    fkey = _f.get("key", "")
-                    fname = (_f.get("name", "") or "").lower()
-                    ftype = _f.get("type", "")
-                    if (_tvar == fkey or _label == _f.get("name")) and (ftype == "digit_group" or "mã số thuế" in fname):
-                        is_digit_box = True
-                        break
-
-            if is_digit_box and mode != "template":
-                preview_data[_tvar] = " "  # Do not spill the number string before the boxes
-            elif _val not in ('', None, False):
-                preview_data[_tvar] = _val
-            else:
-                if mode == "template":
-                    preview_data[_tvar] = f"[[ {_label} ]]"
-                else:
-                    preview_data[_tvar] = "............"
-
-        # Carry over any remaining normalized values not handled above
-        for _k, _v in normalized.items():
-            _tk = _friendly_to_tvar.get(_k, _k)
-            if _tk not in preview_data and _k not in preview_data:
-                preview_data[_k] = _v
+        preview_data = _build_render_context(
+            form=form,
+            payload=payload,
+            template_path=template_path,
+            mode=mode,
+            is_docx_export=False,
+        )
 
         # ── Step 4: Render ────────────────────────────────────────────────────────
         doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
         print("DEBUG PREVIEW DATA:", preview_data)
-        print("DEBUG TEMPLATE VARS:", template_vars)
         doc.render(preview_data)
         _populate_table_data(doc, payload, form)
 
