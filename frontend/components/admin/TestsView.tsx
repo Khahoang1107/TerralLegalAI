@@ -27,6 +27,7 @@ import {
   Trash2,
   Zap,
   Edit3,
+  RefreshCw,
   CheckSquare,
   Square,
 } from "lucide-react";
@@ -114,6 +115,31 @@ export default function TestsView() {
   useEffect(() => {
     load();
   }, []);
+
+  // Tự động kiểm tra và cập nhật khi đợt test đang chạy ngầm
+  useEffect(() => {
+    if (!selectedRun) return;
+    // Nếu đợt test này chưa có điểm và chưa có danh sách câu, tự động poll kết quả mỗi 3.5s
+    if (selectedRun.faithfulness === null && cases.length === 0) {
+      const timer = setInterval(async () => {
+        try {
+          const caseRes = await evaluationApi.getResultCases(selectedRun.id);
+          if (caseRes.items && caseRes.items.length > 0) {
+            setCases(caseRes.items);
+            const updatedRuns = await evaluationApi.getResults();
+            setRuns(updatedRuns);
+            const found = updatedRuns.find((r) => r.id === selectedRun.id);
+            if (found) setSelectedRun(found);
+            setNotice(`✅ Đánh giá hoàn tất! Đã có kết quả cho ${caseRes.items.length} câu hỏi.`);
+            clearInterval(timer);
+          }
+        } catch {
+          // ignore
+        }
+      }, 3500);
+      return () => clearInterval(timer);
+    }
+  }, [selectedRun, cases.length]);
 
   // Filtered Test Cases for Bank Tab
   const filteredBank = useMemo(() => {
@@ -897,32 +923,105 @@ export default function TestsView() {
                 </div>
 
                 {/* Run history chip selector */}
-                {runs.length > 1 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, color: "#64748b" }}>Chọn lần chạy:</span>
-                    <select
-                      value={selectedRun.id}
-                      onChange={(e) => {
-                        const target = runs.find((r) => r.id === e.target.value);
-                        if (target) openRun(target);
-                      }}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
-                        fontSize: 12,
-                      }}
-                    >
-                      {runs.map((r, i) => (
-                        <option key={r.id} value={r.id}>
-                          Lần #{runs.length - i}: {new Date(r.run_date).toLocaleDateString("vi-VN")}{" "}
-                          ({r.total_questions} câu)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  {runs.length > 1 && (
+                    <>
+                      <span style={{ fontSize: 12, color: "#64748b" }}>Chọn lần chạy:</span>
+                      <select
+                        value={selectedRun.id}
+                        onChange={(e) => {
+                          const target = runs.find((r) => r.id === e.target.value);
+                          if (target) openRun(target);
+                        }}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          fontSize: 12,
+                        }}
+                      >
+                        {runs.map((r, i) => (
+                          <option key={r.id} value={r.id}>
+                            Lần #{runs.length - i}: {new Date(r.run_date).toLocaleDateString("vi-VN")}{" "}
+                            ({r.total_questions} câu)
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openRun(selectedRun)}
+                    disabled={busy}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      border: "1px solid #b7e8ce",
+                      background: "#e8f5ed",
+                      color: "#166b45",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                    title="Bấm để cập nhật lại kết quả đợt chạy này"
+                  >
+                    <RefreshCw size={13} className={busy ? "spinner" : ""} /> Tải lại kết quả
+                  </button>
+                </div>
               </div>
+
+              {/* Error Banner */}
+              {selectedRun.notes?.startsWith("ERROR:") && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "12px 16px",
+                    borderRadius: 8,
+                    background: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    color: "#991b1b",
+                    marginBottom: 16,
+                    fontSize: 13,
+                  }}
+                >
+                  <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <strong>Đợt đánh giá này gặp sự cố:</strong>{" "}
+                    {selectedRun.notes.replace("ERROR:", "").trim()}
+                  </div>
+                </div>
+              )}
+
+              {/* In-Progress Notification */}
+              {selectedRun.faithfulness === null && cases.length === 0 && !selectedRun.notes?.startsWith("ERROR:") && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "14px 18px",
+                    borderRadius: 8,
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    color: "#1e40af",
+                    marginBottom: 16,
+                    fontSize: 13,
+                  }}
+                >
+                  <Loader2 size={20} className="spinner" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ fontSize: 13.5 }}>Đang trong quá trình chạy kiểm thử và chấm điểm...</strong>
+                    <div style={{ color: "#3b82f6", fontSize: 12, marginTop: 2 }}>
+                      Hệ thống đang truy vấn mô hình và chấm điểm. Trang sẽ tự động cập nhật kết quả sau vài giây.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 4 Ragas Core Metric Cards Grid */}
               <div
@@ -1348,6 +1447,51 @@ export default function TestsView() {
 
               {/* Cases Table List */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {cases.length === 0 && (
+                  <div
+                    style={{
+                      padding: "36px 20px",
+                      textAlign: "center",
+                      background: "#f8fafc",
+                      borderRadius: 8,
+                      border: "1px dashed #cbd5e1",
+                    }}
+                  >
+                    <Loader2
+                      className="spinner"
+                      size={28}
+                      style={{ color: "#166b45", margin: "0 auto 10px" }}
+                    />
+                    <strong style={{ fontSize: 14, color: "#1e293b", display: "block" }}>
+                      Hệ thống đang chạy ngầm đánh giá {selectedRun.total_questions || ""} câu hỏi...
+                    </strong>
+                    <p style={{ fontSize: 12.5, color: "#64748b", margin: "6px 0 14px" }}>
+                      Mô hình AI đang trả lời và chấm điểm đối chiếu từng câu. Kết quả sẽ tự động hiển thị sau khoảng 20-40 giây (hệ thống tự động cập nhật).
+                    </p>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => openRun(selectedRun)}
+                      style={{ fontSize: 12, margin: "0 auto", display: "inline-flex", alignItems: "center", gap: 6 }}
+                    >
+                      <RefreshCw size={13} /> Kiểm tra ngay
+                    </button>
+                  </div>
+                )}
+
+                {cases.length > 0 && filteredCases.length === 0 && (
+                  <div
+                    style={{
+                      padding: 24,
+                      textAlign: "center",
+                      color: "#64748b",
+                      fontSize: 13,
+                    }}
+                  >
+                    Không có câu hỏi nào khớp với bộ lọc hiện tại.
+                  </div>
+                )}
+
                 {filteredCases.map((item, idx) => (
                   <div
                     key={item.id}

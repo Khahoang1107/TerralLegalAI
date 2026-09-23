@@ -107,6 +107,7 @@ def _run_evaluation_sync(
     gemini_model: str,
     notes: str = "",
     use_ragas: bool = True,
+    pipeline: Any = None,
 ):
     """
     Chạy đánh giá RAG và lưu kết quả (chạy trong background thread).
@@ -132,30 +133,44 @@ def _run_evaluation_sync(
                 return
 
             try:
-                # Khởi tạo pipeline
-                vs = VectorStore(host=qdrant_host, port=qdrant_port, collection_name=qdrant_collection)
-                emb = EmbeddingModel(model_name=embedding_model_name)
-                client = genai.Client(api_key=gemini_api_key)
-
-                pipeline = RAGPipeline(
-                    vector_store=vs,
-                    embedding_model=emb,
-                    gemini_client=client,
-                    gemini_model=gemini_model,
-                )
+                # Dùng pipeline có sẵn nếu có, tránh khởi tạo lại EmbeddingModel gây nghẽn RAM/deadlock
+                active_pipeline = pipeline
+                if active_pipeline is None:
+                    vs = VectorStore(host=qdrant_host, port=qdrant_port, collection_name=qdrant_collection)
+                    emb = EmbeddingModel(model_name=embedding_model_name)
+                    client = genai.Client(api_key=gemini_api_key)
+                    active_pipeline = RAGPipeline(
+                        vector_store=vs,
+                        embedding_model=emb,
+                        gemini_client=client,
+                        gemini_model=gemini_model,
+                    )
 
                 # Chạy test runner
-                runner = TestRunner(pipeline=pipeline)
+                runner = TestRunner(pipeline=active_pipeline)
                 results = runner.run(test_cases)
 
+                current_notes = notes
                 if use_ragas:
-                    from backend.app.evaluation.ragas_evaluator import RAGASEvaluator
-                    samples = [{"question": d["question"], "answer": d["actual_answer"], "contexts": d.get("retrieved_contexts", []), "ground_truth": d["expected_answer"]} for d in results.get("details", [])]
-                    metrics = RAGASEvaluator(gemini_api_key=gemini_api_key).evaluate(samples)
-                    for key in ("faithfulness", "answer_relevancy", "context_precision", "context_recall"):
-                        if metrics.get(key) is not None:
-                            results[key] = metrics[key]
-                    notes = f"{notes}\nAutomatic evaluation: {metrics.get('evaluation_type', 'heuristic')}".strip()
+                    try:
+                        from backend.app.evaluation.ragas_evaluator import RAGASEvaluator
+                        samples = [
+                            {
+                                "question": d["question"],
+                                "answer": d["actual_answer"],
+                                "contexts": d.get("retrieved_contexts", []),
+                                "ground_truth": d["expected_answer"],
+                            }
+                            for d in results.get("details", [])
+                        ]
+                        metrics = RAGASEvaluator(gemini_api_key=gemini_api_key).evaluate(samples)
+                        for key in ("faithfulness", "answer_relevancy", "context_precision", "context_recall"):
+                            if metrics.get(key) is not None:
+                                results[key] = metrics[key]
+                        current_notes = f"{current_notes}\nAutomatic evaluation: {metrics.get('evaluation_type', 'heuristic')}".strip()
+                    except Exception as ragas_err:
+                        logger.warning(f"RAGAS evaluation error (falling back to heuristic): {ragas_err}")
+                        current_notes = f"{current_notes}\nAutomatic evaluation: heuristic (RAGAS fallback: {str(ragas_err)[:80]})".strip()
 
                 # Cập nhật kết quả
                 run.faithfulness = results.get("faithfulness")
@@ -164,14 +179,21 @@ def _run_evaluation_sync(
                 run.context_recall = results.get("context_recall")
                 run.total_questions = results.get("total_questions", len(test_cases))
                 run.passed_questions = results.get("passed_questions", 0)
-                run.notes = notes
+                run.notes = current_notes
                 for detail in results.get("details", []):
                     score = detail.get("answer_similarity") or 0.0
                     session.add(EvaluationCaseResult(
-                        id=str(uuid.uuid4()), run_id=run_id, test_case_id=detail["test_case_id"],
-                        question=detail["question"], expected_answer=detail["expected_answer"], actual_answer=detail.get("actual_answer") or "",
-                        answer_similarity=score, grounding_score=detail.get("grounding_score") or 0.0,
-                        is_fallback=str(bool(detail.get("is_fallback"))).lower(), retrieved_contexts=detail.get("retrieved_contexts", []), auto_status="pass" if score >= TestRunner.PASS_THRESHOLD and not detail.get("is_fallback") else "review",
+                        id=str(uuid.uuid4()),
+                        run_id=run_id,
+                        test_case_id=detail["test_case_id"],
+                        question=detail["question"],
+                        expected_answer=detail["expected_answer"],
+                        actual_answer=detail.get("actual_answer") or "",
+                        answer_similarity=score,
+                        grounding_score=detail.get("grounding_score") or 0.0,
+                        is_fallback=str(bool(detail.get("is_fallback"))).lower(),
+                        retrieved_contexts=detail.get("retrieved_contexts", []),
+                        auto_status="pass" if score >= TestRunner.PASS_THRESHOLD and not detail.get("is_fallback") else "review",
                     ))
                 await session.commit()
 
@@ -419,6 +441,7 @@ async def run_evaluation(
         gemini_model=settings.gemini_model,
         notes=payload.notes or "",
         use_ragas=payload.use_ragas,
+        pipeline=getattr(req.app.state, "rag_pipeline", None),
     )
 
     return {
