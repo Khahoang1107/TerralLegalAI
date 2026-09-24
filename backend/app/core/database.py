@@ -49,5 +49,7 @@ async def init_db():
         await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS effective_from DATE"))
         await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS effective_to DATE"))
         await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS validity_note TEXT"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS has_table BOOLEAN DEFAULT FALSE"))
+        await conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS table_type VARCHAR(50)"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_chunks_validity ON document_chunks(validity_status)"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_chunks_document_article ON document_chunks(document_id, article, clause)"))

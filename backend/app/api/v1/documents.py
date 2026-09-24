@@ -75,6 +75,8 @@ class ChunkResponse(BaseModel):
     field_type: Optional[str] = None
     validity_status: str = "active"
     validity_note: Optional[str] = None
+    has_table: bool = False
+    table_type: Optional[str] = None
 
 
 class ConfirmAmendmentsRequest(BaseModel):
@@ -163,13 +165,27 @@ def _index_document_sync(
 
                 # Chunk
                 chunker = DocumentChunker()
-                chunks = chunker.chunk(
-                    text=parsed.full_text,
-                    source_file=file_path_obj.name,
-                    source_name=source_name,
-                    group_type=group_type,
-                    procedure_type=procedure_type,
-                )
+
+                # v4: Dùng chunk_from_segments() nếu parser có segments (table-aware)
+                segments = getattr(parsed, "segments", [])
+                if segments and len(segments) > 1:
+                    # Parser v2 trả về segments có bảng → dùng chiến lược table-aware
+                    chunks = chunker.chunk_from_segments(
+                        segments=segments,
+                        source_file=file_path_obj.name,
+                        source_name=source_name,
+                        group_type=group_type,
+                        procedure_type=procedure_type,
+                    )
+                else:
+                    # Fallback: text thuần (PDF scan, parser cũ)
+                    chunks = chunker.chunk(
+                        text=parsed.full_text,
+                        source_file=file_path_obj.name,
+                        source_name=source_name,
+                        group_type=group_type,
+                        procedure_type=procedure_type,
+                    )
                 logger.info(f"Created {len(chunks)} chunks")
 
                 # Lưu chunks vào PostgreSQL
@@ -181,6 +197,8 @@ def _index_document_sync(
                         article=c.article,
                         clause=c.clause,
                         field_type=c.field_type,
+                        has_table=getattr(c, "has_table", False),
+                        table_type=getattr(c, "table_type", None),
                     )
                     session.add(chunk_record)
 
@@ -530,7 +548,34 @@ async def list_document_chunks(document_id: str, db: AsyncSession = Depends(get_
     except ValueError:
         raise HTTPException(status_code=400, detail="document_id không hợp lệ")
     chunks = (await db.execute(select(DocumentChunk).where(DocumentChunk.document_id == doc_uuid).order_by(DocumentChunk.id))).scalars().all()
-    return [ChunkResponse(id=chunk.id, text=chunk.text, article=chunk.article, clause=chunk.clause, field_type=chunk.field_type, validity_status=chunk.validity_status or "active", validity_note=chunk.validity_note) for chunk in chunks]
+    
+    def _detect_table_status(chunk: DocumentChunk) -> tuple[bool, Optional[str]]:
+        has_tbl = bool(getattr(chunk, "has_table", False))
+        t_type = getattr(chunk, "table_type", None)
+        text = chunk.text or ""
+        if not has_tbl and ("[Bảng" in text or ("|" in text and "\n| ---" in text)):
+            has_tbl = True
+            if not t_type:
+                t_type = chunk.field_type or "table"
+        return has_tbl, t_type
+
+    res = []
+    for chunk in chunks:
+        has_tbl, t_type = _detect_table_status(chunk)
+        res.append(
+            ChunkResponse(
+                id=chunk.id,
+                text=chunk.text,
+                article=chunk.article,
+                clause=chunk.clause,
+                field_type=chunk.field_type,
+                validity_status=chunk.validity_status or "active",
+                validity_note=chunk.validity_note,
+                has_table=has_tbl,
+                table_type=t_type,
+            )
+        )
+    return res
 
 
 @router.post("/documents/{document_id}/analyze-amendments")

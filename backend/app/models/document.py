@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, DateTime, Date, ForeignKey, Text, Float
+from sqlalchemy import Column, String, DateTime, Date, ForeignKey, Text, Float, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -45,6 +45,8 @@ class DocumentChunk(Base):
     effective_from = Column(Date, nullable=True)
     effective_to = Column(Date, nullable=True)
     validity_note = Column(Text, nullable=True)
+    has_table = Column(Boolean, default=False, nullable=True)
+    table_type = Column(String(50), nullable=True)
     
     document = relationship("Document", back_populates="chunks")
 

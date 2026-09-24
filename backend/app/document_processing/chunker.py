@@ -1,41 +1,29 @@
 """
-TerraLegalAI — Document Chunker (v3 — Structure-Aware)
+TerraLegalAI — Document Chunker (v4 — Table-Aware + Structure-Aware)
 Chia tài liệu thủ tục hành chính đất đai thành chunks theo cấu trúc thực tế.
 
-Cấu trúc tài liệu thực tế (phân tích từ OCR output):
+Cải tiến v4 (Table-Aware):
+- Nhận `segments` từ parser mới (paragraph xen kẽ table)
+- Bảng được chunk riêng biệt, không bao giờ bị cắt ngang hàng
+- Bảng nhỏ (≤ MAX_TABLE_TOKENS) → 1 bảng = 1 chunk nguyên vẹn
+- Bảng lớn → chia theo nhóm hàng, giữ header row ở đầu mỗi chunk
+- Backward compatible: `chunk()` vẫn hoạt động với full_text
+
+Cấu trúc tài liệu thực tế (đã phân tích từ OCR output):
 
   QĐ 1085 (Bộ thủ tục hành chính):
     ┌─ "8. Cap đổi Giấy chứng nhận..."    ← header thủ tục
     │   ├─ (1) Trình tự thực hiện          ← chunk 1
-    │   │    ├─ Bước 1: ...
-    │   │    ├─ Bước 2: ...
-    │   │    └─ Bước 3: ...
-    │   ├─ (2) Cách thức thực hiện         ← chunk 2
-    │   ├─ (3) Thành phần, số lượng hồ sơ ← chunk 3
-    │   ├─ (4) Thời hạn giải quyết         ← chunk 4
-    │   ├─ (5) Đối tượng thực hiện         ← chunk 5
-    │   ├─ (6) Cơ quan thực hiện           ← chunk 6
-    │   ├─ (7) Kết quả thực hiện           ← chunk 7
-    │   ├─ (8) Lệ phí                      ← chunk 8
-    │   ├─ (9) Tên mẫu đơn                 ← chunk 9
-    │   ├─ (10) Yêu cầu, điều kiện         ← chunk 10
-    │   └─ (11) Căn cứ pháp lý             ← chunk 11
+    │   ├─ (3) Thành phần hồ sơ          ← chunk 3 (bảng → Markdown)
+    │   └─ (11) Căn cứ pháp lý
     └─ "12. Đăng ký biến động..."
-         └─ (tương tự)
 
   QĐ 1467 (Quy trình nội bộ — dạng bảng):
     ┌─ "8. Cấp đổi GCN" (Mã TTHC: 1.012783.H61)
     │   ├─ 8.1  (cấp trên bản đồ chính quy)
-    │   │   ├─ Bước 1: Tiếp nhận hồ sơ         ← chunk
-    │   │   ├─ Bước 2: Kiểm tra hồ sơ          ← chunk
-    │   │   ├─ Bước 3: Gửi phiếu tài chính     ← chunk
-    │   │   ├─ Bước 4: Cấp GCN                 ← chunk
-    │   │   ├─ Bước 5: Trả kết quả             ← chunk
-    │   │   └─ Tổng thời gian: 05 ngày         ← chunk thoi_han
-    │   └─ 8.2  (thay đổi kích thước)
-    │       └─ (tương tự)
+    │   │   ├─ Bước 1, 2, 3, 4, 5          ← chunks từng bước
+    │   └─ 8.2  (điều chỉnh kích thước)
     └─ "12. Đăng ký biến động..."
-        └─ (tương tự)
 
   Văn bản pháp luật (Luật, Nghị định):
     - Chunk theo Điều, fallback theo Khoản
@@ -114,6 +102,9 @@ class DocumentChunk:
     field_type:      str  = "general"
     chunk_index:     int  = 0
     validity_status: str  = "active"
+    # Table-aware fields (v4)
+    has_table:       bool = False  # True nếu chunk này chứa Markdown table
+    table_type:      str  = ""    # "ho_so" | "trinh_tu" | "le_phi" | ...
 
 
 @dataclass
@@ -252,6 +243,219 @@ class DocumentChunker:
             f"avg {sum(c.token_estimate for c in chunks) // max(len(chunks), 1)} tokens"
         )
         return chunks
+
+    def chunk_from_segments(
+        self,
+        segments: list,
+        source_file: str,
+        source_name: str,
+        group_type: str = "general",
+        procedure_type: str = "all",
+        procedure_name: str = "",
+    ) -> list[DocumentChunk]:
+        """
+        Entry point mới (v4): nhận segments từ parser table-aware.
+
+        ``segments`` là list[str | ParsedTable] từ DOCXParser / PDFParser v2.
+        Bảng được giữ nguyên cấu trúc, không bao giờ bị cắt ngang hàng.
+        """
+        try:
+            from backend.app.document_processing.docx_parser import ParsedTable
+        except ImportError:
+            ParsedTable = None
+
+        if not segments:
+            return []
+
+        if ParsedTable is None:
+            full_text = "\n\n".join(s if isinstance(s, str) else "" for s in segments)
+            return self.chunk(full_text, source_file, source_name, group_type, procedure_type)
+
+        chunks = self._chunk_with_tables(
+            segments=segments,
+            ParsedTable=ParsedTable,
+            source_file=source_file,
+            source_name=source_name,
+            group_type=group_type,
+            procedure_type=procedure_type,
+            procedure_name=procedure_name,
+        )
+
+        for i, c in enumerate(chunks):
+            c.chunk_index = i
+
+        n_table_chunks = sum(1 for c in chunks if c.has_table)
+        logger.info(
+            f"  → {len(chunks)} chunks (table-aware) | "
+            f"{n_table_chunks} bảng | "
+            f"avg {sum(c.token_estimate for c in chunks) // max(len(chunks), 1)} tokens"
+        )
+        return chunks
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Strategy 0: Table-Aware (v4)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    MAX_TABLE_TOKENS = 700
+    MAX_ROWS_PER_CHUNK = 20
+
+    def _chunk_with_tables(
+        self, segments, ParsedTable, source_file, source_name,
+        group_type, procedure_type, procedure_name,
+    ) -> list[DocumentChunk]:
+        """
+        Chunk document có bảng xen kẽ văn bản.
+        Không BAO GIỜ cắt ngang một hàng bảng.
+        """
+        chunks: list[DocumentChunk] = []
+        text_buffer: list[str] = []
+
+        for segment in segments:
+            if isinstance(segment, ParsedTable):
+                # Flush text buffer trước
+                if text_buffer:
+                    combined = "\n".join(text_buffer).strip()
+                    if combined:
+                        combined = self._cleaner.clean(combined)
+                        for sc in self._fallback_splitter.split_text(combined):
+                            sc = sc.strip()
+                            if len(sc) >= self.config.min_chunk_size:
+                                chunks.append(DocumentChunk(
+                                    chunk_id=str(uuid.uuid4()),
+                                    text=sc,
+                                    token_estimate=self._estimate_tokens(sc),
+                                    source_file=source_file,
+                                    source_name=source_name,
+                                    group_type=group_type,
+                                    procedure_type=procedure_type,
+                                    procedure_name=procedure_name,
+                                    field_type="general",
+                                ))
+                    text_buffer = []
+
+                chunks.extend(self._make_table_chunks(
+                    table=segment,
+                    source_file=source_file,
+                    source_name=source_name,
+                    group_type=group_type,
+                    procedure_type=procedure_type,
+                    procedure_name=procedure_name,
+                ))
+            else:
+                text = segment.strip() if isinstance(segment, str) else ""
+                if text:
+                    text_buffer.append(text)
+
+        # Flush buffer cuối
+        if text_buffer:
+            combined = "\n".join(text_buffer).strip()
+            if combined:
+                combined = self._cleaner.clean(combined)
+                doc_type = self._detect_doc_type(combined, source_name)
+                if doc_type == "quyet_dinh_tthc":
+                    chunks.extend(self._chunk_quyet_dinh_tthc(
+                        combined, source_file, source_name, group_type, procedure_type
+                    ))
+                elif doc_type == "luat_nghi_dinh":
+                    chunks.extend(self._chunk_luat(
+                        combined, source_file, source_name, group_type, procedure_type
+                    ))
+                else:
+                    for sc in self._fallback_splitter.split_text(combined):
+                        sc = sc.strip()
+                        if len(sc) >= self.config.min_chunk_size:
+                            chunks.append(DocumentChunk(
+                                chunk_id=str(uuid.uuid4()),
+                                text=sc,
+                                token_estimate=self._estimate_tokens(sc),
+                                source_file=source_file,
+                                source_name=source_name,
+                                group_type=group_type,
+                                procedure_type=procedure_type,
+                                procedure_name=procedure_name,
+                                field_type="general",
+                            ))
+
+        return chunks
+
+    def _make_table_chunks(
+        self, table, source_file, source_name, group_type, procedure_type, procedure_name,
+    ) -> list[DocumentChunk]:
+        """
+        Tạo chunk(s) từ ParsedTable.
+        Bảng nhỏ ≤ MAX_TABLE_TOKENS → 1 chunk.
+        Bảng lớn → chia theo nhóm hàng, giữ header ở đầu mỗi sub-chunk.
+        """
+        field_type = table.table_type if table.table_type else "general"
+        context = table.context_before.strip()
+
+        type_label = {
+            "ho_so": "Bảng: Thành phần hồ sơ",
+            "trinh_tu": "Bảng: Trình tự thực hiện",
+            "le_phi": "Bảng: Lệ phí",
+            "dieu_kien": "Bảng: Điều kiện",
+            "thoi_han": "Bảng: Thời hạn",
+            "can_cu_phap_ly": "Bảng: Căn cứ pháp lý",
+        }.get(table.table_type, "Bảng")
+
+        prefix_parts = []
+        if procedure_name:
+            prefix_parts.append(f"[Thủ tục: {procedure_name}]")
+        prefix_parts.append(f"[{type_label}]")
+        if context:
+            prefix_parts.append(context)
+        prefix = "\n".join(prefix_parts) + "\n"
+
+        markdown = table.markdown_repr
+        full_text = (prefix + markdown).strip()
+        tokens = self._estimate_tokens(full_text)
+
+        # Bảng nhỏ → 1 chunk nguyên vẹn
+        if tokens <= self.MAX_TABLE_TOKENS or not table.rows:
+            if len(full_text) < self.config.min_chunk_size:
+                return []
+            return [DocumentChunk(
+                chunk_id=str(uuid.uuid4()),
+                text=full_text,
+                token_estimate=tokens,
+                source_file=source_file,
+                source_name=source_name,
+                group_type=group_type,
+                procedure_type=procedure_type,
+                procedure_name=procedure_name,
+                field_type=field_type,
+                has_table=True,
+                table_type=table.table_type,
+            )]
+
+        # Bảng lớn → chia nhóm hàng, GIỮ header ở mỗi sub-chunk
+        from backend.app.document_processing.docx_parser import _table_to_markdown
+        headers = table.headers
+        rows = table.rows
+        result = []
+        batch_start = 0
+
+        while batch_start < len(rows):
+            batch = rows[batch_start: batch_start + self.MAX_ROWS_PER_CHUNK]
+            batch_md = _table_to_markdown(headers, batch)
+            chunk_text = (prefix + batch_md).strip()
+            if len(chunk_text) >= self.config.min_chunk_size:
+                result.append(DocumentChunk(
+                    chunk_id=str(uuid.uuid4()),
+                    text=chunk_text,
+                    token_estimate=self._estimate_tokens(chunk_text),
+                    source_file=source_file,
+                    source_name=source_name,
+                    group_type=group_type,
+                    procedure_type=procedure_type,
+                    procedure_name=procedure_name,
+                    field_type=field_type,
+                    has_table=True,
+                    table_type=table.table_type,
+                ))
+            batch_start += self.MAX_ROWS_PER_CHUNK
+
+        return result
 
     # ─────────────────────────────────────────────────────────────────────────
     # Detection

@@ -224,7 +224,7 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
         )}
 
         {/* File upload zone */}
-        <div className="upload-zone" style={{ padding: "1.5rem", marginBottom: "1rem", cursor: "pointer" }}
+        <div className="upload-zone" style={{ padding: "1.5rem", marginBottom: "0.75rem", cursor: "pointer" }}
           onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()}>
           <UploadCloud size={24} />
           <div>
@@ -232,6 +232,16 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
             <span>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "hoặc bấm để chọn file"}</span>
           </div>
           <input ref={fileInputRef} type="file" accept=".pdf,.docx,.doc" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        </div>
+
+        {/* Thông báo tính năng Table-Aware */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6,
+          fontSize: 12, color: "#166534", marginBottom: 14
+        }}>
+          <span style={{ fontSize: 14 }}>⚡</span>
+          <span><strong>Table-Aware:</strong> Tự động bóc tách & bảo toàn nguyên vẹn cấu trúc bảng biểu, quy trình TTHC từ file Word / PDF.</span>
         </div>
 
         {/* Tên nguồn + Số/ký hiệu */}
@@ -1787,12 +1797,95 @@ function Overview() {
     <section className="panel"><div className="panel-title"><div><h2>Cần chú ý</h2><p>Các câu hỏi có độ tin cậy thấp cần cán bộ rà soát</p></div><button className="text-button">Xem tất cả</button></div><div className="issue-list"><div><CircleAlert /><span><strong>"Trường hợp mất sổ đỏ cần làm gì?"</strong><small>Độ tin cậy 43% · Cấp lại GCN</small></span><button>Kiểm tra</button></div><div><CircleAlert /><span><strong>"Có thể nộp hồ sơ trực tuyến không?"</strong><small>Độ tin cậy 51% · Nộp hồ sơ</small></span><button>Kiểm tra</button></div></div></section></>;
 }
 
+function ChunkContentRenderer({ text }: { text: string }) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const hasTable = lines.some(l => l.trim().startsWith("|") && l.includes("|", 1));
+  if (!hasTable) {
+    return <p style={{ whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.55 }}>{text}</p>;
+  }
+
+  const blocks: { type: "text" | "table"; lines: string[] }[] = [];
+  let current: { type: "text" | "table"; lines: string[] } = { type: "text", lines: [] };
+
+  for (const line of lines) {
+    const isTbl = line.trim().startsWith("|") && line.trim().endsWith("|");
+    if (isTbl) {
+      if (current.type !== "table") {
+        if (current.lines.length > 0) blocks.push(current);
+        current = { type: "table", lines: [] };
+      }
+      current.lines.push(line);
+    } else {
+      if (current.type !== "text") {
+        if (current.lines.length > 0) blocks.push(current);
+        current = { type: "text", lines: [] };
+      }
+      current.lines.push(line);
+    }
+  }
+  if (current.lines.length > 0) blocks.push(current);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {blocks.map((b, bi) => {
+        if (b.type === "text") {
+          const t = b.lines.join("\n").trim();
+          if (!t) return null;
+          return <p key={bi} style={{ whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.55 }}>{t}</p>;
+        }
+        const raw = b.lines.filter(l => l.trim().length > 0);
+        if (raw.length < 2) {
+          return <p key={bi} style={{ whiteSpace: "pre-wrap", margin: 0 }}>{b.lines.join("\n")}</p>;
+        }
+        const parseRow = (r: string) => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+        const headerRow = parseRow(raw[0]);
+        const bodyRows = raw.slice(1).filter(r => !r.includes("---")).map(parseRow);
+
+        return (
+          <div key={bi} style={{ overflowX: "auto", margin: "6px 0", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, background: "#ffffff" }}>
+              <thead>
+                <tr style={{ background: "#f1f5f9", borderBottom: "2px solid #cbd5e1" }}>
+                  {headerRow.map((h, hi) => (
+                    <th key={hi} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1e293b", borderRight: "1px solid #e2e8f0" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bodyRows.map((row, ri) => (
+                  <tr key={ri} style={{ borderBottom: "1px solid #e2e8f0", background: ri % 2 === 1 ? "#f8fafc" : "#ffffff" }}>
+                    {row.map((cell, ci) => (
+                      <td key={ci} style={{ padding: "7px 10px", color: "#334155", verticalAlign: "top", borderRight: "1px solid #f1f5f9", lineHeight: 1.45 }}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DocumentsView() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [chunkDoc, setChunkDoc] = useState<Document | null>(null);
-  const [chunks, setChunks] = useState<{id:string;text:string;article?:string;clause?:string;field_type?:string;validity_status?:string;validity_note?:string}[]>([]);
+  const [chunks, setChunks] = useState<{
+    id: string;
+    text: string;
+    article?: string;
+    clause?: string;
+    field_type?: string;
+    validity_status?: string;
+    validity_note?: string;
+    has_table?: boolean;
+    table_type?: string;
+  }[]>([]);
+  const [chunkTableFilter, setChunkTableFilter] = useState<"all" | "table" | "text">("all");
   const [analysis, setAnalysis] = useState<AmendmentAnalysis | null>(null);
   const [selectedChanges, setSelectedChanges] = useState<Set<string>>(new Set());
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -1803,6 +1896,16 @@ function DocumentsView() {
     documentsApi.getDocuments().then(setDocs).catch(console.error).finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setChunkDoc(null);
+    };
+    if (chunkDoc) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [chunkDoc]);
+
   const handleDelete = async (id: string) => {
     if (!window.confirm("Bạn có chắc muốn xóa tài liệu này?")) return;
     try {
@@ -1811,7 +1914,16 @@ function DocumentsView() {
       showToast("Đã xóa tài liệu.", "success");
     } catch { showToast("Lỗi khi xóa.", "error"); }
   };
-  const viewChunks = async (doc: Document) => { try { setChunks(await documentsApi.getChunks(doc.id)); setChunkDoc(doc); } catch { showToast("Không tải được chunks.", "error"); } };
+  const viewChunks = async (doc: Document) => {
+    try {
+      const data = await documentsApi.getChunks(doc.id);
+      setChunks(data);
+      setChunkTableFilter("all");
+      setChunkDoc(doc);
+    } catch {
+      showToast("Không tải được chunks.", "error");
+    }
+  };
   const reindex = async (doc: Document) => { if (!window.confirm(`Lập chỉ mục lại “${doc.source_name}”? Chunks cũ sẽ được thay bằng chunks mới từ file gốc.`)) return; try { const out = await documentsApi.reindexDocument(doc.id); showToast(out.message, "success"); setDocs(prev => prev.map(item => item.id === doc.id ? {...item, status: "indexing"} : item)); } catch { showToast("Không thể lập chỉ mục lại tài liệu.", "error"); } };
   const analyze = async (doc: Document, parentId: string) => {
     setAnalysisLoading(true);
@@ -1906,7 +2018,227 @@ function DocumentsView() {
       }
     </tbody></table></div></section>
     {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => { documentsApi.getDocuments().then(setDocs).catch(console.error); showToast("Tải lên thành công!", "success"); }} />}
-    {chunkDoc && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:820}}><div className="modal-header"><div><h2>Chunks: {chunkDoc.source_name}</h2><small>{chunks.length} chunk · trạng thái hiệu lực theo từng đoạn</small></div><button className="icon-button" onClick={()=>setChunkDoc(null)}>×</button></div><div className="modal-body">{chunks.length===0?<p>Chưa có chunk. Hãy re-index tài liệu.</p>:chunks.map((chunk,index)=><article key={chunk.id} style={{border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><div style={{display:"flex",justifyContent:"space-between",gap:12}}><strong>Chunk {index+1} {chunk.field_type ? `· ${chunk.field_type}` : ""}</strong><span style={{fontSize:11,fontWeight:700,color:chunk.validity_status === "active" ? "#047857" : "#b45309"}}>{chunk.validity_status || "active"}</span></div><small style={{display:"block",color:"#64748b",margin:"4px 0 8px"}}>{[chunk.article,chunk.clause].filter(Boolean).join(" · ") || "Chưa có Điều/Khoản"}</small><p style={{whiteSpace:"pre-wrap",margin:0,lineHeight:1.55}}>{chunk.text}</p>{chunk.validity_note && <small style={{display:"block",color:"#92400e",marginTop:8}}>Ghi chú: {chunk.validity_note}</small>}</article>)}</div></div></div>}
+    {chunkDoc && (
+      <div className="modal-backdrop" onClick={() => setChunkDoc(null)} style={{ overflow: "hidden" }}>
+        {/* Nút X nổi cố định góc trên bên phải màn hình */}
+        <button
+          type="button"
+          onClick={() => setChunkDoc(null)}
+          title="Đóng (ESC)"
+          aria-label="Đóng"
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 24,
+            zIndex: 150,
+            width: 42,
+            height: 42,
+            borderRadius: "50%",
+            background: "#dc2626",
+            color: "#ffffff",
+            border: "2px solid #ffffff",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.background = "#b91c1c"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "#dc2626"; }}
+        >
+          <X size={22} />
+        </button>
+
+        <div
+          className="modal-content"
+          style={{
+            maxWidth: 940,
+            width: "95%",
+            height: "88vh",
+            maxHeight: "88vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden", // KHÔNG cuộn container chính để Header & X luôn cố định
+            position: "relative",
+            borderRadius: 14,
+            boxShadow: "0 25px 60px rgba(15,23,42,0.35)",
+            background: "#ffffff",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header Cố định (Never scrolls away) */}
+          <div className="modal-header" style={{ flexShrink: 0, padding: "16px 22px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, color: "#0f172a", fontWeight: 700 }}>Chunks: {chunkDoc.source_name}</h2>
+              <small style={{ color: "#64748b", marginTop: 4, display: "block" }}>
+                {chunks.length} chunks tổng cộng · {chunks.filter(c => c.has_table || c.text.includes("| ---") || c.text.includes("[Bảng")).length} chunks chứa bảng biểu
+              </small>
+            </div>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setChunkDoc(null)}
+              title="Đóng (ESC)"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                border: "1px solid #cbd5e1",
+                background: "#f8fafc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#475569",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "#fee2e2"; e.currentTarget.style.color = "#dc2626"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.color = "#475569"; }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Filter Bar Cố định */}
+          <div style={{ display: "flex", gap: 8, padding: "10px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => setChunkTableFilter("all")}
+              style={{
+                padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: chunkTableFilter === "all" ? "1px solid #4f46e5" : "1px solid #e2e8f0",
+                background: chunkTableFilter === "all" ? "#eef2ff" : "#fff",
+                color: chunkTableFilter === "all" ? "#4f46e5" : "#475569"
+              }}
+            >
+              Tất cả ({chunks.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setChunkTableFilter("table")}
+              style={{
+                padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: chunkTableFilter === "table" ? "1px solid #059669" : "1px solid #e2e8f0",
+                background: chunkTableFilter === "table" ? "#ecfdf5" : "#fff",
+                color: chunkTableFilter === "table" ? "#059669" : "#475569"
+              }}
+            >
+              📊 Chứa bảng TTHC ({chunks.filter(c => c.has_table || c.text.includes("| ---") || c.text.includes("[Bảng")).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setChunkTableFilter("text")}
+              style={{
+                padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: chunkTableFilter === "text" ? "1px solid #64748b" : "1px solid #e2e8f0",
+                background: chunkTableFilter === "text" ? "#f1f5f9" : "#fff",
+                color: chunkTableFilter === "text" ? "#1e293b" : "#475569"
+              }}
+            >
+              📄 Văn bản thông thường ({chunks.filter(c => !(c.has_table || c.text.includes("| ---") || c.text.includes("[Bảng"))).length})
+            </button>
+          </div>
+
+          {/* Vùng cuộn riêng cho các chunks */}
+          <div className="modal-body" style={{ overflowY: "auto", flex: "1 1 auto", minHeight: 0, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+            {(() => {
+              const filteredChunks = chunks.filter(c => {
+                const isTable = Boolean(c.has_table || c.text.includes("| ---") || c.text.includes("[Bảng"));
+                if (chunkTableFilter === "table") return isTable;
+                if (chunkTableFilter === "text") return !isTable;
+                return true;
+              });
+
+              if (filteredChunks.length === 0) {
+                return (
+                  <p style={{ textAlign: "center", color: "#64748b", padding: "30px 0" }}>
+                    {chunks.length === 0 ? "Chưa có chunk. Hãy re-index tài liệu." : "Không có chunk nào phù hợp với bộ lọc."}
+                  </p>
+                );
+              }
+
+              return filteredChunks.map((chunk, index) => {
+                const isTable = Boolean(chunk.has_table || chunk.text.includes("| ---") || chunk.text.includes("[Bảng"));
+                return (
+                  <article key={chunk.id} style={{
+                    border: isTable ? "1.5px solid #a7f3d0" : "1px solid #e2e8f0",
+                    borderRadius: 8,
+                    padding: 14,
+                    background: isTable ? "#fcfffd" : "#fff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <strong style={{ fontSize: 13, color: "#1e293b" }}>Chunk #{index + 1}</strong>
+                        {isTable && (
+                          <span style={{ fontSize: 11, fontWeight: 700, background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", padding: "2px 7px", borderRadius: 4 }}>
+                            📊 Bảng TTHC
+                          </span>
+                        )}
+                        {chunk.table_type && (
+                          <span style={{ fontSize: 11, fontWeight: 600, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", padding: "2px 7px", borderRadius: 4 }}>
+                            {chunk.table_type === "administrative_procedure" ? "Quy trình TTHC" :
+                             chunk.table_type === "thanh_phan_ho_so" || chunk.table_type === "ho_so" ? "Hồ sơ đính kèm" :
+                             chunk.table_type === "trinh_tu" ? "Trình tự" :
+                             chunk.table_type === "le_phi" ? "Phí & Lệ phí" : chunk.table_type}
+                          </span>
+                        )}
+                        {chunk.field_type && chunk.field_type !== chunk.table_type && (
+                          <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>
+                            {chunk.field_type}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                        background: chunk.validity_status === "active" ? "#ecfdf5" : chunk.validity_status === "repealed" ? "#fef2f2" : "#fffbeb",
+                        color: chunk.validity_status === "active" ? "#047857" : chunk.validity_status === "repealed" ? "#dc2626" : "#b45309",
+                        border: `1px solid ${chunk.validity_status === "active" ? "#a7f3d0" : chunk.validity_status === "repealed" ? "#fecaca" : "#fde68a"}`
+                      }}>
+                        {chunk.validity_status === "active" ? "Còn hiệu lực" : chunk.validity_status === "repealed" ? "Hết hiệu lực" : (chunk.validity_status || "active")}
+                      </span>
+                    </div>
+
+                    <small style={{ display: "block", color: "#64748b", marginBottom: 10 }}>
+                      {[chunk.article, chunk.clause].filter(Boolean).join(" · ") || "Ngữ cảnh chung"}
+                    </small>
+
+                    <ChunkContentRenderer text={chunk.text} />
+
+                    {chunk.validity_note && (
+                      <small style={{ display: "block", color: "#92400e", background: "#fef3c7", padding: "4px 8px", borderRadius: 4, marginTop: 10 }}>
+                        Ghi chú hiệu lực: {chunk.validity_note}
+                      </small>
+                    )}
+                  </article>
+                );
+              });
+            })()}
+          </div>
+
+          {/* Footer Cố định với nút Đóng tiện lợi */}
+          <div style={{
+            padding: "10px 22px",
+            borderTop: "1px solid #e2e8f0",
+            background: "#f8fafc",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 12, color: "#64748b" }}>Mẹo: Nhấn <strong>ESC</strong> hoặc click nền đen bên ngoài để đóng</span>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setChunkDoc(null)}
+              style={{ padding: "6px 18px", fontSize: 13, fontWeight: 600, borderRadius: 6 }}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {analysis && <div className="modal-backdrop"><div className="modal-content" style={{maxWidth:940}}><div className="modal-header"><div><h2>Kiểm duyệt thay đổi hiệu lực</h2><small>{analysis.source_document} → {analysis.target_document}</small></div><button className="icon-button" onClick={()=>setAnalysis(null)}>×</button></div><div className="modal-body">
       {analysis.changes.length === 0 ? <p>Không nhận dạng được dẫn chiếu Điều/Khoản rõ ràng. Chưa có dữ liệu nào bị thay đổi.</p> : analysis.changes.map(change => <label key={change.id} style={{display:"grid",gridTemplateColumns:"24px 1fr",gap:10,border:"1px solid #e2e8f0",borderRadius:8,padding:14}}><input type="checkbox" checked={selectedChanges.has(change.id)} onChange={event=>setSelectedChanges(previous=>{const next=new Set(previous);event.target.checked?next.add(change.id):next.delete(change.id);return next;})}/><span><strong>{change.action.toUpperCase()} · {change.article}{change.clause ? ` · ${change.clause}` : ""}</strong><small style={{display:"block",color:"#64748b",margin:"4px 0"}}>Tin cậy {Math.round(change.confidence*100)}% · {change.evidence_text}</small><p style={{whiteSpace:"pre-wrap",margin:0}}>{change.target_text_preview}</p></span></label>)}
     </div><div className="dialog-actions"><button className="secondary-button" onClick={()=>setAnalysis(null)}>Hủy</button><button className="primary-button" disabled={analysisLoading || selectedChanges.size===0} onClick={confirmAnalysis}>{analysisLoading?"Đang áp dụng...":`Xác nhận ${selectedChanges.size} thay đổi`}</button></div></div></div>}

@@ -421,7 +421,7 @@ export const documentsApi = {
     const { data } = await client.put(`/documents/${id}/reindex`);
     return data;
   },
-  async getChunks(id: string): Promise<{ id: string; text: string; article?: string; clause?: string; field_type?: string; validity_status?: string; validity_note?: string }[]> {
+  async getChunks(id: string): Promise<{ id: string; text: string; article?: string; clause?: string; field_type?: string; validity_status?: string; validity_note?: string; has_table?: boolean; table_type?: string }[]> {
     const { data } = await client.get(`/documents/${id}/chunks`); return data;
   },
   async analyzeAmendments(id: string, parentDocumentId: string): Promise<AmendmentAnalysis> {

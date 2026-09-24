@@ -1,14 +1,20 @@
 """
-TerraLegalAI — PDF Document Parser
+TerraLegalAI — PDF Document Parser (v2 — Table-Aware)
 Sử dụng PyMuPDF (fitz) để extract text từ PDF văn bản pháp luật tiếng Việt.
 Hỗ trợ: cấu trúc Điều/Khoản/Điểm, metadata extraction, làm sạch text.
 Tự động phát hiện PDF scan và fallback sang OCR (Tesseract).
+
+Cải tiến v2:
+- Dùng pdfplumber để detect bảng trong PDF có text layer
+- Bảng được giữ nguyên cấu trúc → Markdown table
+- Phân loại bảng (hồ sơ / trình tự / lệ phí / điều kiện)
+- Backward compatible: full_text vẫn xuất ra
 """
 import re
 import logging
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 import fitz  # PyMuPDF
 
@@ -55,6 +61,9 @@ class ParsedDocument:
     # Detected structure
     detected_articles: list[str] = field(default_factory=list)  # Điều 1, Điều 2...
     detected_procedure_name: Optional[str] = None
+    # Table-aware segments (v2): list of str (text) or ParsedTable objects
+    # Import lazily to avoid circular imports
+    segments: list = field(default_factory=list)
 
 
 class PDFParser:
@@ -200,10 +209,13 @@ class PDFParser:
         detected_articles = self._detect_articles(full_text)
         procedure_name = self._detect_procedure_name(full_text)
 
+        # ── Table detection với pdfplumber (nếu có) ──────────────
+        segments = self._extract_segments_with_tables(file_path, full_text)
+
         result = ParsedDocument(
             file_path=str(file_path),
             file_name=file_path.name,
-            total_pages=len(doc) if not doc.is_closed else len(pages),
+            total_pages=len(pages),
             full_text=full_text,
             pages=pages,
             metadata={
@@ -212,12 +224,15 @@ class PDFParser:
             },
             detected_articles=detected_articles,
             detected_procedure_name=procedure_name,
+            segments=segments,
         )
 
+        n_tables = sum(1 for s in segments if not isinstance(s, str))
         logger.info(
             f"✅ Parse xong: {file_path.name} | "
             f"{len(pages)} trang | "
             f"{len(detected_articles)} điều | "
+            f"{n_tables} bảng phát hiện | "
             f"{len(full_text):,} ký tự"
         )
         return result
@@ -270,6 +285,137 @@ class PDFParser:
         if match:
             return match.group(1).strip()
         return None
+
+    # ── Table-Aware Extraction (v2) ──────────────────────────────
+
+    def _extract_segments_with_tables(self, file_path: Path, full_text: str) -> list:
+        """
+        Dùng pdfplumber để phát hiện bảng trong PDF có text layer.
+        Trả về list các segments theo thứ tự đọc:
+          - str → đoạn text thuần
+          - ParsedTable → bảng được phát hiện
+
+        Fallback: nếu pdfplumber không có hoặc lỗi → trả về [full_text]
+        """
+        try:
+            import pdfplumber  # noqa: F401
+        except ImportError:
+            logger.debug("pdfplumber không được cài → bỏ qua table detection cho PDF")
+            return [full_text]
+
+        try:
+            from backend.app.document_processing.docx_parser import (
+                ParsedTable,
+                _detect_table_type,
+                _table_to_markdown,
+            )
+
+            segments = []
+            table_index = 0
+
+            with pdfplumber.open(str(file_path)) as pdf:
+                for page in pdf.pages:
+                    # Extract tables trên trang
+                    page_tables = page.extract_tables() or []
+
+                    if not page_tables:
+                        # Không có bảng → chỉ lấy text
+                        page_text = page.extract_text() or ""
+                        if page_text.strip():
+                            segments.append(page_text.strip())
+                        continue
+
+                    # Lấy bbox của các bảng để tách text còn lại
+                    table_bboxes = []
+                    try:
+                        for tbl in page.find_tables():
+                            table_bboxes.append(tbl.bbox)
+                    except Exception:
+                        pass
+
+                    # Text ngoài bảng
+                    try:
+                        if table_bboxes:
+                            non_table_text = self._extract_text_outside_tables(
+                                page, table_bboxes
+                            )
+                        else:
+                            non_table_text = page.extract_text() or ""
+                    except Exception:
+                        non_table_text = page.extract_text() or ""
+
+                    # Thêm text trước bảng
+                    if non_table_text.strip():
+                        segments.append(non_table_text.strip())
+
+                    # Xử lý từng bảng trên trang
+                    for raw_table in page_tables:
+                        if not raw_table:
+                            continue
+
+                        # Clean cells: None → ""
+                        cleaned_rows = [
+                            [str(c).strip() if c is not None else "" for c in row]
+                            for row in raw_table
+                            if any(c for c in row if c)
+                        ]
+
+                        if not cleaned_rows:
+                            continue
+
+                        headers = cleaned_rows[0]
+                        data_rows = cleaned_rows[1:]
+
+                        # Context before = text vừa thêm vào (phần cuối)
+                        context_before = ""
+                        if segments and isinstance(segments[-1], str):
+                            context_before = segments[-1][-200:]
+
+                        tbl_type = _detect_table_type(context_before, headers, data_rows[:3])
+                        markdown = _table_to_markdown(headers, data_rows)
+
+                        parsed_tbl = ParsedTable(
+                            table_index=table_index,
+                            headers=headers,
+                            rows=data_rows,
+                            context_before=context_before,
+                            table_type=tbl_type,
+                            markdown_repr=markdown,
+                        )
+                        segments.append(parsed_tbl)
+                        table_index += 1
+
+            if not segments:
+                return [full_text]
+
+            logger.info(f"  PDF table-aware: {table_index} bảng phát hiện qua pdfplumber")
+            return segments
+
+        except Exception as e:
+            logger.warning(f"  PDF table detection thất bại ({e}), fallback text-only")
+            return [full_text]
+
+    def _extract_text_outside_tables(
+        self,
+        page,
+        table_bboxes: list[tuple],
+    ) -> str:
+        """
+        Lấy text trên trang PDF ngoài vùng bảng (dùng pdfplumber crop).
+        """
+        # Lọc words nằm ngoài tất cả bounding boxes của bảng
+        words = page.extract_words() or []
+        non_table_words = []
+        for word in words:
+            wx0, wy0, wx1, wy1 = word["x0"], word["top"], word["x1"], word["bottom"]
+            in_table = False
+            for bx0, by0, bx1, by1 in table_bboxes:
+                if wx0 >= bx0 and wy0 >= by0 and wx1 <= bx1 and wy1 <= by1:
+                    in_table = True
+                    break
+            if not in_table:
+                non_table_words.append(word["text"])
+        return " ".join(non_table_words)
 
 
 # ─── Quick test ───────────────────────────────────────────────────
