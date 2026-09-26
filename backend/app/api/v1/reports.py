@@ -159,11 +159,11 @@ async def get_overview(db: AsyncSession = Depends(get_db)):
 
     # 3. Needs attention (Low confidence or fallback questions)
     attention_stmt = (
-        select(Message.content, Message.confidence, Message.created_at, Message.conversation_id, Message.intent)
+        select(Message.id, Message.content, Message.confidence, Message.created_at, Message.conversation_id, Message.intent, Message.is_fallback)
         .where((Message.is_fallback == True) | (Message.confidence < 0.6))
         .where(Message.role == 'assistant')
         .order_by(Message.created_at.desc())
-        .limit(3)
+        .limit(10)
     )
     attention_res = await db.execute(attention_stmt)
     
@@ -174,10 +174,16 @@ async def get_overview(db: AsyncSession = Depends(get_db)):
             .where(Message.conversation_id == msg.conversation_id, Message.role == 'user', Message.created_at <= msg.created_at)
             .order_by(Message.created_at.desc()).limit(1)
         )
+        conf_pct = int(round((msg.confidence or 0) * 100)) if msg.confidence is not None else 0
         needs_attention.append({
-            "question": user_msg or 'Không rõ',
-            "confidence": round(msg.confidence or 0, 2),
-            "intent": msg.intent or 'Khác'
+            "id": str(msg.id),
+            "question": user_msg or 'Không rõ câu hỏi',
+            "answer": msg.content or '',
+            "confidence": conf_pct,
+            "is_fallback": bool(msg.is_fallback),
+            "intent": msg.intent or 'Hỏi đáp chung',
+            "conversation_id": str(msg.conversation_id),
+            "created_at": msg.created_at.strftime("%H:%M %d/%m/%Y") if msg.created_at else ""
         })
 
     return {

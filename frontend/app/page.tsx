@@ -7,7 +7,7 @@ import PdfFormPreview from "@/components/PdfFormPreview";
 import FormReviewModal from "@/components/chat/FormReviewModal";
 import UsersView from "@/components/admin/UsersView";
 import TestsView from "@/components/admin/TestsView";
-import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, API_BASE_URL, type AmendmentAnalysis, type AuthUser, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun } from "@/lib/api";
+import { authApi, chatApi, conversationApi, formsApi, documentsApi, evaluationApi, reportsApi, API_BASE_URL, type AmendmentAnalysis, type AuthUser, type Citation, type Conversation, type Document, type TestCase, type EvaluationRun, type OverviewData, type OverviewAttentionItem } from "@/lib/api";
 import ProjectSidebar, { type LegalProject } from "@/components/chat/ProjectSidebar";
 import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
 import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
@@ -1789,12 +1789,344 @@ function Metric({ label, value, note, tone }: { label: string; value: string; no
   return <article className="metric"><div className={`metric-icon ${tone ?? ""}`}><BarChart3 size={19} /></div><span>{label}</span><strong>{value}</strong><small>{note}</small></article>;
 }
 
-function Overview() {
-  return <><div className="page-heading"><div><span className="eyebrow">Chất lượng hệ thống</span><h1>Bảng điều khiển</h1><p>Theo dõi hiệu quả trả lời và tình trạng kho tri thức.</p></div><select className="compact-select"><option>30 ngày gần nhất</option><option>7 ngày gần nhất</option></select></div>
-    <section className="metric-grid"><Metric label="Faithfulness" value="92.4%" note="+2.1% so với kỳ trước" tone="green" /><Metric label="Answer Relevancy" value="88.7%" note="+1.3% so với kỳ trước" tone="blue" /><Metric label="Context Precision" value="86.1%" note="-0.8% cần theo dõi" tone="amber" /><Metric label="Tỷ lệ fallback" value="4.8%" note="38 / 792 câu hỏi" tone="red" /></section>
-    <section className="admin-grid"><div className="panel chart-panel"><div className="panel-title"><div><h2>Chất lượng trả lời</h2><p>Điểm RAGAS theo 6 tuần gần nhất</p></div><MoreHorizontal /></div><div className="chart"><div className="y-labels"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><div className="chart-body"><div className="chart-lines"><i /><i /><i /><i /></div><svg viewBox="0 0 600 190" preserveAspectRatio="none" aria-label="Biểu đồ điểm chất lượng"><polyline points="0,88 100,78 200,84 300,60 400,66 500,45 600,50" fill="none" stroke="#157347" strokeWidth="4" /><polyline points="0,110 100,100 200,106 300,90 400,84 500,78 600,72" fill="none" stroke="#315f9b" strokeWidth="4" /></svg><div className="x-labels"><span>Tuần 1</span><span>Tuần 2</span><span>Tuần 3</span><span>Tuần 4</span><span>Tuần 5</span><span>Tuần 6</span></div></div></div><div className="legend"><span><i className="green-dot" /> Faithfulness</span><span><i className="blue-dot" /> Relevancy</span></div></div>
-      <div className="panel"><div className="panel-title"><div><h2>Tình trạng dữ liệu</h2><p>Cập nhật lúc 10:30 hôm nay</p></div></div><div className="data-stats"><div><span>Tài liệu đã index</span><strong>2</strong></div><div><span>Tổng số chunks</span><strong>280</strong></div><div><span>Câu hỏi hôm nay</span><strong>64</strong></div><div><span>Phản hồi tích cực</span><strong>91%</strong></div></div><button className="secondary-button"><RefreshCw size={16} /> Đồng bộ dữ liệu</button></div></section>
-    <section className="panel"><div className="panel-title"><div><h2>Cần chú ý</h2><p>Các câu hỏi có độ tin cậy thấp cần cán bộ rà soát</p></div><button className="text-button">Xem tất cả</button></div><div className="issue-list"><div><CircleAlert /><span><strong>"Trường hợp mất sổ đỏ cần làm gì?"</strong><small>Độ tin cậy 43% · Cấp lại GCN</small></span><button>Kiểm tra</button></div><div><CircleAlert /><span><strong>"Có thể nộp hồ sơ trực tuyến không?"</strong><small>Độ tin cậy 51% · Nộp hồ sơ</small></span><button>Kiểm tra</button></div></div></section></>;
+function Overview({ onNavigateView }: { onNavigateView?: (view: AdminView) => void }) {
+  const [data, setData] = useState<OverviewData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<OverviewAttentionItem | null>(null);
+  const [showAllModal, setShowAllModal] = useState(false);
+  const [syncToast, setSyncToast] = useState("");
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      const res = await reportsApi.getOverview();
+      setData(res);
+      if (isRefresh) {
+        setSyncToast("Đã đồng bộ số liệu mới nhất thành công!");
+        setTimeout(() => setSyncToast(""), 3000);
+      }
+    } catch (e) {
+      console.error("Failed to load overview data:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const metrics = data?.metrics;
+  const faithfulnessVal = metrics?.faithfulness != null ? `${metrics.faithfulness}%` : "--";
+  const faithfulnessNote = metrics?.faithfulness_diff ? `${metrics.faithfulness_diff > 0 ? "+" : ""}${metrics.faithfulness_diff}% so với kỳ trước` : "Dữ liệu kỳ mới nhất";
+
+  const relevancyVal = metrics?.answer_relevancy != null ? `${metrics.answer_relevancy}%` : "--";
+  const relevancyNote = metrics?.relevancy_diff ? `${metrics.relevancy_diff > 0 ? "+" : ""}${metrics.relevancy_diff}% so với kỳ trước` : "Dữ liệu kỳ mới nhất";
+
+  const precisionVal = metrics?.context_precision != null ? `${metrics.context_precision}%` : "--";
+  const precisionNote = metrics?.precision_diff ? `${metrics.precision_diff > 0 ? "+" : ""}${metrics.precision_diff}% so với kỳ trước` : "Dữ liệu kỳ mới nhất";
+
+  const fallbackVal = metrics?.fallback_rate != null ? `${metrics.fallback_rate}%` : "--";
+  const fallbackNote = "Tỷ lệ câu hỏi rơi vào fallback";
+
+  const chartPoints = data?.chart_data || [];
+  const n = chartPoints.length;
+  const pointsF = n > 0 ? chartPoints.map((p, i) => {
+    const x = n === 1 ? 300 : Math.round(30 + (i / (n - 1)) * 540);
+    const y = Math.round(170 - (p.faithfulness / 100) * 140);
+    return `${x},${y}`;
+  }).join(" ") : "";
+
+  const pointsR = n > 0 ? chartPoints.map((p, i) => {
+    const x = n === 1 ? 300 : Math.round(30 + (i / (n - 1)) * 540);
+    const y = Math.round(170 - (p.relevancy / 100) * 140);
+    return `${x},${y}`;
+  }).join(" ") : "";
+
+  const dataStats = data?.data_stats;
+  const attentionItems = data?.needs_attention || [];
+
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">Chất lượng hệ thống</span>
+          <h1>Bảng điều khiển</h1>
+          <p>Theo dõi hiệu quả trả lời và tình trạng kho tri thức.</p>
+        </div>
+        <select className="compact-select">
+          <option>30 ngày gần nhất</option>
+          <option>7 ngày gần nhất</option>
+        </select>
+      </div>
+
+      {syncToast && (
+        <div style={{ background: "#dcfce7", border: "1px solid #86efac", color: "#166534", padding: "10px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8 }}>
+          <CheckCircle2 size={16} />
+          {syncToast}
+        </div>
+      )}
+
+      <section className="metric-grid">
+        <Metric label="Faithfulness" value={faithfulnessVal} note={faithfulnessNote} tone="green" />
+        <Metric label="Answer Relevancy" value={relevancyVal} note={relevancyNote} tone="blue" />
+        <Metric label="Context Precision" value={precisionVal} note={precisionNote} tone="amber" />
+        <Metric label="Tỷ lệ fallback" value={fallbackVal} note={fallbackNote} tone="red" />
+      </section>
+
+      <section className="admin-grid">
+        <div className="panel chart-panel">
+          <div className="panel-title">
+            <div>
+              <h2>Chất lượng trả lời</h2>
+              <p>Điểm RAGAS theo các kỳ đánh giá gần nhất</p>
+            </div>
+            <MoreHorizontal />
+          </div>
+          <div className="chart">
+            <div className="y-labels">
+              <span>100</span>
+              <span>75</span>
+              <span>50</span>
+              <span>25</span>
+              <span>0</span>
+            </div>
+            <div className="chart-body">
+              <div className="chart-lines"><i /><i /><i /><i /></div>
+              {n > 0 ? (
+                <svg viewBox="0 0 600 190" preserveAspectRatio="none" aria-label="Biểu đồ điểm chất lượng">
+                  <polyline points={pointsF} fill="none" stroke="#157347" strokeWidth="4" />
+                  <polyline points={pointsR} fill="none" stroke="#315f9b" strokeWidth="4" />
+                </svg>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 140, color: "#94a3b8", fontSize: 13 }}>
+                  Chưa có lịch sử chạy đánh giá RAGAS. (Chạy kiểm thử tại tab Bộ kiểm thử)
+                </div>
+              )}
+              <div className="x-labels">
+                {n > 0 ? chartPoints.map((p, i) => <span key={i}>{p.label}</span>) : (
+                  <><span>Kỳ 1</span><span>Kỳ 2</span><span>Kỳ 3</span><span>Kỳ 4</span><span>Kỳ 5</span><span>Kỳ 6</span></>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="legend">
+            <span><i className="green-dot" /> Faithfulness</span>
+            <span><i className="blue-dot" /> Relevancy</span>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-title">
+            <div>
+              <h2>Tình trạng dữ liệu</h2>
+              <p>Dữ liệu đồng bộ trực tiếp từ hệ thống</p>
+            </div>
+          </div>
+          <div className="data-stats">
+            <div><span>Tài liệu đã index</span><strong>{dataStats?.indexed_docs ?? 0}</strong></div>
+            <div><span>Tổng số chunks</span><strong>{dataStats?.total_chunks ?? 0}</strong></div>
+            <div><span>Câu hỏi hôm nay</span><strong>{dataStats?.questions_today ?? 0}</strong></div>
+            <div><span>Phản hồi tích cực</span><strong>{dataStats?.positive_feedback_pct ?? 0}%</strong></div>
+          </div>
+          <button className="secondary-button" onClick={() => loadData(true)} disabled={refreshing}>
+            <RefreshCw size={16} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+            {refreshing ? "Đang đồng bộ..." : "Đồng bộ dữ liệu"}
+          </button>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <div>
+            <h2>Cần chú ý</h2>
+            <p>Các câu hỏi có độ tin cậy thấp hoặc fallback cần cán bộ rà soát</p>
+          </div>
+          {attentionItems.length > 0 && (
+            <button className="text-button" onClick={() => setShowAllModal(true)}>
+              Xem tất cả ({attentionItems.length})
+            </button>
+          )}
+        </div>
+
+        {loading ? (
+          <div style={{ padding: "24px 0", textAlign: "center", color: "#64748b", fontSize: 13.5 }}>
+            Đang tải dữ liệu rà soát...
+          </div>
+        ) : attentionItems.length === 0 ? (
+          <div style={{ padding: "24px 16px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "#f8fafc", borderRadius: 8, margin: "8px 0" }}>
+            <CheckCircle2 size={24} color="#16a34a" />
+            <span style={{ fontWeight: 600, color: "#1e293b", fontSize: 14 }}>Chưa có câu hỏi nào cần chú ý</span>
+            <small style={{ color: "#64748b", fontSize: 12.5 }}>Tất cả câu trả lời của AI đều có độ tin cậy tốt (trên 60%) hoặc hệ thống chưa ghi nhận câu hỏi fallback.</small>
+          </div>
+        ) : (
+          <div className="issue-list">
+            {attentionItems.slice(0, 5).map((item) => (
+              <div key={item.id}>
+                <CircleAlert style={{ color: item.confidence < 50 ? "#dc2626" : "#f59e0b" }} />
+                <span>
+                  <strong>&ldquo;{item.question}&rdquo;</strong>
+                  <small>
+                    Độ tin cậy {item.confidence}% · {item.intent}
+                    {item.is_fallback ? " · Fallback" : ""}
+                    {item.created_at ? ` · ${item.created_at}` : ""}
+                  </small>
+                </span>
+                <button onClick={() => setSelectedItem(item)}>Kiểm tra</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Modal Kiểm tra chi tiết phản hồi */}
+      {selectedItem && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(2px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#ffffff", borderRadius: 12, width: "100%", maxWidth: 660, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <CircleAlert size={20} color={selectedItem.confidence < 50 ? "#dc2626" : "#f59e0b"} />
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Chi tiết câu hỏi cần rà soát</h3>
+              </div>
+              <button onClick={() => setSelectedItem(null)} style={{ border: 0, background: "none", cursor: "pointer", padding: 4, borderRadius: 6, display: "flex", color: "#64748b" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: 20, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 20,
+                  background: selectedItem.confidence < 50 ? "#fee2e2" : "#fef3c7",
+                  color: selectedItem.confidence < 50 ? "#991b1b" : "#92400e"
+                }}>
+                  Độ tin cậy: {selectedItem.confidence}%
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: "#f1f5f9", color: "#334155" }}>
+                  Chủ đề: {selectedItem.intent}
+                </span>
+                {selectedItem.is_fallback && (
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "#fee2e2", color: "#991b1b" }}>
+                    Fallback kích hoạt
+                  </span>
+                )}
+                {selectedItem.created_at && (
+                  <span style={{ fontSize: 12, color: "#64748b", marginLeft: "auto" }}>
+                    {selectedItem.created_at}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", display: "block", marginBottom: 6 }}>
+                  Câu hỏi của người dùng:
+                </label>
+                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
+                  &ldquo;{selectedItem.question}&rdquo;
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#64748b", display: "block", marginBottom: 6 }}>
+                  Câu trả lời của AI:
+                </label>
+                <div style={{ background: "#ffffff", padding: "14px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13.5, lineHeight: 1.6, color: "#334155", maxHeight: 260, overflowY: "auto", whiteSpace: "pre-wrap" }}>
+                  {selectedItem.answer || "Không có nội dung câu trả lời."}
+                </div>
+              </div>
+
+              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", padding: "12px 14px", borderRadius: 8, fontSize: 13, color: "#1e40af", display: "flex", gap: 10 }}>
+                <Sparkles size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <strong>Khuyến nghị cho cán bộ:</strong> Nếu câu trả lời chưa đầy đủ hoặc không tìm thấy căn cứ pháp lý, hãy tải bổ sung văn bản quy định tại tab <strong>Tài liệu</strong> hoặc kiểm tra kịch bản tại tab <strong>Bộ kiểm thử</strong>.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              {onNavigateView && (
+                <button
+                  onClick={() => { setSelectedItem(null); onNavigateView("documents"); }}
+                  style={{ padding: "8px 14px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}
+                >
+                  Bổ sung tài liệu
+                </button>
+              )}
+              <button
+                onClick={() => setSelectedItem(null)}
+                style={{ padding: "8px 18px", borderRadius: 6, border: 0, background: "#157347", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Đã rà soát / Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem tất cả câu hỏi cần chú ý */}
+      {showAllModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(2px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#ffffff", borderRadius: 12, width: "100%", maxWidth: 720, maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <CircleAlert size={20} color="#f59e0b" />
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Tất cả câu hỏi cần rà soát ({attentionItems.length})</h3>
+              </div>
+              <button onClick={() => setShowAllModal(false)} style={{ border: 0, background: "none", cursor: "pointer", padding: 4, borderRadius: 6, display: "flex", color: "#64748b" }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+              {attentionItems.length === 0 ? (
+                <p style={{ color: "#64748b", textAlign: "center", padding: 20 }}>Không có câu hỏi nào cần rà soát.</p>
+              ) : (
+                attentionItems.map((item) => (
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fafafa" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+                      <CircleAlert size={18} color={item.confidence < 50 ? "#dc2626" : "#f59e0b"} style={{ flexShrink: 0 }} />
+                      <div style={{ overflow: "hidden" }}>
+                        <strong style={{ fontSize: 13.5, color: "#0f172a", display: "block", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                          &ldquo;{item.question}&rdquo;
+                        </strong>
+                        <small style={{ color: "#64748b", fontSize: 12 }}>
+                          Độ tin cậy {item.confidence}% · {item.intent} {item.is_fallback ? " · Fallback" : ""} {item.created_at ? ` · ${item.created_at}` : ""}
+                        </small>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setShowAllModal(false); setSelectedItem(item); }}
+                      style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #ccd6d0", background: "#ffffff", fontSize: 12.5, fontWeight: 600, color: "#157347", cursor: "pointer", flexShrink: 0 }}
+                    >
+                      Kiểm tra
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {onNavigateView && (
+                <button
+                  onClick={() => { setShowAllModal(false); onNavigateView("reports"); }}
+                  style={{ background: "none", border: 0, color: "#157347", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                >
+                  Xem chi tiết tại Nhật ký & báo cáo &rarr;
+                </button>
+              )}
+              <button
+                onClick={() => setShowAllModal(false)}
+                style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer" }}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 function ChunkContentRenderer({ text }: { text: string }) {
@@ -5699,7 +6031,7 @@ function AdminPortal({ userName, onLogout }: { userName: string; onLogout: () =>
         </aside>
         {sidebar && <button className="overlay" onClick={() => setSidebar(false)} />}
         <main className="admin-main">
-          {view === "overview" && <Overview />}
+          {view === "overview" && <Overview onNavigateView={(v) => setView(v)} />}
           {view === "documents" && <DocumentsView />}
           {view === "forms" && <FormsView />}
           {view === "tests" && <TestsView />}

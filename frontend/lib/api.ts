@@ -593,6 +593,37 @@ export const formsApi = {
 
 // ─── Reports API ──────────────────────────────────────────────────
 
+export type OverviewAttentionItem = {
+  id: string;
+  question: string;
+  answer: string;
+  confidence: number;
+  is_fallback: boolean;
+  intent: string;
+  conversation_id: string;
+  created_at: string;
+};
+
+export type OverviewData = {
+  metrics: {
+    faithfulness: number;
+    answer_relevancy: number;
+    context_precision: number;
+    fallback_rate: number;
+    faithfulness_diff: number;
+    relevancy_diff: number;
+    precision_diff: number;
+  };
+  chart_data: { label: string; faithfulness: number; relevancy: number }[];
+  data_stats: {
+    indexed_docs: number;
+    total_chunks: number;
+    questions_today: number;
+    positive_feedback_pct: number;
+  };
+  needs_attention: OverviewAttentionItem[];
+};
+
 export const reportsApi = {
   async getStats(): Promise<{
     feedback_stats: { total: number; up_pct: number; down_pct: number };
@@ -602,7 +633,7 @@ export const reportsApi = {
     const { data } = await client.get("/reports/stats");
     return data;
   },
-  async getOverview(): Promise<any> {
+  async getOverview(): Promise<OverviewData> {
     const { data } = await client.get("/reports/overview");
     return data;
   }
