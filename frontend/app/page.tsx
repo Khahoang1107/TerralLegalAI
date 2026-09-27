@@ -162,10 +162,14 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
       // Auto-match parent document
       if (meta.parent_hint) {
         documentsApi.getDocuments().then(allDocs => {
-          const match = allDocs.find(d =>
-            d.source_name.toLowerCase().includes(meta.parent_hint!.toLowerCase()) ||
-            (d.document_number && d.document_number.includes(meta.parent_hint!))
-          );
+          const hint = meta.parent_hint!.toLowerCase();
+          const match = allDocs.find(d => {
+            const name = (d.source_name || "").toLowerCase();
+            const num = (d.document_number || "").toLowerCase();
+            return name.includes(hint) || num.includes(hint) ||
+                   (hint.includes("1085") && (name.includes("tthc") || name.includes("thủ tục") || name.includes("ban hành"))) ||
+                   (hint.includes("1467") && (name.includes("quy trình") || name.includes("qtnb")));
+          });
           if (match) {
             setParentDocumentId(match.id);
           }
