@@ -148,53 +148,92 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
     setFile(selectedFile);
     setAutoExtracted(false);
 
-    // ─── BƯỚC 1: Bóc tách NGAY LẬP TỨC trong 0 giây từ tên file ───
-    const fn = selectedFile.name;
-    const fnUpper = fn.toUpperCase();
-    let quickNum = "";
-    const mNum = fn.match(/(\d{2,5})\s*[/_]?(?:QĐ|QD)[-_]?(?:UBND|ubnd)?/i);
-    if (mNum) quickNum = `${mNum[1]}/QĐ-UBND`;
+    // ─── BƯỚC 1: Universal Parser — Bóc tách tức thì (0s) từ tên file mọi văn bản VN ───
+    const rawName = selectedFile.name.replace(/\.(pdf|docx|doc)$/i, "").replace(/(\.signed|_signed|_\d+|\(\d+\))/gi, "").trim();
+    const fnUpper = rawName.toUpperCase();
 
-    if (fn.includes("1085")) {
-      setSourceName("Quyết định 1085/QĐ-UBND");
-      setDocumentNumber("1085/QĐ-UBND");
-      setIssuingAgency("Ủy ban nhân dân tỉnh Vĩnh Long");
-      setDocumentAction("new");
-      setPromulgationDate("2025-09-03");
-      setEffectiveDate("2025-09-03");
-      setAutoExtracted(true);
-    } else if (fn.includes("1467")) {
-      setSourceName("Quyết định 1467/QĐ-UBND");
-      setDocumentNumber("1467/QĐ-UBND");
-      setIssuingAgency("Ủy ban nhân dân tỉnh Vĩnh Long");
-      setDocumentAction("new");
-      setPromulgationDate("2025-09-30");
-      setEffectiveDate("2025-09-30");
-      setAutoExtracted(true);
-    } else if (fn.includes("4836")) {
-      if (fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("PHU LUC I")) {
-        setSourceName("Phụ lục I - 38 TTHC đặc thù (kèm 4836/QĐ-UBND)");
-        setDocumentAction("replace");
-      } else if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("PHU LUC II")) {
-        setSourceName("Phụ lục II - Quy trình nội bộ 38 TTHC (kèm 4836/QĐ-UBND)");
-        setDocumentAction("replace");
+    // 1. Nhận diện số / ký hiệu văn bản tổng quát (VD: 4836/QĐ-UBND, 102/2024/NĐ-CP, 79/2026/QĐ-UBND...)
+    let parsedDocNum = "";
+    const mFullNum = rawName.match(/(\d{1,5}\/[0-9A-ZĐa-zđ\-_]+)/);
+    if (mFullNum) {
+      parsedDocNum = mFullNum[1];
+    } else {
+      const mShortNum = rawName.match(/(\d{1,5})\s*[/_]?(?:QĐ|QD)[-_]?(?:UBND|ubnd)?/i);
+      if (mShortNum) {
+        parsedDocNum = `${mShortNum[1]}/QĐ-UBND`;
       } else {
-        setSourceName("Quyết định 4836/QĐ-UBND");
-        setDocumentAction("replace");
+        const mNd = rawName.match(/(\d{1,5})\s*[/_]?(?:NĐ|ND)[-_]?(?:CP|cp)?/i);
+        if (mNd) parsedDocNum = `${mNd[1]}/NĐ-CP`;
       }
-      setDocumentNumber("4836/QĐ-UBND");
+    }
+    if (parsedDocNum) setDocumentNumber(parsedDocNum);
+
+    // 2. Nhận diện loại văn bản & nhóm (Quyết định, Nghị định, Thông tư, Luật, Phụ lục)
+    let autoGroup = "quyet_dinh";
+    let autoTitle = "";
+
+    if (fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("PHU LUC I")) {
+      autoTitle = `Phụ lục I - 38 TTHC đặc thù ${parsedDocNum ? `(kèm ${parsedDocNum})` : ""}`.trim();
+      autoGroup = "quyet_dinh";
+    } else if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("PHU LUC II") || fnUpper.includes("QTNB")) {
+      autoTitle = `Phụ lục II - Quy trình nội bộ 38 TTHC ${parsedDocNum ? `(kèm ${parsedDocNum})` : ""}`.trim();
+      autoGroup = "quyet_dinh";
+    } else if (fnUpper.includes("NGHỊ ĐỊNH") || fnUpper.includes(" NĐ") || fnUpper.includes("ND ")) {
+      autoTitle = `Nghị định ${parsedDocNum || rawName}`;
+      autoGroup = "luat";
+      setIssuingAgency("Chính phủ");
+    } else if (fnUpper.includes("THÔNG TƯ") || fnUpper.includes(" TT")) {
+      autoTitle = `Thông tư ${parsedDocNum || rawName}`;
+      autoGroup = "luat";
+    } else if (fnUpper.includes("LUẬT")) {
+      autoTitle = rawName;
+      autoGroup = "luat";
+      setIssuingAgency("Quốc hội");
+    } else if (parsedDocNum) {
+      autoTitle = `Quyết định ${parsedDocNum}`;
+      autoGroup = "quyet_dinh";
       setIssuingAgency("Ủy ban nhân dân tỉnh Vĩnh Long");
-      setPromulgationDate("2026-08-03");
-      setEffectiveDate("2026-08-04");
-      setAutoExtracted(true);
-    } else if (quickNum) {
-      setSourceName(`Quyết định ${quickNum}`);
-      setDocumentNumber(quickNum);
-      setIssuingAgency("Ủy ban nhân dân tỉnh Vĩnh Long");
-      setAutoExtracted(true);
+    } else {
+      autoTitle = rawName;
     }
 
-    // Nếu file quá lớn (> 10MB như file 150MB), không cần đẩy 150MB lên chỉ để bóc metadata
+    if (autoTitle) setSourceName(autoTitle);
+    setGroupType(autoGroup);
+
+    // 3. Tự động bóc tách ngày từ tên file nếu có (VD: "ng 3.8", "ngay 24.07.2026")
+    const mDate = rawName.match(/(?:ngày|ng|d)?\s*(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{4}))?/i);
+    if (mDate) {
+      const d = mDate[1].padStart(2, "0");
+      const m = mDate[2].padStart(2, "0");
+      const y = mDate[3] || "2026";
+      const formattedDate = `${y}-${m}-${d}`;
+      setPromulgationDate(formattedDate);
+      setEffectiveDate(formattedDate);
+    }
+
+    // 4. Khớp văn bản gốc tự động từ danh sách tài liệu hiện có (cho các văn bản thay thế / sửa đổi)
+    if (existingDocs.length > 0) {
+      // Nếu là Phụ lục II hoặc văn bản quy trình -> ưu tiên khớp với Quy trình nội bộ cũ
+      if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("QTNB") || fnUpper.includes("1467")) {
+        const match = existingDocs.find(d => d.source_name.toLowerCase().includes("quy trình") || d.source_name.includes("1467"));
+        if (match) {
+          setDocumentAction("replace");
+          setParentDocumentId(match.id);
+        }
+      }
+      // Nếu là QĐ mới bãi bỏ hoặc Phụ lục I -> ưu tiên khớp với Bộ TTHC cũ
+      else if (fnUpper.includes("4836") || fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("THAY THẾ")) {
+        const match = existingDocs.find(d => d.source_name.toLowerCase().includes("tthc") || d.source_name.includes("1085"));
+        if (match) {
+          setDocumentAction("replace");
+          setParentDocumentId(match.id);
+        }
+      }
+    }
+
+    setAutoExtracted(true);
+
+    // Nếu file quá lớn (> 10MB như file 150MB), dừng ở đây để tránh treo mạng người dùng
     if (selectedFile.size > 10 * 1024 * 1024) {
       setExtracting(false);
       return;
