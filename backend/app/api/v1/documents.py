@@ -377,22 +377,13 @@ async def upload_document(
     promulgation_date: Optional[str] = Form(None, description="Ngày ban hành (YYYY-MM-DD)"),
     effective_date: Optional[str] = Form(None, description="Ngày hiệu lực (YYYY-MM-DD)"),
     issuing_agency: Optional[str] = Form(None, description="Cơ quan ban hành"),
-    parent_document_id: Optional[str] = Form(None, description="ID văn bản gốc (khi amend/replace)"),
+    parent_document_id: Optional[str] = Form(None, description="ID văn bản gốc đơn lẻ (tương thích ngược)"),
+    parent_document_ids: Optional[str] = Form(None, description="Danh sách ID văn bản gốc phân tách bởi dấu phẩy"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Upload tài liệu mới / sửa đổi bổ sung / thay thế toàn bộ.
-
-    document_action:
-      - "new":     Văn bản hoàn toàn mới, validity = "Còn hiệu lực"
-      - "amend":   Sửa đổi bổ sung — bản gốc chuyển "Đã sửa đổi bổ sung", bản mới "Còn hiệu lực"
-      - "replace": Thay thế toàn bộ — bản cũ chuyển "Hết hiệu lực", bản mới "Còn hiệu lực"
-
-    Khi amend/replace, parent_document_id bắt buộc. Hệ thống tự động:
-      1. Cập nhật validity_status của bản gốc
-      2. Lưu quan hệ hai chiều vào related_documents (amends ↔ amended_by, replaces ↔ replaced_by)
-      3. Cập nhật payload trong Qdrant (khi replace)
+    Upload tài liệu mới / sửa đổi bổ sung / thay thế toàn bộ (hỗ trợ bãi bỏ nhiều văn bản cùng lúc).
     """
     # Chỉ admin mới được upload
     if current_user.role not in ("admin",):
@@ -418,18 +409,29 @@ async def upload_document(
     if procedure_type not in valid_procedures:
         raise HTTPException(status_code=400, detail=f"procedure_type không hợp lệ: {procedure_type}")
 
-    # Validate parent_document_id khi amend/replace
-    parent_doc = None
+    # Validate parent_document_ids khi amend/replace (hỗ trợ nhiều văn bản gốc)
+    parent_docs = []
     if document_action in ("amend", "replace"):
-        if not parent_document_id:
-            raise HTTPException(status_code=400, detail="Phải chọn văn bản gốc khi sửa đổi/thay thế.")
-        try:
-            parent_uuid = uuid.UUID(parent_document_id)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="parent_document_id không hợp lệ")
-        parent_doc = await db.scalar(select(Document).where(Document.id == parent_uuid))
-        if not parent_doc:
-            raise HTTPException(status_code=404, detail="Không tìm thấy văn bản gốc")
+        target_ids = []
+        if parent_document_ids:
+            target_ids.extend([x.strip() for x in parent_document_ids.split(",") if x.strip()])
+        if parent_document_id and parent_document_id.strip() not in target_ids:
+            target_ids.append(parent_document_id.strip())
+
+        if not target_ids:
+            raise HTTPException(status_code=400, detail="Phải chọn ít nhất một văn bản gốc khi sửa đổi/thay thế.")
+
+        for pid in target_ids:
+            try:
+                parent_uuid = uuid.UUID(pid)
+            except ValueError:
+                continue
+            doc_found = await db.scalar(select(Document).where(Document.id == parent_uuid))
+            if doc_found:
+                parent_docs.append(doc_found)
+
+        if not parent_docs:
+            raise HTTPException(status_code=404, detail="Không tìm thấy văn bản gốc được chỉ định.")
 
     # Parse dates
     parsed_promulgation = None
@@ -466,65 +468,56 @@ async def upload_document(
     new_related: list[dict] = []
     effective_date_str = parsed_effective.isoformat() if parsed_effective else None
 
-    if document_action == "amend" and parent_doc:
-        # Bản gốc → "Đã sửa đổi bổ sung"
-        parent_doc.validity_status = "Đã sửa đổi bổ sung"
+    if document_action == "amend" and parent_docs:
+        for p_doc in parent_docs:
+            p_doc.validity_status = "Đã sửa đổi bổ sung"
+            parent_related = list(p_doc.related_documents or [])
+            parent_related.append({
+                "document_id": doc_id,
+                "source_name": source_name,
+                "relation": "amended_by",
+                "effective_date": effective_date_str,
+            })
+            p_doc.related_documents = parent_related
 
-        # Liên kết bản gốc → bản mới (amended_by)
-        parent_related = list(parent_doc.related_documents or [])
-        parent_related.append({
-            "document_id": doc_id,
-            "source_name": source_name,
-            "relation": "amended_by",
-            "effective_date": effective_date_str,
-        })
-        parent_doc.related_documents = parent_related
+            new_related.append({
+                "document_id": str(p_doc.id),
+                "source_name": p_doc.source_name,
+                "relation": "amends",
+                "effective_date": effective_date_str,
+            })
+            logger.info(f"Amend: {p_doc.source_name} → Đã sửa đổi bổ sung bởi {source_name}")
 
-        # Liên kết bản mới → bản gốc (amends)
-        new_related.append({
-            "document_id": str(parent_doc.id),
-            "source_name": parent_doc.source_name,
-            "relation": "amends",
-            "effective_date": effective_date_str,
-        })
-
-        # Provision payloads remain active until an administrator confirms the
-        # exact affected Điều/Khoản in the amendment review workflow.
-
-        logger.info(f"Amend: {parent_doc.source_name} → Đã sửa đổi bổ sung bởi {source_name}")
-
-    elif document_action == "replace" and parent_doc:
-        # Bản gốc → "Hết hiệu lực"
-        parent_doc.validity_status = "Hết hiệu lực"
-        await db.execute(
-            update(DocumentChunk)
-            .where(DocumentChunk.document_id == parent_doc.id)
-            .values(
-                validity_status="repealed",
-                effective_to=parsed_effective,
-                validity_note=f"Bị thay thế toàn bộ bởi {source_name}",
+    elif document_action == "replace" and parent_docs:
+        for p_doc in parent_docs:
+            p_doc.validity_status = "Hết hiệu lực"
+            await db.execute(
+                update(DocumentChunk)
+                .where(DocumentChunk.document_id == p_doc.id)
+                .values(
+                    validity_status="repealed",
+                    effective_to=parsed_effective,
+                    validity_note=f"Bị thay thế toàn bộ bởi {source_name}",
+                )
             )
-        )
+            parent_related = list(p_doc.related_documents or [])
+            parent_related.append({
+                "document_id": doc_id,
+                "source_name": source_name,
+                "relation": "replaced_by",
+                "effective_date": effective_date_str,
+            })
+            p_doc.related_documents = parent_related
 
-        # Liên kết bản gốc → bản mới (replaced_by)
-        parent_related = list(parent_doc.related_documents or [])
-        parent_related.append({
-            "document_id": doc_id,
-            "source_name": source_name,
-            "relation": "replaced_by",
-            "effective_date": effective_date_str,
-        })
-        parent_doc.related_documents = parent_related
+            new_related.append({
+                "document_id": str(p_doc.id),
+                "source_name": p_doc.source_name,
+                "relation": "replaces",
+                "effective_date": effective_date_str,
+            })
+            logger.info(f"Replace: {p_doc.source_name} → Hết hiệu lực do bị thay thế toàn bộ bởi {source_name}")
 
-        # Liên kết bản mới → bản gốc (replaces)
-        new_related.append({
-            "document_id": str(parent_doc.id),
-            "source_name": parent_doc.source_name,
-            "relation": "replaces",
-            "effective_date": effective_date_str,
-        })
-
-        # Cập nhật Qdrant payload của bản cũ
+        # Cập nhật Qdrant payload của các bản cũ
         try:
             from backend.app.embedding.vector_store import VectorStore
             vs = VectorStore(
@@ -532,14 +525,13 @@ async def upload_document(
                 port=settings.qdrant_port,
                 collection_name=settings.qdrant_collection_name,
             )
-            vs.update_validity_status(
-                source_name=parent_doc.source_name,
-                new_status="repealed",
-            )
+            for p_doc in parent_docs:
+                vs.update_validity_status(
+                    source_name=p_doc.source_name,
+                    new_status="repealed",
+                )
         except Exception as e:
             logger.warning(f"Không thể cập nhật Qdrant payload cho văn bản cũ: {e}")
-
-        logger.info(f"Replace: {parent_doc.source_name} → Hết hiệu lực, thay bởi {source_name}")
 
     # ── Tạo record Document mới ──────────────────────────────────
     doc = Document(

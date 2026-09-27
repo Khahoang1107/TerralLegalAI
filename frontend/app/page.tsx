@@ -130,6 +130,8 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const [effectiveDate, setEffectiveDate] = useState("");
   const [issuingAgency, setIssuingAgency] = useState("");
   const [parentDocumentId, setParentDocumentId] = useState("");
+  const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
+  const [parentFilterQuery, setParentFilterQuery] = useState("");
   const [existingDocs, setExistingDocs] = useState<{ id: string; source_name: string; validity_status: string }[]>([]);
 
   const [extracting, setExtracting] = useState(false);
@@ -242,16 +244,32 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
 
     // 4. Khớp văn bản gốc tự động từ danh sách tài liệu hiện có (cho các văn bản thay thế / sửa đổi)
     if (existingDocs.length > 0) {
-      if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("QTNB") || fnUpper.includes("1467")) {
+      if (fnUpper.includes("4836") || fnUpper.includes("THAY THẾ")) {
+        setDocumentAction("replace");
+        // QĐ 4836 bãi bỏ cả QĐ 1085 và QĐ 1467! Tự động tích chọn cả hai văn bản này
+        const matched = existingDocs.filter(d =>
+          d.source_name.includes("1085") ||
+          d.source_name.includes("1467") ||
+          d.source_name.toLowerCase().includes("tthc") ||
+          d.source_name.toLowerCase().includes("quy trình")
+        );
+        if (matched.length > 0) {
+          const ids = matched.map(m => m.id);
+          setSelectedParentIds(ids);
+          setParentDocumentId(ids[0]);
+        }
+      } else if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("QTNB") || fnUpper.includes("1467")) {
         const match = existingDocs.find(d => d.source_name.toLowerCase().includes("quy trình") || d.source_name.includes("1467"));
         if (match) {
           setDocumentAction("replace");
+          setSelectedParentIds([match.id]);
           setParentDocumentId(match.id);
         }
-      } else if (fnUpper.includes("4836") || fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("THAY THẾ")) {
+      } else if (fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("1085")) {
         const match = existingDocs.find(d => d.source_name.toLowerCase().includes("tthc") || d.source_name.includes("1085"));
         if (match) {
           setDocumentAction("replace");
+          setSelectedParentIds([match.id]);
           setParentDocumentId(match.id);
         }
       }
@@ -311,7 +329,11 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !sourceName.trim()) { setError("Vui lòng chọn file và nhập tên nguồn."); return; }
-    if (documentAction !== "new" && !parentDocumentId) { setError("Vui lòng chọn văn bản gốc."); return; }
+    const finalParentIds = selectedParentIds.length > 0 ? selectedParentIds : (parentDocumentId ? [parentDocumentId] : []);
+    if (documentAction !== "new" && finalParentIds.length === 0) {
+      setError("Vui lòng chọn ít nhất một văn bản gốc bị tác động.");
+      return;
+    }
     setLoading(true); setError("");
     try {
       await documentsApi.uploadDocument(file, sourceName.trim(), groupType, procedureType, {
@@ -320,7 +342,8 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
         promulgationDate: promulgationDate || undefined,
         effectiveDate: effectiveDate || undefined,
         issuingAgency: issuingAgency.trim() || undefined,
-        parentDocumentId: parentDocumentId || undefined,
+        parentDocumentId: finalParentIds[0] || undefined,
+        parentDocumentIds: finalParentIds,
       });
       onSuccess(); onClose();
     } catch (err) {
@@ -334,7 +357,7 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <form className="rename-dialog" style={{ maxWidth: 560, width: "95%", maxHeight: "90vh", overflowY: "auto" }} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
+      <form className="rename-dialog" style={{ maxWidth: 580, width: "95%", maxHeight: "90vh", overflowY: "auto" }} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
         <div className="dialog-head">
           <h2>Tải tài liệu lên</h2>
           <button type="button" className="icon-button" onClick={onClose}><X size={18} /></button>
@@ -357,7 +380,13 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
                 transition: "all 0.15s",
               }}>
                 <input type="radio" name="docAction" value={opt.value} checked={documentAction === opt.value}
-                  onChange={() => { setDocumentAction(opt.value); if (opt.value === "new") setParentDocumentId(""); }}
+                  onChange={() => {
+                    setDocumentAction(opt.value);
+                    if (opt.value === "new") {
+                      setParentDocumentId("");
+                      setSelectedParentIds([]);
+                    }
+                  }}
                   style={{ accentColor: opt.color }} />
                 {opt.label}
               </label>
@@ -365,23 +394,105 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
           </div>
         </div>
 
-        {/* Chọn VB gốc (khi amend/replace) */}
+        {/* Chọn VB gốc (khi amend/replace) - Hỗ trợ bãi bỏ nhiều văn bản cùng lúc */}
         {documentAction !== "new" && (
-          <label style={{ ...labelStyle, marginBottom: 12 }}>
-            Văn bản gốc bị tác động *
-            <select value={parentDocumentId} onChange={e => setParentDocumentId(e.target.value)}
-              className="compact-select" style={{ height: 40 }} required>
-              <option value="">— Chọn văn bản gốc —</option>
-              {existingDocs.map(d => (
-                <option key={d.id} value={d.id}>{d.source_name} ({d.validity_status})</option>
-              ))}
-            </select>
-            <small style={{ color: "#64748b", fontWeight: 400 }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                Văn bản gốc bị tác động * ({selectedParentIds.length} đã chọn)
+              </span>
+              {existingDocs.length > 0 && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedParentIds(existingDocs.map(d => d.id))}
+                    style={{ background: "none", border: 0, color: "#2563eb", fontSize: 11.5, cursor: "pointer", fontWeight: 600, padding: 0 }}
+                  >
+                    Chọn tất cả
+                  </button>
+                  <span style={{ color: "#cbd5e1", fontSize: 11 }}>|</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedParentIds([]); setParentDocumentId(""); }}
+                    style={{ background: "none", border: 0, color: "#64748b", fontSize: 11.5, cursor: "pointer", fontWeight: 500, padding: 0 }}
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick search filter nếu có từ 4 văn bản trở lên */}
+            {existingDocs.length > 3 && (
+              <input
+                type="text"
+                value={parentFilterQuery}
+                onChange={e => setParentFilterQuery(e.target.value)}
+                placeholder="🔍 Tìm nhanh văn bản gốc..."
+                style={{ ...inputStyle, padding: "6px 10px", fontSize: 12.5, width: "100%", marginBottom: 8 }}
+              />
+            )}
+
+            {/* Checklist văn bản */}
+            <div style={{
+              maxHeight: 160, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8,
+              background: "#f8fafc", padding: "6px 8px", display: "flex", flexDirection: "column", gap: 4
+            }}>
+              {existingDocs.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "#94a3b8", fontSize: 12.5 }}>
+                  Chưa có văn bản nào trong hệ thống.
+                </div>
+              ) : (
+                existingDocs
+                  .filter(d => !parentFilterQuery.trim() || d.source_name.toLowerCase().includes(parentFilterQuery.toLowerCase()))
+                  .map(d => {
+                    const isChecked = selectedParentIds.includes(d.id);
+                    return (
+                      <label
+                        key={d.id}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+                          borderRadius: 6, cursor: "pointer", fontSize: 12.5,
+                          background: isChecked ? "#eff6ff" : "transparent",
+                          border: isChecked ? "1px solid #bfdbfe" : "1px solid transparent",
+                          transition: "all 0.1s ease"
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedParentIds(prev => [...prev, d.id]);
+                              setParentDocumentId(d.id);
+                            } else {
+                              setSelectedParentIds(prev => prev.filter(id => id !== d.id));
+                            }
+                          }}
+                          style={{ accentColor: documentAction === "replace" ? "#dc2626" : "#d97706" }}
+                        />
+                        <span style={{ flex: 1, fontWeight: isChecked ? 600 : 400, color: isChecked ? "#1e40af" : "#334155" }}>
+                          {d.source_name}
+                        </span>
+                        <span style={{
+                          fontSize: 10.5, padding: "2px 6px", borderRadius: 4,
+                          background: d.validity_status === "Còn hiệu lực" ? "#dcfce7" : "#fee2e2",
+                          color: d.validity_status === "Còn hiệu lực" ? "#166534" : "#991b1b"
+                        }}>
+                          {d.validity_status}
+                        </span>
+                      </label>
+                    );
+                  })
+              )}
+            </div>
+
+            <small style={{ color: "#64748b", fontWeight: 400, display: "block", marginTop: 6, fontSize: 12 }}>
               {documentAction === "amend"
-                ? "Văn bản gốc sẽ chuyển sang trạng thái \"Đã sửa đổi bổ sung\""
-                : "Văn bản cũ sẽ chuyển sang trạng thái \"Hết hiệu lực\""}
+                ? "💡 Tất cả văn bản được chọn sẽ chuyển sang trạng thái \"Đã sửa đổi bổ sung\"."
+                : "💡 Tất cả văn bản được chọn sẽ bị chuyển sang trạng thái \"Hết hiệu lực\" (bãi bỏ đồng loạt)."}
             </small>
-          </label>
+          </div>
         )}
 
         {/* File upload zone */}

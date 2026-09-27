@@ -416,6 +416,7 @@ export const documentsApi = {
       effectiveDate?: string;
       issuingAgency?: string;
       parentDocumentId?: string;
+      parentDocumentIds?: string[];
     }
   ): Promise<UploadDocumentResponse> {
     const form = new FormData();
@@ -429,6 +430,9 @@ export const documentsApi = {
     if (opts?.effectiveDate) form.append("effective_date", opts.effectiveDate);
     if (opts?.issuingAgency) form.append("issuing_agency", opts.issuingAgency);
     if (opts?.parentDocumentId) form.append("parent_document_id", opts.parentDocumentId);
+    if (opts?.parentDocumentIds && opts.parentDocumentIds.length > 0) {
+      form.append("parent_document_ids", opts.parentDocumentIds.join(","));
+    }
     const { data } = await client.post<UploadDocumentResponse>("/documents/upload", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
