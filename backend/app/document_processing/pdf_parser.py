@@ -123,73 +123,46 @@ class PDFParser:
         pages = []
         all_text_parts = []
 
-        import cv2
-        import numpy as np
-        import subprocess
-        import tempfile
-        import os
-        from PIL import Image
-        import io
-
         for page_num in range(len(doc)):
             page = doc[page_num]
             raw_text = page.get_text("text")
             cleaned = self._clean_page_text(raw_text)
 
-            # OCR fallback for scanned pages
+            # OCR fallback for scanned pages (chỉ chạy khi trang hoàn toàn không có text layer)
             if len(cleaned.strip()) < 20:
-                logger.info(f"  Trang {page_num + 1} trống hoặc là ảnh scan, đang chạy OCR (Tesseract CLI với OpenCV)...")
                 try:
-                    # Nâng DPI lên 300 để OCR chính xác hơn
-                    pix = page.get_pixmap(dpi=300)
-                    img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    
-                    # Chuyển PIL Image sang OpenCV format để xử lý
-                    cv_img = np.array(img)
-                    if len(cv_img.shape) == 3:
-                        cv_img = cv_img[:, :, ::-1].copy() # RGB to BGR
-                    
-                    # Preprocessing ảnh để tăng độ chính xác OCR
-                    gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-                    # Phóng to ảnh (upscale) để tesseract nhận diện tốt hơn với font nhỏ
-                    gray = cv2.resize(gray, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
-                    # Binarization (Adaptive Thresholding) để khử nhiễu nền
-                    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
-                    
-                    # Lưu ảnh tạm ra đĩa để đưa vào tesseract CLI
+                    import subprocess
+                    import tempfile
+                    import os
+
+                    pix = page.get_pixmap(dpi=200)
                     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_img:
-                        cv2.imwrite(tmp_img.name, thresh)
+                        pix.save(tmp_img.name)
                         tmp_img_path = tmp_img.name
-                        
-                    # Dùng subprocess gọi Tesseract CLI trực tiếp để tránh lỗi pandas/pytesseract trên Windows AppLocker
+
                     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp_out:
                         tmp_out_path = tmp_out.name
-                        
-                    # Lưu ý: Tesseract CLI tự thêm đuôi .txt vào file output
+
                     out_base = tmp_out_path.rsplit('.', 1)[0]
                     cmd = [
                         "tesseract",
                         tmp_img_path,
                         out_base,
                         "-l", "vie",
-                        "--psm", "3" # Assume fully automatic page segmentation
+                        "--psm", "3"
                     ]
-                    
-                    subprocess.run(cmd, check=True, capture_output=True)
-                    
-                    # Đọc kết quả
-                    with open(out_base + ".txt", "r", encoding="utf-8") as f:
-                        ocr_text = f.read()
-                        
-                    # Dọn dẹp file tạm
-                    os.remove(tmp_img_path)
-                    os.remove(out_base + ".txt")
-                    if os.path.exists(tmp_out_path):
-                        os.remove(tmp_out_path)
-                        
-                    cleaned = self._clean_page_text(ocr_text)
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=30)
+                    if os.path.exists(out_base + ".txt"):
+                        with open(out_base + ".txt", "r", encoding="utf-8") as f:
+                            ocr_text = f.read()
+                        if ocr_text.strip():
+                            cleaned = self._clean_page_text(ocr_text)
+
+                    if os.path.exists(tmp_img_path): os.remove(tmp_img_path)
+                    if os.path.exists(out_base + ".txt"): os.remove(out_base + ".txt")
+                    if os.path.exists(tmp_out_path): os.remove(tmp_out_path)
                 except Exception as e:
-                    logger.error(f"  Lỗi OCR ở trang {page_num + 1}: {e}")
+                    logger.debug(f"Trang {page_num + 1} không chạy được OCR fallback ({e}), giữ text mặc định.")
 
             parsed_page = ParsedPage(
                 page_number=page_num + 1,
