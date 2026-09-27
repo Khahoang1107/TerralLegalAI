@@ -310,43 +310,117 @@ class RAGPipeline:
             is_fallback=False,
         )
 
+    # ─── Intent Classifier (LLM-based) ──────────────────────────────────────
+    _INTENT_CLASSIFIER_PROMPT = """Bạn là chuyên gia phân tích câu hỏi về thủ tục hành chính đất đai Việt Nam.
+
+Phân loại câu hỏi sau vào đúng một trong các nhóm:
+- hoi_ho_so: Hỏi về giấy tờ, hồ sơ, thành phần hồ sơ cần chuẩn bị
+- hoi_trinh_tu: Hỏi về quy trình, các bước thực hiện, trình tự
+- hoi_thoi_han: Hỏi về thời gian giải quyết, bao nhiêu ngày
+- hoi_le_phi: Hỏi về lệ phí, chi phí, tiền thuế, phí trước bạ
+- hoi_co_quan: Hỏi về nơi nộp hồ sơ, cơ quan thực hiện
+- hoi_dieu_kien: Hỏi về điều kiện, yêu cầu, có được phép không
+- hoi_mau_don: Hỏi về mẫu đơn, tờ khai, biểu mẫu
+- general: Câu hỏi chung về thủ tục đất đai
+
+Câu hỏi: "{question}"
+
+Chỉ trả về TÊN NHÓM (không giải thích), ví dụ: hoi_ho_so"""
+
+    # ─── Query Rewriter (LLM-based) ──────────────────────────────────────────
+    _QUERY_REWRITE_PROMPT = """Bạn là chuyên gia pháp lý đất đai Việt Nam. Nhiệm vụ: viết lại câu hỏi của người dân thành ngôn ngữ văn bản pháp luật để tìm kiếm tài liệu hiệu quả hơn.
+
+Quy tắc:
+- Thay thế từ thông thường bằng thuật ngữ pháp lý chính xác
+- Thêm tên thủ tục hành chính chuẩn nếu xác định được
+- Giữ nguyên ý nghĩa gốc, không thêm thông tin mới
+- Trả về DUY NHẤT câu đã viết lại, không giải thích
+
+Ví dụ:
+- "cha mẹ tặng đất cho con" → "tặng cho quyền sử dụng đất đăng ký biến động thành phần hồ sơ trình tự"
+- "bán nhà sang tên" → "chuyển nhượng quyền sử dụng đất tài sản gắn liền đăng ký biến động"
+- "đổi sổ đỏ cũ" → "cấp đổi giấy chứng nhận quyền sử dụng đất thủ tục trình tự hồ sơ"
+- "thừa kế đất cha mẹ để lại" → "đăng ký biến động thừa kế quyền sử dụng đất thành phần hồ sơ"
+- "mất sổ đỏ làm lại" → "cấp lại giấy chứng nhận quyền sử dụng đất trường hợp bị mất"
+
+Câu hỏi gốc: "{question}"
+
+Câu hỏi đã viết lại:"""
+
     def _detect_intent(self, question: str) -> str:
-        """Nhận dạng ý định câu hỏi từ từ khoá."""
+        """
+        Nhận dạng ý định câu hỏi bằng LLM (fast call).
+        Fallback về heuristic nếu LLM thất bại.
+        """
+        # Heuristic fast-path (không tốn API call cho câu rõ ràng)
         q = question.lower()
-        intent_keywords = {
-            "hoi_ho_so": ["hồ sơ", "giấy tờ", "cần gì", "cần có gì", "chuẩn bị gì"],
-            "hoi_trinh_tu": ["trình tự", "các bước", "làm thế nào", "thủ tục", "làm sao"],
-            "hoi_thoi_han": ["mất bao lâu", "bao nhiêu ngày", "thời hạn", "thời gian"],
-            "hoi_le_phi": ["lệ phí", "phí", "tiền", "chi phí", "tốn bao nhiêu"],
-            "hoi_co_quan": ["nộp ở đâu", "cơ quan", "văn phòng", "ở đâu"],
-            "hoi_dieu_kien": ["điều kiện", "yêu cầu", "có được không", "có thể không"],
-            "hoi_mau_don": ["mẫu đơn", "mẫu số", "tờ khai", "biểu mẫu"],
+        fast_map = {
+            "hoi_ho_so": ["hồ sơ", "giấy tờ", "cần gì", "cần có gì", "chuẩn bị", "nộp gì"],
+            "hoi_trinh_tu": ["trình tự", "các bước", "làm thế nào", "thủ tục", "làm sao", "quy trình"],
+            "hoi_thoi_han": ["mất bao lâu", "bao nhiêu ngày", "thời hạn", "thời gian giải quyết"],
+            "hoi_le_phi": ["lệ phí", "phí trước bạ", "thuế", "chi phí", "tốn bao nhiêu", "mất tiền"],
+            "hoi_co_quan": ["nộp ở đâu", "nộp tại đâu", "văn phòng đăng ký", "trung tâm hành chính"],
+            "hoi_dieu_kien": ["điều kiện", "yêu cầu", "có được không", "được phép không"],
+            "hoi_mau_don": ["mẫu đơn", "mẫu số", "tờ khai", "biểu mẫu", "đơn đăng ký"],
         }
-        for intent, keywords in intent_keywords.items():
+        for intent, keywords in fast_map.items():
             if any(kw in q for kw in keywords):
                 return intent
-        return "general"
+
+        # LLM call cho câu hỏi không rõ ràng
+        try:
+            prompt = self._INTENT_CLASSIFIER_PROMPT.format(question=question)
+            response = self.gemini_client.models.generate_content(
+                model=self.gemini_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.0,
+                    max_output_tokens=20,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            intent = (response.text or "").strip().lower()
+            valid_intents = {"hoi_ho_so", "hoi_trinh_tu", "hoi_thoi_han", "hoi_le_phi",
+                            "hoi_co_quan", "hoi_dieu_kien", "hoi_mau_don", "general"}
+            return intent if intent in valid_intents else "general"
+        except Exception as exc:
+            logger.debug("Intent classifier LLM failed, using 'general': %s", exc)
+            return "general"
 
     def _expand_query(self, question: str) -> str:
         """
-        Mở rộng câu hỏi với các từ đồng nghĩa pháp lý.
-        Ví dụ: "sang tên sổ đỏ" → thêm "chuyển nhượng quyền sử dụng đất"
+        Query Rewriting bằng LLM: chuyển ngôn ngữ thông thường → thuật ngữ pháp lý.
+        Fallback về bản gốc nếu LLM thất bại.
         """
-        expansions = {
-            "sang tên sổ đỏ": "chuyển nhượng quyền sử dụng đất đăng ký biến động",
-            "sổ đỏ": "giấy chứng nhận quyền sử dụng đất",
-            "sổ hồng": "giấy chứng nhận quyền sử dụng đất",
-            "bán đất": "chuyển nhượng quyền sử dụng đất",
-            "cho đất": "tặng cho quyền sử dụng đất",
-            "cấp đổi sổ": "cấp đổi giấy chứng nhận quyền sử dụng đất",
-            "đổi sổ": "cấp đổi giấy chứng nhận",
-        }
-        expanded = question
-        for informal, formal in expansions.items():
-            if informal in question.lower():
-                expanded = f"{question} {formal}"
-                break
-        return expanded
+        # Fast-path: nếu câu đã dùng thuật ngữ pháp lý → không cần rewrite
+        legal_terms = [
+            "quyền sử dụng đất", "đăng ký biến động", "giấy chứng nhận",
+            "thành phần hồ sơ", "trình tự thực hiện", "nghị định", "thông tư",
+        ]
+        if any(term in question.lower() for term in legal_terms):
+            return question
+
+        # LLM Query Rewriting
+        try:
+            prompt = self._QUERY_REWRITE_PROMPT.format(question=question)
+            response = self.gemini_client.models.generate_content(
+                model=self.gemini_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.0,
+                    max_output_tokens=120,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            rewritten = (response.text or "").strip()
+            if rewritten and len(rewritten) > 5:
+                logger.info("🔄 Query rewritten: '%s' → '%s'", question[:60], rewritten[:80])
+                # Nối cả câu gốc lẫn câu rewritten để không mất context
+                return f"{question} {rewritten}"
+        except Exception as exc:
+            logger.debug("Query rewriting LLM failed, using original: %s", exc)
+
+        return question
 
     def _rerank(
         self,

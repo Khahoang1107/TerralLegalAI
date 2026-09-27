@@ -89,3 +89,9 @@ htmlcov/
 /forms_chunks.txt
 /formsview_returns.txt
 *.backup
+scratch/
+CAU_TRUC_LUAN_VAN_*.md
+LuanVan/
+*luan_van*
+*LUAN_VAN*
+*de_cuong*

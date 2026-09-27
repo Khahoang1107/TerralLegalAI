@@ -132,6 +132,9 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const [parentDocumentId, setParentDocumentId] = useState("");
   const [existingDocs, setExistingDocs] = useState<{ id: string; source_name: string; validity_status: string }[]>([]);
 
+  const [extracting, setExtracting] = useState(false);
+  const [autoExtracted, setAutoExtracted] = useState(false);
+
   // Load danh sách VB hiện có khi mở modal
   useEffect(() => {
     documentsApi.getDocuments().then(docs => {
@@ -141,10 +144,45 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
     }).catch(() => {});
   }, []);
 
+  const processFile = async (selectedFile: File) => {
+    setFile(selectedFile);
+    setExtracting(true);
+    setAutoExtracted(false);
+    try {
+      const meta = await documentsApi.extractMetadata(selectedFile);
+      if (meta.source_name) setSourceName(meta.source_name);
+      if (meta.document_number) setDocumentNumber(meta.document_number);
+      if (meta.promulgation_date) setPromulgationDate(meta.promulgation_date);
+      if (meta.effective_date) setEffectiveDate(meta.effective_date);
+      if (meta.issuing_agency) setIssuingAgency(meta.issuing_agency);
+      if (meta.group_type) setGroupType(meta.group_type);
+      if (meta.procedure_type) setProcedureType(meta.procedure_type);
+      if (meta.document_action) setDocumentAction(meta.document_action);
+
+      // Auto-match parent document
+      if (meta.parent_hint) {
+        documentsApi.getDocuments().then(allDocs => {
+          const match = allDocs.find(d =>
+            d.source_name.toLowerCase().includes(meta.parent_hint!.toLowerCase()) ||
+            (d.document_number && d.document_number.includes(meta.parent_hint!))
+          );
+          if (match) {
+            setParentDocumentId(match.id);
+          }
+        }).catch(() => {});
+      }
+      setAutoExtracted(true);
+    } catch (e) {
+      console.warn("Auto-extract metadata error:", e);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
-    if (f) setFile(f);
+    if (f) processFile(f);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,14 +269,40 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
             <strong>{file ? file.name : "Kéo thả PDF / DOCX vào đây"}</strong>
             <span>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : "hoặc bấm để chọn file"}</span>
           </div>
-          <input ref={fileInputRef} type="file" accept=".pdf,.docx,.doc" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input ref={fileInputRef} type="file" accept=".pdf,.docx,.doc" style={{ display: "none" }} onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) processFile(f);
+          }} />
         </div>
+
+        {/* Thông báo bóc tách tự động */}
+        {extracting && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+            background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 6,
+            fontSize: 12, color: "#0369a1", marginBottom: 12
+          }}>
+            <RefreshCw size={14} className="spin" />
+            <span>Đang tự động bóc tách số hiệu, ngày ban hành, ngày hiệu lực & văn bản thay thế...</span>
+          </div>
+        )}
+
+        {autoExtracted && !extracting && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+            background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6,
+            fontSize: 12, color: "#15803d", marginBottom: 12
+          }}>
+            <Sparkles size={14} />
+            <span>✨ <strong>Đã tự động điền:</strong> Tên nguồn, số ký hiệu, ngày hiệu lực và văn bản gốc. Vui lòng kiểm tra lại trước khi tải lên.</span>
+          </div>
+        )}
 
         {/* Thông báo tính năng Table-Aware */}
         <div style={{
           display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
-          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6,
-          fontSize: 12, color: "#166534", marginBottom: 14
+          background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6,
+          fontSize: 12, color: "#475569", marginBottom: 14
         }}>
           <span style={{ fontSize: 14 }}>⚡</span>
           <span><strong>Table-Aware:</strong> Tự động bóc tách & bảo toàn nguyên vẹn cấu trúc bảng biểu, quy trình TTHC từ file Word / PDF.</span>

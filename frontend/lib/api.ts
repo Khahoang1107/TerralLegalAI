@@ -73,6 +73,18 @@ export interface Document {
   related_documents?: { document_id: string; source_name: string; relation: string; effective_date?: string }[];
 }
 
+export interface ExtractedMetadata {
+  source_name?: string;
+  document_number?: string;
+  promulgation_date?: string;
+  effective_date?: string;
+  issuing_agency?: string;
+  group_type?: string;
+  procedure_type?: string;
+  document_action?: "new" | "amend" | "replace";
+  parent_hint?: string;
+}
+
 export interface DocumentStats {
   total_documents: number;
   indexed_documents: number;
@@ -382,6 +394,14 @@ export const documentsApi = {
   },
   async getStats(): Promise<DocumentStats> {
     const { data } = await client.get<DocumentStats>("/documents/stats");
+    return data;
+  },
+  async extractMetadata(file: File): Promise<ExtractedMetadata> {
+    const form = new FormData();
+    form.append("file", file);
+    const { data } = await client.post<ExtractedMetadata>("/documents/extract-metadata", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return data;
   },
   async uploadDocument(
