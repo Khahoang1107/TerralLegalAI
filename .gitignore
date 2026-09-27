@@ -63,7 +63,7 @@ htmlcov/
 # Local databases and generated processing output.
 *.db
 *.sqlite3
-/data/processed/ocr_text/
+# /data/processed/ocr_text/
 /backend/output.txt
 /backend/app/api/v1/forms_restored.py
 

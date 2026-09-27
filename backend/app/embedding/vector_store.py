@@ -56,19 +56,26 @@ class VectorStore:
 
     def create_collection_if_not_exists(self):
         """Tạo Qdrant collection nếu chưa có."""
-        existing = [c.name for c in self.client.get_collections().collections]
-        if self.collection_name in existing:
-            logger.info(f"Collection '{self.collection_name}' đã tồn tại.")
-            return
+        try:
+            existing = [c.name for c in self.client.get_collections().collections]
+            if self.collection_name in existing:
+                logger.info(f"Collection '{self.collection_name}' đã tồn tại.")
+                return
 
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=VectorParams(
-                size=self.embedding_dim,
-                distance=Distance.COSINE,
-            ),
-        )
-        logger.info(f"✅ Đã tạo collection: {self.collection_name}")
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(
+                    size=self.embedding_dim,
+                    distance=Distance.COSINE,
+                ),
+            )
+            logger.info(f"✅ Đã tạo collection: {self.collection_name}")
+        except Exception as e:
+            if "already exists" in str(e).lower() or "409" in str(e):
+                logger.info(f"Collection '{self.collection_name}' đã tồn tại.")
+            else:
+                logger.error(f"Lỗi khi kiểm tra/tạo collection Qdrant: {e}")
+                raise
 
     def upsert_chunks(
         self,

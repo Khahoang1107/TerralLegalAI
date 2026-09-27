@@ -178,6 +178,29 @@ class PDFParser:
         full_text = "\n\n".join(all_text_parts)
         full_text = self._normalize_whitespace(full_text)
 
+        # Nếu file là ảnh scan (không bóc tách được chữ qua text layer thông thường)
+        if len(full_text.strip()) < 50:
+            logger.info(f"File {file_path.name} không có text layer (ảnh scan). Đang tìm dữ liệu OCR sẵn có...")
+            ocr_dirs = [Path("data/processed/ocr_text"), Path("/app/data/processed/ocr_text")]
+            for ocr_dir in ocr_dirs:
+                if not ocr_dir.exists():
+                    continue
+                for txt_file in ocr_dir.glob("*.txt"):
+                    fn_base = file_path.name.lower()
+                    m_num = re.search(r'(\d{2,5})', fn_base)
+                    doc_num = m_num.group(1) if m_num else ""
+                    if (doc_num and doc_num in txt_file.name) or (file_path.stem.lower() in txt_file.name.lower()):
+                        try:
+                            cached_text = txt_file.read_text(encoding="utf-8")
+                            if len(cached_text.strip()) > 50:
+                                full_text = self._normalize_whitespace(cached_text)
+                                logger.info(f"✅ Đã nạp thành công dữ liệu OCR từ {txt_file.name} ({len(full_text):,} ký tự)")
+                                break
+                        except Exception as e:
+                            logger.warning(f"Lỗi đọc file OCR {txt_file}: {e}")
+                if len(full_text.strip()) >= 50:
+                    break
+
         # Extract metadata và cấu trúc
         detected_articles = self._detect_articles(full_text)
         procedure_name = self._detect_procedure_name(full_text)

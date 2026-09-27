@@ -187,6 +187,8 @@ def _index_document_sync(
                         procedure_type=procedure_type,
                     )
                 logger.info(f"Created {len(chunks)} chunks")
+                if not chunks:
+                    raise ValueError(f"Không thể trích xuất đoạn văn bản từ file {file_path_obj.name} (file có thể là bản scan ảnh không có chữ hoặc chưa được OCR).")
 
                 # Lưu chunks vào PostgreSQL
                 for c in chunks:
