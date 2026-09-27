@@ -152,18 +152,30 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
     const rawName = selectedFile.name.replace(/\.(pdf|docx|doc)$/i, "").replace(/(\.signed|_signed|_\d+|\(\d+\))/gi, "").trim();
     const fnUpper = rawName.toUpperCase();
 
-    // 1. Nhận diện số / ký hiệu văn bản tổng quát (VD: 4836/QĐ-UBND, 102/2024/NĐ-CP, 79/2026/QĐ-UBND...)
+    // 1. Nhận diện số / ký hiệu văn bản tổng quát (Hỗ trợ cả 'QĐ 1085', '4836 QĐ', '79_2026_QD-UBND')
     let parsedDocNum = "";
-    const mFullNum = rawName.match(/(\d{1,5}\/[0-9A-ZĐa-zđ\-_]+)/);
-    if (mFullNum) {
-      parsedDocNum = mFullNum[1];
+    const mFullSlash = rawName.match(/(\d{1,5}(?:\/\d{4})?\/(?:QĐ|QD|NĐ|ND|TT|NQ|TB)[A-ZĐa-zđ\-_]*)/i);
+    if (mFullSlash) {
+      parsedDocNum = mFullSlash[1].toUpperCase();
     } else {
-      const mShortNum = rawName.match(/(\d{1,5})\s*[/_]?(?:QĐ|QD)[-_]?(?:UBND|ubnd)?/i);
-      if (mShortNum) {
-        parsedDocNum = `${mShortNum[1]}/QĐ-UBND`;
+      const mCompound = rawName.match(/(\d{1,5})[._\-/](\d{4})[._\-/]?(?:QĐ|QD)[-_]?(?:UBND|ubnd)?/i);
+      if (mCompound) {
+        parsedDocNum = `${mCompound[1]}/${mCompound[2]}/QĐ-UBND`;
       } else {
-        const mNd = rawName.match(/(\d{1,5})\s*[/_]?(?:NĐ|ND)[-_]?(?:CP|cp)?/i);
-        if (mNd) parsedDocNum = `${mNd[1]}/NĐ-CP`;
+        // Hỗ trợ dạng tiền tố: QĐ 1085, QĐ. 1085, QD_1085
+        const mPrefix = rawName.match(/(?:QĐ|QD)\s*[._\-]?\s*(\d{1,5})/i);
+        if (mPrefix) {
+          parsedDocNum = `${mPrefix[1]}/QĐ-UBND`;
+        } else {
+          // Hỗ trợ dạng hậu tố: 4836 QĐ, 1085 QĐ-UBND
+          const mSuffix = rawName.match(/(\d{1,5})\s*[/_]?(?:QĐ|QD)[-_]?(?:UBND|ubnd)?/i);
+          if (mSuffix) {
+            parsedDocNum = `${mSuffix[1]}/QĐ-UBND`;
+          } else {
+            const mNd = rawName.match(/(?:NĐ|ND)\s*[._\-]?\s*(\d{1,5})/i) || rawName.match(/(\d{1,5})\s*[/_]?(?:NĐ|ND)[-_]?(?:CP|cp)?/i);
+            if (mNd) parsedDocNum = `${mNd[1]}/NĐ-CP`;
+          }
+        }
       }
     }
     if (parsedDocNum) setDocumentNumber(parsedDocNum);
@@ -171,58 +183,72 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
     // 2. Nhận diện loại văn bản & nhóm (Quyết định, Nghị định, Thông tư, Luật, Phụ lục)
     let autoGroup = "quyet_dinh";
     let autoTitle = "";
+    let autoAgency = "Ủy ban nhân dân tỉnh Vĩnh Long";
 
     if (fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("PHU LUC I")) {
-      autoTitle = `Phụ lục I - 38 TTHC đặc thù ${parsedDocNum ? `(kèm ${parsedDocNum})` : ""}`.trim();
+      autoTitle = `Phụ lục I - 38 TTHC đặc thù ${parsedDocNum ? `(kèm ${parsedDocNum})` : "(kèm 4836/QĐ-UBND)"}`;
       autoGroup = "quyet_dinh";
     } else if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("PHU LUC II") || fnUpper.includes("QTNB")) {
-      autoTitle = `Phụ lục II - Quy trình nội bộ 38 TTHC ${parsedDocNum ? `(kèm ${parsedDocNum})` : ""}`.trim();
+      autoTitle = `Phụ lục II - Quy trình nội bộ 38 TTHC ${parsedDocNum ? `(kèm ${parsedDocNum})` : "(kèm 4836/QĐ-UBND)"}`;
       autoGroup = "quyet_dinh";
-    } else if (fnUpper.includes("NGHỊ ĐỊNH") || fnUpper.includes(" NĐ") || fnUpper.includes("ND ")) {
+    } else if (fnUpper.includes("NGHỊ ĐỊNH") || /(?:^|[\s_\-.])(?:NĐ|ND)(?:[\s_\-./]|\d|$)/i.test(rawName)) {
       autoTitle = `Nghị định ${parsedDocNum || rawName}`;
       autoGroup = "luat";
-      setIssuingAgency("Chính phủ");
-    } else if (fnUpper.includes("THÔNG TƯ") || fnUpper.includes(" TT")) {
+      autoAgency = "Chính phủ";
+    } else if ((fnUpper.includes("THÔNG TƯ") || /(?:^|[\s_\-.])TT(?:[\s_\-./]|\d|$)/i.test(rawName)) && !fnUpper.includes("TTHC")) {
       autoTitle = `Thông tư ${parsedDocNum || rawName}`;
       autoGroup = "luat";
+      autoAgency = "Bộ";
     } else if (fnUpper.includes("LUẬT")) {
       autoTitle = rawName;
       autoGroup = "luat";
-      setIssuingAgency("Quốc hội");
-    } else if (parsedDocNum) {
-      autoTitle = `Quyết định ${parsedDocNum}`;
+      autoAgency = "Quốc hội";
+    } else if (parsedDocNum || fnUpper.includes("QĐ") || fnUpper.includes("QD") || fnUpper.includes("QUYẾT ĐỊNH")) {
+      autoTitle = parsedDocNum ? `Quyết định ${parsedDocNum}` : `Quyết định ${rawName}`;
       autoGroup = "quyet_dinh";
-      setIssuingAgency("Ủy ban nhân dân tỉnh Vĩnh Long");
+      autoAgency = "Ủy ban nhân dân tỉnh Vĩnh Long";
     } else {
       autoTitle = rawName;
     }
 
     if (autoTitle) setSourceName(autoTitle);
     setGroupType(autoGroup);
+    setIssuingAgency(autoAgency);
 
-    // 3. Tự động bóc tách ngày từ tên file nếu có (VD: "ng 3.8", "ngay 24.07.2026")
-    const mDate = rawName.match(/(?:ngày|ng|d)?\s*(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{4}))?/i);
-    if (mDate) {
-      const d = mDate[1].padStart(2, "0");
-      const m = mDate[2].padStart(2, "0");
-      const y = mDate[3] || "2026";
-      const formattedDate = `${y}-${m}-${d}`;
-      setPromulgationDate(formattedDate);
-      setEffectiveDate(formattedDate);
+    // 3. Tự động điền ngày ban hành & hiệu lực
+    if (parsedDocNum.includes("1085")) {
+      setPromulgationDate("2025-09-03");
+      setEffectiveDate("2025-09-03");
+      setDocumentAction("new");
+    } else if (parsedDocNum.includes("1467")) {
+      setPromulgationDate("2025-09-30");
+      setEffectiveDate("2025-09-30");
+      setDocumentAction("new");
+    } else if (parsedDocNum.includes("4836")) {
+      setPromulgationDate("2026-08-03");
+      setEffectiveDate("2026-08-04");
+      setDocumentAction("replace");
+    } else {
+      const mDate = rawName.match(/(?:ngày|ng|d)?\s*(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{4}))?/i);
+      if (mDate) {
+        const d = mDate[1].padStart(2, "0");
+        const m = mDate[2].padStart(2, "0");
+        const y = mDate[3] || "2026";
+        const formattedDate = `${y}-${m}-${d}`;
+        setPromulgationDate(formattedDate);
+        setEffectiveDate(formattedDate);
+      }
     }
 
     // 4. Khớp văn bản gốc tự động từ danh sách tài liệu hiện có (cho các văn bản thay thế / sửa đổi)
     if (existingDocs.length > 0) {
-      // Nếu là Phụ lục II hoặc văn bản quy trình -> ưu tiên khớp với Quy trình nội bộ cũ
       if (fnUpper.includes("PHỤ LỤC II") || fnUpper.includes("QTNB") || fnUpper.includes("1467")) {
         const match = existingDocs.find(d => d.source_name.toLowerCase().includes("quy trình") || d.source_name.includes("1467"));
         if (match) {
           setDocumentAction("replace");
           setParentDocumentId(match.id);
         }
-      }
-      // Nếu là QĐ mới bãi bỏ hoặc Phụ lục I -> ưu tiên khớp với Bộ TTHC cũ
-      else if (fnUpper.includes("4836") || fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("THAY THẾ")) {
+      } else if (fnUpper.includes("4836") || fnUpper.includes("PHỤ LỤC I") || fnUpper.includes("THAY THẾ")) {
         const match = existingDocs.find(d => d.source_name.toLowerCase().includes("tthc") || d.source_name.includes("1085"));
         if (match) {
           setDocumentAction("replace");
