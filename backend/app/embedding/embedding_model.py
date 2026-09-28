@@ -14,6 +14,9 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+_GLOBAL_MODEL_CACHE: dict[str, tuple] = {}
+
+
 class EmbeddingModel:
     """
     Wrapper cho BAAI/bge-m3 embedding model.
@@ -39,6 +42,7 @@ class EmbeddingModel:
         self.use_fp16 = use_fp16
         self.cpu_threads = cpu_threads
         self._model = None
+        self._use_flag = False
         self._query_cache: OrderedDict[str, tuple[float, ...]] = OrderedDict()
         self._query_cache_lock = Lock()
         self._query_cache_size = 256
@@ -50,6 +54,9 @@ class EmbeddingModel:
         - Mọi model khác (multilingual-e5-*, paraphrase-*, ...) → sentence-transformers.
         """
         if self._model is not None:
+            return
+        if self.model_name in _GLOBAL_MODEL_CACHE:
+            self._model, self._use_flag = _GLOBAL_MODEL_CACHE[self.model_name]
             return
         # The production VPS runs one backend worker to avoid loading the
         # embedding model twice. Explicitly give that worker both CPU cores.
@@ -74,6 +81,7 @@ class EmbeddingModel:
                 )
                 self._use_flag = True
                 logger.info(f"✅ Model loaded (FlagEmbedding): {self.model_name}")
+                _GLOBAL_MODEL_CACHE[self.model_name] = (self._model, self._use_flag)
                 return
             except ImportError:
                 logger.warning("FlagEmbedding không tìm thấy, fallback sang sentence-transformers")
@@ -89,6 +97,7 @@ class EmbeddingModel:
         )
         self._use_flag = False
         logger.info(f"✅ Model loaded (sentence-transformers): {self.model_name}")
+        _GLOBAL_MODEL_CACHE[self.model_name] = (self._model, self._use_flag)
 
     def encode(self, texts: list[str]) -> list[list[float]]:
         """

@@ -11,6 +11,7 @@ Cải tiến v2:
 - Backward compatible: full_text vẫn xuất ra
 """
 import re
+import shutil
 import logging
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -101,12 +102,39 @@ class PDFParser:
         re.compile(r"^\s*[-–—]+\s*$", re.MULTILINE),        # Đường kẻ
     ]
 
+    def _find_cached_ocr(self, file_path: Path, source_name: str) -> Optional[str]:
+        """Tìm file text OCR đã được xử lý sẵn cho văn bản scan."""
+        ocr_dirs = [
+            Path("data/processed/ocr_text"),
+            Path("/app/data/processed/ocr_text"),
+            Path(__file__).resolve().parent.parent.parent.parent / "data" / "processed" / "ocr_text",
+        ]
+        combined_name = f"{source_name} {file_path.name}".lower()
+        m_nums = re.findall(r'(\d{2,5})', combined_name)
+
+        for ocr_dir in ocr_dirs:
+            if not ocr_dir.exists():
+                continue
+            for txt_file in ocr_dir.glob("*.txt"):
+                txt_lower = txt_file.name.lower()
+                matched = any(num in txt_lower for num in m_nums) or (file_path.stem.lower() in txt_lower)
+                if matched:
+                    try:
+                        cached_text = txt_file.read_text(encoding="utf-8")
+                        if len(cached_text.strip()) > 50:
+                            logger.info(f"✅ Đã nạp thành công dữ liệu OCR sẵn có từ {txt_file.name} ({len(cached_text):,} ký tự)")
+                            return self._normalize_whitespace(cached_text)
+                    except Exception as e:
+                        logger.warning(f"Lỗi đọc file OCR {txt_file}: {e}")
+        return None
+
     def parse(self, file_path: str | Path, source_name: str = "") -> ParsedDocument:
         """
         Parse một file PDF và trả về ParsedDocument.
         
         Args:
             file_path: Đường dẫn đến file PDF
+            source_name: Tên văn bản hoặc số hiệu để hỗ trợ tìm OCR cache
             
         Returns:
             ParsedDocument với full_text, pages, metadata
@@ -119,17 +147,51 @@ class PDFParser:
 
         logger.info(f"Đang parse: {file_path.name}")
 
+        # 1. Tối ưu: Nếu là file scan đã có sẵn bản OCR cache trong hệ thống -> trả về ngay (<0.05s)
+        cached_ocr_text = self._find_cached_ocr(file_path, source_name)
+        if cached_ocr_text:
+            detected_articles = self._detect_articles(cached_ocr_text)
+            procedure_name = self._detect_procedure_name(cached_ocr_text)
+            doc_len = 1
+            try:
+                with fitz.open(str(file_path)) as d:
+                    doc_len = len(d)
+            except Exception:
+                pass
+
+            logger.info(
+                f"⚡ [Tối ưu] Sử dụng trực tiếp dữ liệu OCR sẵn có cho {file_path.name} | "
+                f"{doc_len} trang | {len(detected_articles)} điều | {len(cached_ocr_text):,} ký tự"
+            )
+            return ParsedDocument(
+                file_path=str(file_path),
+                file_name=file_path.name,
+                total_pages=doc_len,
+                full_text=cached_ocr_text,
+                pages=[ParsedPage(page_number=1, text=cached_ocr_text, is_empty=False)],
+                metadata={
+                    "file_size_bytes": file_path.stat().st_size,
+                    "file_name": file_path.name,
+                    "ocr_cached": True,
+                },
+                detected_articles=detected_articles,
+                detected_procedure_name=procedure_name,
+                segments=[cached_ocr_text],
+            )
+
+        # 2. Xử lý PDF thông thường qua PyMuPDF
         doc = fitz.open(str(file_path))
         pages = []
         all_text_parts = []
+        has_tesseract = shutil.which("tesseract") is not None
 
         for page_num in range(len(doc)):
             page = doc[page_num]
             raw_text = page.get_text("text")
             cleaned = self._clean_page_text(raw_text)
 
-            # OCR fallback for scanned pages (chỉ chạy khi trang hoàn toàn không có text layer)
-            if len(cleaned.strip()) < 20:
+            # OCR fallback for scanned pages (chỉ chạy khi trang không có text layer VÀ máy có Tesseract)
+            if len(cleaned.strip()) < 20 and has_tesseract:
                 try:
                     import subprocess
                     import tempfile
@@ -177,32 +239,6 @@ class PDFParser:
 
         full_text = "\n\n".join(all_text_parts)
         full_text = self._normalize_whitespace(full_text)
-
-        # Nếu file là ảnh scan (không bóc tách được chữ qua text layer thông thường)
-        if len(full_text.strip()) < 50:
-            logger.info(f"File {file_path.name} (nguồn: '{source_name}') không có text layer (ảnh scan). Đang tìm dữ liệu OCR sẵn có...")
-            ocr_dirs = [Path("data/processed/ocr_text"), Path("/app/data/processed/ocr_text")]
-            
-            combined_name = f"{source_name} {file_path.name}".lower()
-            m_nums = re.findall(r'(\d{2,5})', combined_name)
-
-            for ocr_dir in ocr_dirs:
-                if not ocr_dir.exists():
-                    continue
-                for txt_file in ocr_dir.glob("*.txt"):
-                    txt_lower = txt_file.name.lower()
-                    matched = any(num in txt_lower for num in m_nums) or (file_path.stem.lower() in txt_lower)
-                    if matched:
-                        try:
-                            cached_text = txt_file.read_text(encoding="utf-8")
-                            if len(cached_text.strip()) > 50:
-                                full_text = self._normalize_whitespace(cached_text)
-                                logger.info(f"✅ Đã nạp thành công dữ liệu OCR từ {txt_file.name} ({len(full_text):,} ký tự)")
-                                break
-                        except Exception as e:
-                            logger.warning(f"Lỗi đọc file OCR {txt_file}: {e}")
-                if len(full_text.strip()) >= 50:
-                    break
 
         # Extract metadata và cấu trúc
         detected_articles = self._detect_articles(full_text)
@@ -296,6 +332,10 @@ class PDFParser:
 
         Fallback: nếu pdfplumber không có hoặc lỗi → trả về [full_text]
         """
+        # Nếu là file scan (không có text layer), bỏ qua pdfplumber hoàn toàn để tiết kiệm thời gian và CPU
+        if is_scanned_pdf(file_path):
+            return [full_text]
+
         try:
             import pdfplumber  # noqa: F401
         except ImportError:
