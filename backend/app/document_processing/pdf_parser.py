@@ -101,7 +101,7 @@ class PDFParser:
         re.compile(r"^\s*[-–—]+\s*$", re.MULTILINE),        # Đường kẻ
     ]
 
-    def parse(self, file_path: str | Path) -> ParsedDocument:
+    def parse(self, file_path: str | Path, source_name: str = "") -> ParsedDocument:
         """
         Parse một file PDF và trả về ParsedDocument.
         
@@ -180,16 +180,19 @@ class PDFParser:
 
         # Nếu file là ảnh scan (không bóc tách được chữ qua text layer thông thường)
         if len(full_text.strip()) < 50:
-            logger.info(f"File {file_path.name} không có text layer (ảnh scan). Đang tìm dữ liệu OCR sẵn có...")
+            logger.info(f"File {file_path.name} (nguồn: '{source_name}') không có text layer (ảnh scan). Đang tìm dữ liệu OCR sẵn có...")
             ocr_dirs = [Path("data/processed/ocr_text"), Path("/app/data/processed/ocr_text")]
+            
+            combined_name = f"{source_name} {file_path.name}".lower()
+            m_nums = re.findall(r'(\d{2,5})', combined_name)
+
             for ocr_dir in ocr_dirs:
                 if not ocr_dir.exists():
                     continue
                 for txt_file in ocr_dir.glob("*.txt"):
-                    fn_base = file_path.name.lower()
-                    m_num = re.search(r'(\d{2,5})', fn_base)
-                    doc_num = m_num.group(1) if m_num else ""
-                    if (doc_num and doc_num in txt_file.name) or (file_path.stem.lower() in txt_file.name.lower()):
+                    txt_lower = txt_file.name.lower()
+                    matched = any(num in txt_lower for num in m_nums) or (file_path.stem.lower() in txt_lower)
+                    if matched:
                         try:
                             cached_text = txt_file.read_text(encoding="utf-8")
                             if len(cached_text.strip()) > 50:

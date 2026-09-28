@@ -136,7 +136,7 @@ class DOCXParser:
     # Namespace XML của OOXML
     _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
-    def parse(self, file_path: str | Path) -> ParsedDocument:
+    def parse(self, file_path: str | Path, **kwargs) -> ParsedDocument:
         """
         Parse file DOCX thành ParsedDocument với cấu trúc bảng nguyên vẹn.
 

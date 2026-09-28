@@ -160,7 +160,7 @@ def _index_document_sync(
                 else:
                     raise ValueError(f"Unsupported file type: {suffix}")
 
-                parsed = parser.parse(file_path)
+                parsed = parser.parse(file_path, source_name=f"{source_name} {doc.document_number or ''}")
                 logger.info(f"Parsed {file_path}: {len(parsed.full_text):,} chars")
 
                 # Chunk
