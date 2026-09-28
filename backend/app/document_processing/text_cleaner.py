@@ -102,6 +102,10 @@ class TextCleaner:
         ("Dăng ký",  "Đăng ký"),
         ("đang ký",  "đăng ký"),
         ("Đang ký",  "Đăng ký"),
+        ("dang ky dat dai", "đăng ký đất đai"),
+        ("Dang ky dat dai", "Đăng ký đất đai"),
+        ("dang ky", "đăng ký"),
+        ("Dang ky", "Đăng ký"),
 
         # ── biến động ───────────────────────────────────────────────────────
         ("biến dộng",  "biến động"),
@@ -111,10 +115,78 @@ class TextCleaner:
         ("thơi hạn",  "thời hạn"),
         ("thời han",  "thời hạn"),
 
-        # ── địa chỉ / địa phương ────────────────────────────────────────────
+        # ── địa chỉ / địa phương / địa bàn / địa chính ─────────────────────
         ("dia chỉ",    "địa chỉ"),
         ("dia phương", "địa phương"),
         ("Dia chỉ",    "Địa chỉ"),
+        ("dia ban",    "địa bàn"),
+        ("dia chinh",  "địa chính"),
+        ("dia chính",  "địa chính"),
+        ("ban đồ",     "bản đồ"),
+        ("ban do",     "bản đồ"),
+
+        # ── hồ sơ / thanh phan ──────────────────────────────────────────────
+        ("hé so",      "hồ sơ"),
+        ("Hé so",      "Hồ sơ"),
+        ("thanh phan", "thành phần"),
+        ("Thanh phan", "Thành phần"),
+
+        # ── sử dụng đất / tài sản gắn liền với đất ──────────────────────────
+        ("sir dung dat",        "sử dụng đất"),
+        ("str dung dat",        "sử dụng đất"),
+        ("su dung dat",         "sử dụng đất"),
+        ("gan liền voi dat",    "gắn liền với đất"),
+        ("gan lién voi dat",    "gắn liền với đất"),
+        ("tai san",             "tài sản"),
+        ("Tai san",             "Tài sản"),
+        ("quyén",               "quyền"),
+        ("Quyén",               "Quyền"),
+        ("thua dat",            "thửa đất"),
+        ("thửa dat",            "thửa đất"),
+
+        # ── trình tự / thủ tục ──────────────────────────────────────────────
+        ("Trinh tw",   "Trình tự"),
+        ("trinh tw",   "trình tự"),
+        ("Trinh tự",   "Trình tự"),
+        ("trinh tự",   "trình tự"),
+        ("thu tue",    "thủ tục"),
+        ("tha tục",    "thủ tục"),
+        ("thuc hién",  "thực hiện"),
+        ("thục hiện",  "thực hiện"),
+        ("yéu cau",    "yêu cầu"),
+        ("Yéu cau",    "Yêu cầu"),
+
+        # ── cơ quan / tổ chức ───────────────────────────────────────────────
+        ("céng ching",   "công chứng"),
+        ("công ching",   "công chứng"),
+        ("Chi nhanh",    "Chi nhánh"),
+        ("chi nhanh",    "chi nhánh"),
+        ("Van phong",    "Văn phòng"),
+        ("van phong",    "văn phòng"),
+        ("can bộ",       "cán bộ"),
+        ("Can bộ",       "Cán bộ"),
+        ("chinh quyén",  "chính quyền"),
+        ("Chinh quyén",  "Chính quyền"),
+        ("nha nude",     "nhà nước"),
+        ("nha nuoc",     "nhà nước"),
+        ("Vinh Long",    "Vĩnh Long"),
+        ("tinh Vinh Long", "tỉnh Vĩnh Long"),
+
+        # ── loại văn bản ────────────────────────────────────────────────────
+        ("Nghi dinh",    "Nghị định"),
+        ("nghi dinh",    "nghị định"),
+        ("Thong tư",     "Thông tư"),
+        ("thong tu",     "thông tư"),
+        ("Quyet dinh",   "Quyết định"),
+        ("Quyết dinh",   "Quyết định"),
+        ("quyet dinh",   "quyết định"),
+        ("Chit tich",    "Chủ tịch"),
+        ("Chu tich",     "Chủ tịch"),
+        ("chu tich",     "chủ tịch"),
+        ("To trinh",     "Tờ trình"),
+        ("to trinh",     "tờ trình"),
+        ("Phu luc",      "Phụ lục"),
+        ("phu luc",      "phụ lục"),
     ]
 
     # ── Regex: ký tự rác không thuộc tiếng Việt/Latin/ASCII ─────────────────
