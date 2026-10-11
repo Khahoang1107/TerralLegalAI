@@ -70,7 +70,21 @@ export interface Document {
   promulgation_date?: string;
   effective_date?: string;
   issuing_agency?: string;
-  related_documents?: { document_id: string; source_name: string; relation: string; effective_date?: string }[];
+  related_documents?: {
+    document_id: string;
+    source_name: string;
+    relation: string;
+    effective_date?: string;
+    scope?: "full" | "partial";
+    affected_provisions?: AffectedProvision[];
+  }[];
+}
+
+export interface AffectedProvision {
+  article: string;           // VD: "Điều 5"
+  clause?: string;           // VD: "Khoản 2"
+  point?: string;            // VD: "Điểm a"
+  action: "amend" | "repeal" | "add";  // loại tác động
 }
 
 export interface ExtractedMetadata {
@@ -81,8 +95,9 @@ export interface ExtractedMetadata {
   issuing_agency?: string;
   group_type?: string;
   procedure_type?: string;
-  document_action?: "new" | "amend" | "replace";
+  document_action?: "new" | "amend" | "replace" | "partial_repeal";
   parent_hint?: string;
+  doc_type?: string;   // loại VB chi tiết: quyet_dinh | nghi_quyet | ...
 }
 
 export interface DocumentStats {
@@ -417,6 +432,10 @@ export const documentsApi = {
       issuingAgency?: string;
       parentDocumentId?: string;
       parentDocumentIds?: string[];
+      /** Phạm vi tác động: "full" (mặc định) hoặc "partial" */
+      amendmentScope?: "full" | "partial";
+      /** Danh sách Điều/Khoản/Điểm bị tác động (cho amend / partial_repeal) */
+      affectedProvisions?: AffectedProvision[];
     }
   ): Promise<UploadDocumentResponse> {
     const form = new FormData();
@@ -432,6 +451,10 @@ export const documentsApi = {
     if (opts?.parentDocumentId) form.append("parent_document_id", opts.parentDocumentId);
     if (opts?.parentDocumentIds && opts.parentDocumentIds.length > 0) {
       form.append("parent_document_ids", opts.parentDocumentIds.join(","));
+    }
+    if (opts?.amendmentScope) form.append("amendment_scope", opts.amendmentScope);
+    if (opts?.affectedProvisions && opts.affectedProvisions.length > 0) {
+      form.append("affected_provisions", JSON.stringify(opts.affectedProvisions));
     }
     const { data } = await client.post<UploadDocumentResponse>("/documents/upload", form, {
       headers: { "Content-Type": "multipart/form-data" },

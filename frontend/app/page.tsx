@@ -124,7 +124,7 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Metadata hiệu lực (Đợt 1) ──
-  const [documentAction, setDocumentAction] = useState<"new" | "amend" | "replace">("new");
+  const [documentAction, setDocumentAction] = useState<"new" | "amend" | "replace" | "partial_repeal">("new");
   const [documentNumber, setDocumentNumber] = useState("");
   const [promulgationDate, setPromulgationDate] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
@@ -133,6 +133,12 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
   const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
   const [parentFilterQuery, setParentFilterQuery] = useState("");
   const [existingDocs, setExistingDocs] = useState<{ id: string; source_name: string; validity_status: string }[]>([]);
+
+  // ── Phạm vi tác động (cho amend / partial_repeal) ──
+  // Mỗi entry: "<action>:<article>[|<clause>][|<point>]"
+  // VD: "repeal:Điều 5|Khoản 2" hoặc "amend:Điều 3|Khoản 1"
+  const [provisionRows, setProvisionRows] = useState<{ action: "amend"|"repeal"|"add"; article: string; clause: string; point: string }[]>([]);
+  const [showProvisions, setShowProvisions] = useState(false);
 
   const [extracting, setExtracting] = useState(false);
   const [autoExtracted, setAutoExtracted] = useState(false);
@@ -334,6 +340,18 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
       setError("Vui lòng chọn ít nhất một văn bản gốc bị tác động.");
       return;
     }
+
+    // Xây dựng affectedProvisions từ provisionRows
+    const affectedProvisions = provisionRows
+      .filter(r => r.article.trim())
+      .map(r => ({
+        action: r.action,
+        article: r.article.trim(),
+        clause: r.clause.trim() || undefined,
+        point: r.point.trim() || undefined,
+      }));
+    const hasPartialScope = affectedProvisions.length > 0;
+
     setLoading(true); setError("");
     try {
       await documentsApi.uploadDocument(file, sourceName.trim(), groupType, procedureType, {
@@ -344,6 +362,8 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
         issuingAgency: issuingAgency.trim() || undefined,
         parentDocumentId: finalParentIds[0] || undefined,
         parentDocumentIds: finalParentIds,
+        amendmentScope: hasPartialScope ? "partial" : "full",
+        affectedProvisions: hasPartialScope ? (affectedProvisions as import("../lib/api").AffectedProvision[]) : undefined,
       });
       onSuccess(); onClose();
     } catch (err) {
@@ -366,29 +386,49 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
         {/* Loại hành động */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Loại cập nhật</div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {([
-              { value: "new", label: "📄 Văn bản mới", color: "#059669" },
-              { value: "amend", label: "✏️ Sửa đổi, bổ sung", color: "#d97706" },
-              { value: "replace", label: "🔄 Thay thế toàn bộ", color: "#dc2626" },
+              { value: "new",            label: "📄 Văn bản mới",        color: "#059669",
+                hint: "Tài liệu hoàn toàn mới, không tác động VB nào" },
+              { value: "amend",          label: "✏️ Sửa đổi, bổ sung",   color: "#d97706",
+                hint: "VB cũ vẫn hiệu lực — chỉ một số điều bị sửa" },
+              { value: "partial_repeal", label: "❌ Bãi bỏ một phần",     color: "#ea580c",
+                hint: "Một số Điều/Khoản bị bãi bỏ, các điều khác vẫn có giá trị" },
+              { value: "replace",        label: "🔄 Thay thế toàn bộ",   color: "#dc2626",
+                hint: "VB cũ hết hiệu lực hoàn toàn" },
             ] as const).map(opt => (
               <label key={opt.value} style={{
-                flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "8px 10px",
+                display: "flex", alignItems: "flex-start", gap: 7, padding: "9px 11px",
                 border: `2px solid ${documentAction === opt.value ? opt.color : "#e2e8f0"}`,
                 borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
-                background: documentAction === opt.value ? `${opt.color}08` : "transparent",
-                transition: "all 0.15s",
+                background: documentAction === opt.value ? `${opt.color}0d` : "transparent",
+                transition: "all 0.15s", flexDirection: "column",
               }}>
-                <input type="radio" name="docAction" value={opt.value} checked={documentAction === opt.value}
-                  onChange={() => {
-                    setDocumentAction(opt.value);
-                    if (opt.value === "new") {
-                      setParentDocumentId("");
-                      setSelectedParentIds([]);
-                    }
-                  }}
-                  style={{ accentColor: opt.color }} />
-                {opt.label}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input type="radio" name="docAction" value={opt.value} checked={documentAction === opt.value}
+                    onChange={() => {
+                      setDocumentAction(opt.value);
+                      if (opt.value === "new") {
+                        setParentDocumentId("");
+                        setSelectedParentIds([]);
+                        setProvisionRows([]);
+                        setShowProvisions(false);
+                      }
+                      // Auto-show provisions panel khi chọn partial_repeal hoặc amend
+                      if (opt.value === "partial_repeal") {
+                        setShowProvisions(true);
+                        if (provisionRows.length === 0)
+                          setProvisionRows([{ action: "repeal", article: "", clause: "", point: "" }]);
+                      } else if (opt.value === "amend") {
+                        setShowProvisions(true);
+                        if (provisionRows.length === 0)
+                          setProvisionRows([{ action: "amend", article: "", clause: "", point: "" }]);
+                      }
+                    }}
+                    style={{ accentColor: opt.color, marginTop: 1 }} />
+                  {opt.label}
+                </div>
+                <span style={{ fontSize: 10.5, color: "#64748b", fontWeight: 400, paddingLeft: 18 }}>{opt.hint}</span>
               </label>
             ))}
           </div>
@@ -490,8 +530,99 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
             <small style={{ color: "#64748b", fontWeight: 400, display: "block", marginTop: 6, fontSize: 12 }}>
               {documentAction === "amend"
                 ? "💡 Tất cả văn bản được chọn sẽ chuyển sang trạng thái \"Đã sửa đổi bổ sung\"."
+                : documentAction === "partial_repeal"
+                ? "💡 Văn bản được chọn sẽ chuyển sang \"Hết hiệu lực một phần\" — các Điều không bị đánh dấu vẫn có giá trị."
                 : "💡 Tất cả văn bản được chọn sẽ bị chuyển sang trạng thái \"Hết hiệu lực\" (bãi bỏ đồng loạt)."}
             </small>
+          </div>
+        )}
+
+        {/* ─ Panel nhập Điều/Khoản bị tác động (cho amend và partial_repeal) ─ */}
+        {(documentAction === "amend" || documentAction === "partial_repeal") && (
+          <div style={{
+            marginBottom: 14, border: "1.5px solid #f97316", borderRadius: 10,
+            padding: "12px 14px", background: "#fff7ed",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#9a3412" }}>
+                {documentAction === "partial_repeal" ? "❌" : "✏️"}&nbsp;
+                {documentAction === "partial_repeal" ? "Các Điều/Khoản bị bãi bỏ" : "Các Điều/Khoản bị tác động"}
+                <span style={{ fontSize: 11, fontWeight: 400, marginLeft: 6, color: "#c2410c" }}>
+                  (tùy chọn — để trống nếu chưa rõ)
+                </span>
+              </span>
+              <button type="button" onClick={() => setShowProvisions(v => !v)}
+                style={{ fontSize: 11.5, background: "none", border: 0, color: "#ea580c", cursor: "pointer", fontWeight: 600 }}>
+                {showProvisions ? "▲ Thu gọn" : "▼ Mở rộng"}
+              </button>
+            </div>
+
+            {showProvisions && (
+              <>
+                {/* Header hướng dẫn */}
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr 1fr 28px", gap: 6, marginBottom: 4 }}>
+                  {["Loại tác động", "Số Điều *", "Khoản", "Điểm", ""].map((h, i) => (
+                    <span key={i} style={{ fontSize: 11, color: "#92400e", fontWeight: 600 }}>{h}</span>
+                  ))}
+                </div>
+
+                {provisionRows.map((row, idx) => (
+                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr 1fr 28px", gap: 6, marginBottom: 6 }}>
+                    {/* Loại */}
+                    <select
+                      value={row.action}
+                      onChange={e => setProvisionRows(rows => rows.map((r, i) => i === idx ? { ...r, action: e.target.value as "amend"|"repeal"|"add" } : r))}
+                      style={{ fontSize: 12, border: "1px solid #fed7aa", borderRadius: 5, padding: "4px 6px", background: "#fff" }}>
+                      <option value="repeal">Bãi bỏ</option>
+                      <option value="amend">Sửa đổi</option>
+                      <option value="add">Bổ sung</option>
+                    </select>
+                    {/* Điều */}
+                    <input
+                      value={row.article}
+                      onChange={e => setProvisionRows(rows => rows.map((r, i) => i === idx ? { ...r, article: e.target.value } : r))}
+                      placeholder="VD: Điều 5"
+                      style={{ fontSize: 12, border: "1px solid #fed7aa", borderRadius: 5, padding: "4px 8px" }}
+                    />
+                    {/* Khoản */}
+                    <input
+                      value={row.clause}
+                      onChange={e => setProvisionRows(rows => rows.map((r, i) => i === idx ? { ...r, clause: e.target.value } : r))}
+                      placeholder="VD: Khoản 2"
+                      style={{ fontSize: 12, border: "1px solid #fed7aa", borderRadius: 5, padding: "4px 8px" }}
+                    />
+                    {/* Điểm */}
+                    <input
+                      value={row.point}
+                      onChange={e => setProvisionRows(rows => rows.map((r, i) => i === idx ? { ...r, point: e.target.value } : r))}
+                      placeholder="VD: Điểm a"
+                      style={{ fontSize: 12, border: "1px solid #fed7aa", borderRadius: 5, padding: "4px 8px" }}
+                    />
+                    {/* Xóa row */}
+                    <button type="button" onClick={() => setProvisionRows(rows => rows.filter((_, i) => i !== idx))}
+                      style={{ background: "none", border: 0, color: "#b91c1c", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                  </div>
+                ))}
+
+                <button type="button"
+                  onClick={() => setProvisionRows(rows => [...rows, { action: documentAction === "partial_repeal" ? "repeal" : "amend", article: "", clause: "", point: "" }])}
+                  style={{ fontSize: 12, color: "#ea580c", background: "none", border: "1px dashed #f97316", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
+                  + Thêm dòng
+                </button>
+
+                {provisionRows.filter(r => r.article.trim()).length > 0 && (
+                  <div style={{ marginTop: 8, padding: "6px 10px", background: "#fff", borderRadius: 6, border: "1px solid #fed7aa", fontSize: 11.5, color: "#7c2d12" }}>
+                    📌 <strong>Tóm tắt:</strong>{" "}
+                    {provisionRows.filter(r => r.article.trim()).map((r, i) => (
+                      <span key={i} style={{ marginRight: 10 }}>
+                        <strong>{r.action === "repeal" ? "❌" : r.action === "amend" ? "✏️" : "➕"}</strong>{" "}
+                        {r.article}{r.clause ? ` – ${r.clause}` : ""}{r.point ? ` – ${r.point}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -559,10 +690,23 @@ function UploadModal({ onClose, onSuccess, initialFile }: { onClose: () => void;
           <label style={labelStyle}>
             Nhóm tài liệu
             <select value={groupType} onChange={(e) => setGroupType(e.target.value)} className="compact-select" style={{ height: 40 }}>
-              <option value="quyet_dinh">Quyết định</option>
-              <option value="luat">Luật / Nghị định</option>
-              <option value="bieu_mau">Biểu mẫu</option>
-              <option value="faq">FAQ</option>
+              <optgroup label="Văn bản UBND">
+                <option value="quyet_dinh">Quyết định (QĐ-UBND)</option>
+                <option value="chi_thi">Chỉ thị (CT-UBND)</option>
+              </optgroup>
+              <optgroup label="Văn bản HĐND">
+                <option value="nghi_quyet">Nghị quyết (NQ-HĐND)</option>
+              </optgroup>
+              <optgroup label="Văn bản Trung ương">
+                <option value="nghi_dinh">Nghị định (NĐ-CP)</option>
+                <option value="thong_tu">Thông tư (TT-Bộ)</option>
+                <option value="luat">Luật</option>
+              </optgroup>
+              <optgroup label="Khác">
+                <option value="cong_van">Công văn (CV)</option>
+                <option value="bieu_mau">Biểu mẫu</option>
+                <option value="faq">Hỏi đáp (FAQ)</option>
+              </optgroup>
             </select>
           </label>
           <label style={labelStyle}>
@@ -3554,34 +3698,7 @@ function FormsView() {
 
     setEditSections(Array.from(sectionsMap.values()));
     
-    if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
-    setEditPdfUrl(null);
-    setEditPageImages([]);
-    setEditPageDimensions([]);
-    setEditZoom(0.5);
-    setEditPdfLoading(true);
-    try {
-      const [imagePreview, blob] = await Promise.all([
-        formsApi.previewImagePages(form.id, {}, "admin").catch(() => ({page_images: [], page_dimensions: []})),
-        formsApi.previewPdf(form.id, {}, "admin").catch(() => null),
-      ]);
-      const originalPreviewImages = labelPreviewBackup?.previewData?.page_images;
-      const imgs = imagePreview.page_images;
-      if (imgs && imgs.length > 0) {
-        setEditPageDimensions(imagePreview.page_dimensions);
-        setEditPageImages(imgs.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
-      } else if (originalPreviewImages?.length > 0) {
-        setEditPageDimensions(labelPreviewBackup?.previewData?.page_dimensions || []);
-        setEditPageImages(originalPreviewImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
-      }
-      if (blob) {
-        setEditPdfUrl(URL.createObjectURL(blob));
-      }
-    } catch (e) {
-      console.error("Lỗi tải bản xem trước", e);
-    } finally {
-      setEditPdfLoading(false);
-    }
+    await refreshEditPreview(form.id);
   };
 
   const refreshEditPreview = useCallback(async (formId: string) => {
