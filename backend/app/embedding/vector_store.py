@@ -206,6 +206,7 @@ class VectorStore:
         return [
             {
                 "text": r.payload.get("text", ""),
+                "chunk_id": r.payload.get("chunk_id", ""),
                 "score": r.score,
                 "source_name": r.payload.get("source_name", ""),
                 "source_file": r.payload.get("source_file", ""),
@@ -260,6 +261,7 @@ class VectorStore:
             )
             records.extend({
                 "text": point.payload.get("text", ""),
+                "chunk_id": point.payload.get("chunk_id", ""),
                 "score": 0.0,
                 "source_name": point.payload.get("source_name", ""),
                 "source_file": point.payload.get("source_file", ""),

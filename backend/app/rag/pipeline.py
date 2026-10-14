@@ -453,7 +453,13 @@ Câu hỏi đã viết lại:"""
 
     @staticmethod
     def _chunk_key(chunk: dict) -> tuple:
-        return (chunk.get("source_file", ""), chunk.get("chunk_index", 0), chunk.get("text", "")[:120])
+        # chunk_id is stable across dense and lexical retrieval.  Fall back to
+        # the source/index pair for older Qdrant payloads created before the
+        # identifier was returned by VectorStore.
+        chunk_id = chunk.get("chunk_id")
+        if chunk_id:
+            return ("chunk_id", str(chunk_id))
+        return ("legacy", chunk.get("source_file", ""), chunk.get("chunk_index", 0))
 
     def _lexical_candidates(self, question: str, procedure_type, top_k: int) -> list[dict]:
         """BM25 retrieval over Qdrant payloads; cache is short to allow re-indexing."""
