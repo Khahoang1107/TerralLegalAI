@@ -1053,27 +1053,31 @@ tr:hover td { background:#fafcfb; }
 .sidebar-collapse-toggle {
   position: absolute;
   z-index: 12;
-  top: 18px;
-  left: 268px;
-  width: 30px;
-  height: 30px;
+  top: 50%;
+  left: 270px;
+  width: 32px;
+  height: 48px;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid #d9e4dc;
-  border-radius: 50%;
+  border: 1px solid #d7e5dd;
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
   background: #ffffff;
-  color: #317456;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
+  color: #3d7b5e;
+  box-shadow: 4px 3px 12px rgba(15, 23, 42, 0.10);
   cursor: pointer;
-  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s ease, color 0.16s ease;
+  transform: translateY(-50%);
+  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 }
 .sidebar-collapse-toggle:hover {
   background: #ecfdf3;
   color: #166b45;
+  box-shadow: 5px 4px 15px rgba(22, 107, 69, 0.16);
 }
 .workspace.workspace-three-col.sidebar-collapsed .sidebar-collapse-toggle {
-  left: 12px;
+  left: 0;
+  border-left: 0;
 }
 .workspace.workspace-three-col.sidebar-collapsed .chat-sidebar.modern-sidebar {
   visibility: hidden;
