@@ -127,6 +127,8 @@ class RAGPipeline:
         similarity_threshold: float = 0.65,
         temperature: float = 0.1,
         max_tokens: int = 2048,
+        rrf_k: int = 60,
+        fusion_method: str = "rrf",
     ):
         self.vector_store = vector_store
         self.embedding_model = embedding_model
@@ -139,6 +141,8 @@ class RAGPipeline:
         self.similarity_threshold = similarity_threshold
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.rrf_k = rrf_k
+        self.fusion_method = fusion_method
         self._cross_encoder = None
         self._cross_encoder_failed = False
         self._lexical_cache: dict[str, tuple[float, object, list[dict], list[list[str]]]] = {}
@@ -484,20 +488,67 @@ Câu hỏi đã viết lại:"""
         return [{**documents[index], "lexical_score": float(scores[index]) / best if best > 0 else 0.0} for index in ranked if scores[index] > 0]
 
     def _hybrid_retrieve(self, question: str, vector_results: list[dict], procedure_type, top_k: int) -> list[dict]:
-        """Fuse dense and BM25 rankings, so legal identifiers survive semantic misses."""
+        """
+        Fuse dense (vector) and lexical (BM25) rankings.
+        Supports Reciprocal Rank Fusion (RRF, Cormack et al. 2009) and weighted score fusion.
+        """
         lexical_results = self._lexical_candidates(question, procedure_type, max(self.top_k * 3, 20))
         merged: dict[tuple, dict] = {}
-        max_vector = max((float(item.get("score", 0)) for item in vector_results), default=0.0)
-        for item in vector_results:
-            merged[self._chunk_key(item)] = {**item, "semantic_score": float(item.get("score", 0)) / max_vector if max_vector else 0.0, "lexical_score": 0.0}
-        for item in lexical_results:
-            key = self._chunk_key(item)
-            current = merged.get(key, {**item, "semantic_score": 0.0})
-            current["lexical_score"] = item.get("lexical_score", 0.0)
-            merged[key] = current
-        for item in merged.values():
-            # Dense retrieval carries intent; BM25 protects exact law/form numbers.
-            item["score"] = 0.65 * item["semantic_score"] + 0.35 * item["lexical_score"]
+
+        if self.fusion_method == "rrf":
+            # ── Reciprocal Rank Fusion (RRF) ─────────────────────────
+            # Formula: RRF(d) = sum(1 / (k + rank_i(d)))
+            k_rrf = self.rrf_k
+
+            # 1. Add dense candidates with dense rank
+            for rank, item in enumerate(vector_results, start=1):
+                key = self._chunk_key(item)
+                merged[key] = {
+                    **item,
+                    "rrf_score": 1.0 / (k_rrf + rank),
+                    "dense_rank": rank,
+                    "lexical_rank": None,
+                }
+
+            # 2. Add or fuse lexical candidates with lexical rank
+            for rank, item in enumerate(lexical_results, start=1):
+                key = self._chunk_key(item)
+                if key in merged:
+                    merged[key]["rrf_score"] += 1.0 / (k_rrf + rank)
+                    merged[key]["lexical_rank"] = rank
+                else:
+                    merged[key] = {
+                        **item,
+                        "rrf_score": 1.0 / (k_rrf + rank),
+                        "dense_rank": None,
+                        "lexical_rank": rank,
+                    }
+
+            for item in merged.values():
+                # Raw RRF is intentionally tiny (for k=60, at most ~0.033).
+                # Downstream confidence and citation relevance expect a
+                # comparable 0..1 retrieval score, so normalize against the
+                # theoretical best result: rank 1 in both input rankings.
+                max_rrf_score = 2.0 / (k_rrf + 1)
+                item["score"] = min(1.0, item["rrf_score"] / max_rrf_score)
+
+        else:
+            # ── Fallback: Weighted linear score fusion (Ablation baseline) ──
+            max_vector = max((float(item.get("score", 0)) for item in vector_results), default=0.0)
+            for item in vector_results:
+                merged[self._chunk_key(item)] = {
+                    **item,
+                    "semantic_score": float(item.get("score", 0)) / max_vector if max_vector else 0.0,
+                    "lexical_score": 0.0,
+                }
+            for item in lexical_results:
+                key = self._chunk_key(item)
+                current = merged.get(key, {**item, "semantic_score": 0.0})
+                current["lexical_score"] = item.get("lexical_score", 0.0)
+                merged[key] = current
+            for item in merged.values():
+                item["score"] = 0.65 * item.get("semantic_score", 0.0) + 0.35 * item.get("lexical_score", 0.0)
+
         return sorted(merged.values(), key=lambda item: item["score"], reverse=True)[:max(top_k, self.reranker_top_k)]
 
     def _build_context(self, chunks: list[RetrievedChunk]) -> str:

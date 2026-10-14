@@ -3,6 +3,7 @@ TerraLegalAI — Application Settings
 Loads all configuration from environment variables / .env file
 """
 from functools import lru_cache
+from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
@@ -66,6 +67,8 @@ class Settings(BaseSettings):
     chunk_size: int = 500
     chunk_overlap: int = 80
     similarity_threshold: float = 0.65
+    rrf_k: int = Field(default=60, ge=1, description="Hằng số k của Reciprocal Rank Fusion")
+    fusion_method: Literal["rrf", "weighted"] = "rrf"
 
     # ── Langfuse (optional) ───────────────────────────────────────
     langfuse_public_key: str = ""

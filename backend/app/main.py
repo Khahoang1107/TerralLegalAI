@@ -74,6 +74,8 @@ async def lifespan(app: FastAPI):
         similarity_threshold=settings.similarity_threshold,
         temperature=settings.gemini_temperature,
         max_tokens=settings.gemini_max_tokens,
+        rrf_k=settings.rrf_k,
+        fusion_method=settings.fusion_method,
     )
     logger.info("✅ RAG Pipeline initialized successfully.")
 
