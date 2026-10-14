@@ -1213,11 +1213,6 @@ function AppHeader({
         </div>
 
         <div className="header-actions">
-          <div className="system-status-pill hide-sm">
-            <span className="pulse-dot" />
-            <span>Hệ thống sẵn sàng</span>
-          </div>
-
           {onToggleRightPanel && (
             <button
               type="button"
