@@ -1038,10 +1038,46 @@ tr:hover td { background:#fafcfb; }
   min-height: 0;
   flex: 1;
   overflow: hidden;
+  position: relative;
   transition: grid-template-columns 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .workspace.workspace-three-col.right-collapsed {
   grid-template-columns: 285px 1fr;
+}
+.workspace.workspace-three-col.sidebar-collapsed {
+  grid-template-columns: 0 1fr 340px;
+}
+.workspace.workspace-three-col.sidebar-collapsed.right-collapsed {
+  grid-template-columns: 0 1fr;
+}
+.sidebar-collapse-toggle {
+  position: absolute;
+  z-index: 12;
+  top: 18px;
+  left: 268px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #d9e4dc;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #317456;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s ease, color 0.16s ease;
+}
+.sidebar-collapse-toggle:hover {
+  background: #ecfdf3;
+  color: #166b45;
+}
+.workspace.workspace-three-col.sidebar-collapsed .sidebar-collapse-toggle {
+  left: 12px;
+}
+.workspace.workspace-three-col.sidebar-collapsed .chat-sidebar.modern-sidebar {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* --- Modern Sidebar (Projects & Chats) --- */
@@ -2336,8 +2372,14 @@ input:checked + .slider:before {
     z-index: 35;
     box-shadow: -4px 0 24px rgba(15, 23, 42, 0.15);
   }
+  .workspace.workspace-three-col.sidebar-collapsed {
+    grid-template-columns: 0 1fr;
+  }
 }
 @media (max-width: 768px) {
+  .sidebar-collapse-toggle {
+    display: none;
+  }
   .hide-sm {
     display: none !important;
   }

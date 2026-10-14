@@ -13,7 +13,7 @@ import ProjectAssistantPanel from "@/components/chat/ProjectAssistantPanel";
 import UserSettingsModal, { type UserSettings } from "@/components/chat/UserSettingsModal";
 import LegalSnippetViewer, { cleanLegalText } from "@/components/chat/LegalSnippetViewer";
 import {
-  AlertCircle, ArrowRight, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, CircleAlert, Clock3,
+  AlertCircle, ArrowRight, BarChart3, BookOpen, Bot, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clock3,
   ExternalLink, Eye, EyeOff, FileCheck2, FileText, GitBranch, Layers, LayoutDashboard, Lock, LogOut, Mail,
   Maximize2, Menu, MessageSquare, Minimize2, MoreHorizontal, Paperclip, Pencil, Plus, RefreshCw, Save, Scale, Search,
   Send, Settings, ShieldCheck, Sparkles, TestTube2, ThumbsDown, ThumbsUp,
@@ -1473,6 +1473,7 @@ function AppHeader({
 
 function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string; userName: string; userEmail: string; onLogout: () => void }) {
   const [sidebar, setSidebar] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
@@ -1717,7 +1718,7 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
         onToggleRightPanel={() => setIsRightPanelOpen(!isRightPanelOpen)}
       />
 
-      <div className={`workspace workspace-three-col ${!isRightPanelOpen ? "right-collapsed" : ""}`}>
+      <div className={`workspace workspace-three-col ${!isRightPanelOpen ? "right-collapsed" : ""} ${isSidebarCollapsed ? "sidebar-collapsed" : ""}`}>
         {/* Left Sidebar: Projects and Conversations with scroll */}
         <ProjectSidebar
           userId={userId}
@@ -1733,6 +1734,16 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
           onSelectProject={(id) => setSelectedProjectId(id)}
         />
         {sidebar && <button type="button" className="overlay" onClick={() => setSidebar(false)} />}
+
+        <button
+          type="button"
+          className="sidebar-collapse-toggle"
+          onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+          aria-label={isSidebarCollapsed ? "Mở thanh cuộc trò chuyện" : "Thu gọn thanh cuộc trò chuyện"}
+          title={isSidebarCollapsed ? "Mở thanh cuộc trò chuyện" : "Thu gọn thanh cuộc trò chuyện"}
+        >
+          {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
 
         {/* Central Main Chat Area */}
         <main className="chat-main">
