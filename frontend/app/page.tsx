@@ -1747,33 +1747,6 @@ function UserPortal({ userId, userName, userEmail, onLogout }: { userId: string;
 
         {/* Central Main Chat Area */}
         <main className="chat-main">
-          <div className="chat-toolbar">
-            <div className="toolbar-left">
-              <h1>
-                {currentProject ? currentProject.name : "Tra cứu & Tư vấn thủ tục đất đai"}
-              </h1>
-              <p>
-                {currentProject
-                  ? `Đang áp dụng đối chiếu theo quy chuẩn hồ sơ: ${currentProject.name}`
-                  : "Thông tin được đối chiếu từ Luật Đất đai 2024 & Nghị định hướng dẫn"}
-              </p>
-            </div>
-
-            <div className="toolbar-right">
-              {currentProject && (
-                <button
-                  type="button"
-                  className="toolbar-project-chat-btn"
-                  onClick={() => handleNewChat()}
-                  title={`Tạo cuộc trò chuyện mới cho dự án: ${currentProject.name}`}
-                >
-                  <Plus size={14} />
-                  <span>Chat mới trong dự án</span>
-                </button>
-              )}
-            </div>
-          </div>
-
           <div className="message-stream custom-scrollbar">
             <div className="date-divider"><span>Hôm nay</span></div>
             
