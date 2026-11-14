@@ -523,7 +523,11 @@ Yêu cầu:
                     if next_field:
                         field_name = get_friendly_name(next_field)
                         field_type = str(next_field.get("type", "string")).lower()
-                        if field_type in ("boolean", "checkbox"):
+                        if next_field.get("is_virtual") or str(next_field.get("key", "")).startswith("section_condition_"):
+                            next_reply = next_field.get("name") or next_field.get("description") or "Bạn vui lòng cho biết phương án phù hợp nhé?"
+                            if not next_reply.endswith("?") and not next_reply.endswith(":"):
+                                next_reply += "?"
+                        elif field_type in ("boolean", "checkbox"):
                             fn_lower = field_name.strip().lower()
                             if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
                                 next_reply = f"Bạn cho biết: **{field_name}**? (Có / Không)"

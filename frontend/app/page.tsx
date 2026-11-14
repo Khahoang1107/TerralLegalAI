@@ -3020,6 +3020,7 @@ type FormSection = {
   tickNoField: string;
   oneOfStyle: "fields" | "branches";
   branches: { id: string; name: string; fieldIds: string[] }[];
+  parent_category?: string;
 };
 type SectionFieldBehavior = "yes" | "no" | "always";
 
@@ -3652,7 +3653,8 @@ function FormsView() {
           tickYesField: "",
           tickNoField: "",
           oneOfStyle: "fields",
-          branches: []
+          branches: [],
+          parent_category: f.parent_category || ""
         });
       }
     });
@@ -3947,6 +3949,7 @@ function FormsView() {
         
         const sec = editSections.find(s => s.id === (res.section_id || res.condition_group_id || res.alternative_group_id));
         if (sec) {
+          res.parent_category = sec.parent_category ? sec.parent_category.trim() : "";
           if (sec.mode === "always") {
             res.section_id = sec.id;
             res.section_name = sec.name.trim();
@@ -5012,6 +5015,10 @@ function FormsView() {
                             const memberKeys = section.mode === "one_of" && section.oneOfStyle === "branches"
                               ? section.branches.flatMap(branch => branch.fieldIds)
                               : physicalFields.filter(f => (section.mode === "one_of" ? f.alternative_group_id : f.section_id) === section.id).map(f => f.key);
+                            const memberIndices = physicalFields
+                              .map((f, idx) => memberKeys.includes(f.key) ? idx : -1)
+                              .filter(idx => idx >= 0);
+                            const hasGap = memberIndices.length > 1 && (memberIndices[memberIndices.length - 1] - memberIndices[0] + 1 !== memberIndices.length);
                             const isCollapsed = editCollapsedSections[section.id] ?? false;
 
                             return (
@@ -5042,6 +5049,16 @@ function FormsView() {
                                     <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {section.name || "(Chưa đặt tên nhóm)"}
                                     </span>
+                                    {section.parent_category && (
+                                      <span style={{ fontSize: "0.68rem", padding: "1px 6px", borderRadius: 10, background: "#ede9fe", color: "#5b21b6", fontWeight: 700, flexShrink: 0 }}>
+                                        📁 {section.parent_category}
+                                      </span>
+                                    )}
+                                    {hasGap && (
+                                      <span style={{ fontSize: "0.66rem", color: "#b45309", background: "#fef3c7", border: "1px solid #fde68a", padding: "1px 5px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 2, flexShrink: 0 }} title="Các ô trong nhóm này bị ngắt quãng bởi ô khác trên biểu mẫu. Nên tách thành các cụm riêng để AI hỏi tuần tự.">
+                                        ⚠️ Ô ngắt quãng
+                                      </span>
+                                    )}
                                     <span style={{
                                       fontSize: "0.68rem",
                                       padding: "1px 6px",
@@ -5085,7 +5102,7 @@ function FormsView() {
                                 {/* Group Card Body */}
                                 {!isCollapsed && (
                                   <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8 }}>
                                       <div>
                                         <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, color: "#475569", marginBottom: 3 }}>
                                           Tên nhóm logic:
@@ -5103,6 +5120,26 @@ function FormsView() {
                                             }));
                                           }}
                                           placeholder="VD: Thông tin thửa đất"
+                                          style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: "0.78rem" }}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label style={{ display: "block", fontSize: "0.7rem", fontWeight: 600, color: "#475569", marginBottom: 3 }}>
+                                          📁 Cụm lớn / Phần cha (tùy chọn):
+                                        </label>
+                                        <input
+                                          value={section.parent_category || ""}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            setEditSections(prev => prev.map(s => s.id === section.id ? { ...s, parent_category: val } : s));
+                                            setEditFields(prev => prev.map(f => {
+                                              if (f.alternative_group_id === section.id || f.condition_group_id === section.id || f.section_id === section.id) {
+                                                return { ...f, parent_category: val };
+                                              }
+                                              return f;
+                                            }));
+                                          }}
+                                          placeholder="VD: I. Người nộp thuế hoặc IV. Thửa đất"
                                           style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: "0.78rem" }}
                                         />
                                       </div>
@@ -5380,36 +5417,116 @@ function FormsView() {
                             const sectionMembers = (sec: FormSection) => sec.mode === "one_of" && sec.oneOfStyle === "branches"
                               ? physicalFields.filter(f => sec.branches.some(branch => branch.fieldIds.includes(f.key)))
                               : physicalFields.filter(f => (sec.mode === "one_of" ? f.alternative_group_id : f.section_id) === sec.id);
-                            
-                            const sectionByField = new Map<string, FormSection>();
-                            editSections.forEach(sec => sectionMembers(sec).forEach(f => sectionByField.set(f.key, sec)));
-                            const resultTickIds = new Set(editSections.flatMap(sec => [sec.tickYesField, sec.tickNoField]).filter(Boolean));
 
-                            const entries: Array<{ order: number; kind: "field"; field: typeof physicalFields[number]; num: number } | { order: number; kind: "section"; section: FormSection; members: typeof physicalFields }> = [];
+                            type TimelineEntry =
+                              | { kind: "chapter"; title: string }
+                              | { kind: "field"; field: typeof physicalFields[number]; num: number }
+                              | { kind: "section"; section: FormSection; members: typeof physicalFields; isContinuation?: boolean };
 
-                            editSections.forEach((sec, idx) => {
+                            const entries: TimelineEntry[] = [];
+                            const handledConditionSecIds = new Set<string>();
+                            const handledResultTickKeys = new Set(editSections.flatMap(sec => [sec.tickYesField, sec.tickNoField]).filter(Boolean));
+
+                            // Pre-calculate condition anchors (right before their earliest member field)
+                            const conditionAnchorMap = new Map<number, FormSection[]>();
+                            editSections.filter(s => s.mode === "yes_no" || s.mode === "one_of").forEach(sec => {
                               const members = sectionMembers(sec);
                               const firstIdx = physicalFields.findIndex(f => members.some(m => m.key === f.key));
-                              entries.push({ order: firstIdx >= 0 ? firstIdx + 1 : (physicalFields.length + idx + 1), kind: "section", section: sec, members });
+                              const anchorIdx = firstIdx >= 0 ? firstIdx : physicalFields.length;
+                              if (!conditionAnchorMap.has(anchorIdx)) conditionAnchorMap.set(anchorIdx, []);
+                              conditionAnchorMap.get(anchorIdx)!.push(sec);
                             });
 
-                            physicalFields.forEach((field, fIdx) => {
-                              if (!sectionByField.has(field.key) && !resultTickIds.has(field.key)) {
-                                entries.push({ order: fIdx + 1, kind: "field", field, num: fIdx + 1 });
+                            const conditionMemberKeys = new Set<string>();
+                            editSections.filter(s => s.mode === "yes_no" || s.mode === "one_of").forEach(sec => {
+                              sectionMembers(sec).forEach(f => conditionMemberKeys.add(f.key));
+                            });
+
+                            let currentChapter = "";
+                            let i = 0;
+                            while (i < physicalFields.length) {
+                              if (conditionAnchorMap.has(i)) {
+                                conditionAnchorMap.get(i)!.forEach(sec => {
+                                  if (!handledConditionSecIds.has(sec.id)) {
+                                    handledConditionSecIds.add(sec.id);
+                                    if (sec.parent_category && sec.parent_category !== currentChapter) {
+                                      currentChapter = sec.parent_category;
+                                      entries.push({ kind: "chapter", title: currentChapter });
+                                    }
+                                    entries.push({ kind: "section", section: sec, members: sectionMembers(sec) });
+                                  }
+                                });
                               }
-                            });
 
-                            entries.sort((a, b) => a.order - b.order || (a.kind === "section" ? -1 : 1));
+                              const field = physicalFields[i];
+                              if (handledResultTickKeys.has(field.key) || conditionMemberKeys.has(field.key)) {
+                                i++;
+                                continue;
+                              }
 
+                              const sec = editSections.find(s => s.mode === "always" && s.id === field.section_id);
+                              if (sec) {
+                                if (sec.parent_category && sec.parent_category !== currentChapter) {
+                                  currentChapter = sec.parent_category;
+                                  entries.push({ kind: "chapter", title: currentChapter });
+                                }
+                                const run: typeof physicalFields = [field];
+                                let j = i + 1;
+                                while (j < physicalFields.length) {
+                                  if (conditionAnchorMap.has(j)) break;
+                                  const nextF = physicalFields[j];
+                                  if (nextF.section_id === sec.id && !handledResultTickKeys.has(nextF.key) && !conditionMemberKeys.has(nextF.key)) {
+                                    run.push(nextF);
+                                    j++;
+                                  } else {
+                                    break;
+                                  }
+                                }
+                                const allMembers = sectionMembers(sec);
+                                const isContinuation = allMembers.length > run.length && allMembers[0].key !== run[0].key;
+                                entries.push({ kind: "section", section: sec, members: run, isContinuation });
+                                i = j;
+                              } else {
+                                entries.push({ kind: "field", field, num: i + 1 });
+                                i++;
+                              }
+                            }
+
+                            if (conditionAnchorMap.has(physicalFields.length)) {
+                              conditionAnchorMap.get(physicalFields.length)!.forEach(sec => {
+                                if (!handledConditionSecIds.has(sec.id)) {
+                                  handledConditionSecIds.add(sec.id);
+                                  if (sec.parent_category && sec.parent_category !== currentChapter) {
+                                    currentChapter = sec.parent_category;
+                                    entries.push({ kind: "chapter", title: currentChapter });
+                                  }
+                                  entries.push({ kind: "section", section: sec, members: sectionMembers(sec) });
+                                }
+                              });
+                            }
+
+                            let counter = 0;
                             return entries.map((entry, index) => {
+                              if (entry.kind === "chapter") {
+                                return (
+                                  <div key={`chapter-${index}`} style={{ position: "relative", zIndex: 1, marginTop: index > 0 ? 8 : 0, marginBottom: 2 }}>
+                                    <div style={{ background: "linear-gradient(90deg, #1e1b4b 0%, #312e81 100%)", color: "#fff", padding: "6px 12px", borderRadius: 6, fontSize: "0.78rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                                      <span>📁</span>
+                                      <span>CỤM LỚN: {entry.title}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              counter++;
                               if (entry.kind === "field") {
                                 const field = entry.field;
                                 const isAuto = field.value_source && field.value_source !== "user_input";
                                 const parent = physicalFields.find(item => item.key === (typeof field.depends_on === "object" ? field.depends_on?.field : field.depends_on));
                                 return (
-                                  <div key={`flow-field-${field.key}`} style={{ position: "relative", zIndex: 1 }}>
+                                  <div key={`flow-field-${field.key}-${index}`} style={{ position: "relative", zIndex: 1 }}>
                                     <div style={{ position: "absolute", left: -21, top: 6, width: 16, height: 16, borderRadius: "50%", background: isAuto ? "#0891b2" : "#64748b", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.55rem", fontWeight: 700, boxShadow: "0 0 0 3px #fff" }}>
-                                      {index + 1}
+                                      {counter}
                                     </div>
                                     <div style={{ background: isAuto ? "#ecfeff" : "#fff", border: `1px solid ${isAuto ? "#a5f3fc" : "#e2e8f0"}`, borderRadius: 8, padding: "8px 10px" }}>
                                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -5424,30 +5541,39 @@ function FormsView() {
                                 );
                               }
 
-                              const { section, members } = entry;
+                              const { section, members, isContinuation } = entry;
                               const isYesNo = section.mode === "yes_no";
                               const isOneOf = section.mode === "one_of";
                               const memberText = (items: typeof physicalFields) => items.map(f => f.name || f.key).join(" → ") || "chưa có trường";
 
                               return (
-                                <div key={`flow-section-${section.id}`} style={{ position: "relative", zIndex: 1 }}>
+                                <div key={`flow-section-${section.id}-${index}`} style={{ position: "relative", zIndex: 1 }}>
                                   <div style={{ position: "absolute", left: -21, top: 6, width: 16, height: 16, borderRadius: "50%", background: isYesNo ? "#2563eb" : isOneOf ? "#ea580c" : "#16a34a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.55rem", fontWeight: 700, boxShadow: "0 0 0 3px #fff" }}>
-                                    {index + 1}
+                                    {counter}
                                   </div>
-                                  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
+                                  <div style={{ background: "#fff", border: `1px solid ${isContinuation ? "#cbd5e1" : "#e2e8f0"}`, borderRadius: 8, padding: "10px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                                       <span style={{ fontSize: "0.68rem", fontWeight: 700, color: isYesNo ? "#2563eb" : isOneOf ? "#ea580c" : "#16a34a" }}>
                                         {isYesNo ? "🔀 Có/Không" : isOneOf ? "◉ Chọn một" : "🟢 Cụm"}
                                       </span>
-                                      <strong style={{ fontSize: "0.78rem", color: "#1e293b" }}>{section.name || "(Chưa đặt tên)"}</strong>
+                                      <strong style={{ fontSize: "0.78rem", color: "#1e293b" }}>
+                                        {section.name || "(Chưa đặt tên)"} {isContinuation ? <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 500 }}>(phần tiếp theo)</span> : ""}
+                                      </strong>
+                                      {section.parent_category && (
+                                        <span style={{ fontSize: "0.65rem", padding: "1px 5px", borderRadius: 4, background: "#ede9fe", color: "#5b21b6", fontWeight: 600 }}>
+                                          {section.parent_category}
+                                        </span>
+                                      )}
                                       <span style={{ marginLeft: "auto", fontSize: "0.66rem", color: "#64748b" }}>{members.length} trường</span>
                                     </div>
                                     <div style={{ fontSize: "0.73rem", color: "#334155", background: "#f8fafc", padding: "6px 8px", borderRadius: 5, marginBottom: 6 }}>
-                                      🗣️ AI hỏi một lần: “{section.question || (isYesNo
-                                        ? `Bạn có ${section.name || "thông tin này"} không?`
-                                        : isOneOf
-                                          ? `Bạn muốn chọn ${(section.oneOfStyle === "branches" ? section.branches.map(b => b.name) : members.map(m => m.name)).join(" hay ")}?`
-                                          : `Sau đây là ${section.name || "các thông tin cần cung cấp"}:`)}”
+                                      🗣️ AI hỏi: “{isContinuation
+                                        ? `Sau đây là các thông tin tiếp theo của ${section.name}:`
+                                        : (section.question || (isYesNo
+                                          ? `Bạn có ${section.name || "thông tin này"} không?`
+                                          : isOneOf
+                                            ? `Bạn muốn chọn ${(section.oneOfStyle === "branches" ? section.branches.map(b => b.name) : members.map(m => m.name)).join(" hay ")}?`
+                                            : `Sau đây là ${section.name || "các thông tin cần cung cấp"}:`))}”
                                     </div>
                                     {isYesNo ? (
                                       <div style={{ display: "grid", gap: 4, fontSize: "0.69rem" }}>
