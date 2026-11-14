@@ -458,3 +458,88 @@ def prepend_group_introduction(fields, candidate_key, reply, introduced_groups):
         reply = f"{introduction}\n\n{reply}"
     introduced.append(str(group))
     return reply, introduced
+
+
+def extract_multi_fields_deterministic(text: str, form_fields: List[Dict[str, Any]]) -> Dict[str, str]:
+    """Deterministic multi-field extraction for form fields when user provides batch declarations."""
+    if not text or not form_fields:
+        return {}
+    
+    extracted: Dict[str, str] = {}
+    field_keys = {f.get("key"): f for f in form_fields}
+
+    # 1. Nơi tiếp nhận (field_9003)
+    if "field_9003" in field_keys:
+        m = re.search(r"(?:nơi\s*tiếp\s*nhận(?:\s*là)?|kính\s*gửi)\s*[:=]?\s*([^;,\.]+)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9003"] = m.group(1).strip(" .;,")
+            
+    # 2. Họ và tên (field_9004)
+    if "field_9004" in field_keys:
+        m = re.search(r"(?:tôi\s*tên(?:\s*là)?|họ\s*và\s*tên(?:\s*là)?|tên\s*tôi\s*là)\s*[:=]?\s*([^;,\.]+)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9004"] = m.group(1).strip(" .;,")
+            
+    # 3. Giấy tờ nhân thân (field_9005)
+    if "field_9005" in field_keys:
+        m_edit = re.search(r"sửa\s*lại\s*(?:giấy\s*tờ\s*nhân\s*thân\s*(?:thành)?)\s*[:=]?\s*([^;\.]+)", text, re.IGNORECASE)
+        if m_edit and any(kw in m_edit.group(1).lower() for kw in ("căn cước", "cccd", "cmnd")):
+            extracted["field_9005"] = m_edit.group(1).strip(" .;,")
+        else:
+            m = re.search(r"(?:giấy\s*tờ\s*nhân\s*thân(?:\s*là)?\s*[:=]?\s*|(?<!\w)(?:cccd|cmnd|căn\s*cước\s*công\s*dân)\s*(?:số)?\s*[:=]?\s*)([a-zA-Z0-9\s]+?)(?=[;,\.]|(?:\s+địa\s*chỉ|\s+điện\s*thoại|$))", text, re.IGNORECASE)
+            if m:
+                val = m.group(0).strip(" .;,")
+                val = re.sub(r"^giấy\s*tờ\s*nhân\s*thân(?:\s*là)?\s*[:=]?\s*", "", val, flags=re.IGNORECASE).strip(" .;,")
+                extracted["field_9005"] = val
+            
+    # 4. Địa chỉ (field_9006)
+    if "field_9006" in field_keys:
+        m = re.search(r"(?:địa\s*chỉ(?:\s*là)?)\s*[:=]?\s*([^;]+?)(?=[;]|(?:\s+điện\s*thoại|\s+sđt|$))", text, re.IGNORECASE)
+        if m:
+            extracted["field_9006"] = m.group(1).strip(" .;,")
+            
+    # 5. Điện thoại (field_9007)
+    if "field_9007" in field_keys:
+        if re.search(r"(?:không\s*có\s*(?:số\s*)?điện\s*thoại|bỏ\s*qua\s*(?:trường\s*)?(?:số\s*)?điện\s*thoại)", text, re.IGNORECASE):
+            extracted["field_9007"] = SKIPPED
+        else:
+            m = re.search(r"(?:số\s*điện\s*thoại(?:\s*đúng)?(?:\s*là)?|điện\s*thoại(?:\s*là)?|sđt(?:\s*là)?)\s*[:=]?\s*([0-9\s\.\-\+]{9,15})", text, re.IGNORECASE)
+            if m:
+                clean_phone = re.sub(r"[^\d\+]", "", m.group(1))
+                extracted["field_9007"] = clean_phone
+
+    # 6. Email (field_9008)
+    if "field_9008" in field_keys:
+        if re.search(r"(?:không\s*có\s*email|bỏ\s*qua\s*(?:trường\s*)?email|không\s*có\s*hộp\s*thư)", text, re.IGNORECASE):
+            extracted["field_9008"] = SKIPPED
+        else:
+            m = re.search(r"(?:email(?:\s*là)?|hộp\s*thư(?:\s*điện\s*tử)?(?:\s*là)?)\s*[:=]?\s*([^\s;,]+@[^\s;,]+)", text, re.IGNORECASE)
+            if m:
+                extracted["field_9008"] = m.group(1).strip(" .;,")
+                
+    # 7. Nội dung biến động (field_9021)
+    if "field_9021" in field_keys:
+        m = re.search(r"(?:nội\s*dung\s*biến\s*động(?:\s*là)?)\s*[:=]?\s*([^;]+?)(?=[;]|$)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9021"] = m.group(1).strip(" .;,")
+            
+    # 8. Giấy tờ liên quan thứ hai (field_9009)
+    if "field_9009" in field_keys:
+        m = re.search(r"(?:giấy\s*tờ(?:\s*liên\s*quan)?\s*thứ\s*hai(?:\s*là)?)\s*[:=]?\s*([^;]+?)(?=[;]|$)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9009"] = m.group(1).strip(" .;,")
+            
+    # 9. Giấy tờ liên quan thứ ba (field_9010)
+    if "field_9010" in field_keys:
+        m = re.search(r"(?:giấy\s*tờ(?:\s*liên\s*quan)?\s*thứ\s*ba(?:\s*là)?)\s*[:=]?\s*([^;]+?)(?=[;]|$)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9010"] = m.group(1).strip(" .;,")
+            
+    # 10. Nơi viết đơn (field_9020)
+    if "field_9020" in field_keys:
+        m = re.search(r"(?:nơi\s*viết\s*đơn(?:\s*là)?)\s*[:=]?\s*([^;\.]+)", text, re.IGNORECASE)
+        if m:
+            extracted["field_9020"] = m.group(1).strip(" .;,")
+            
+    return extracted
+

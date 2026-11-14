@@ -126,11 +126,13 @@ def _recover_legacy_template(
             overlap = len(expected_keys & variables)
             title_hits = sum(token in text for token in name_tokens)
 
-            # Match either variable overlap or strong title tokens (e.g. "bien", "dong")
+            # Match only genuine variable overlap or variable overlap + title hits.
+            # Never match on title tokens alone: that would incorrectly overwrite
+            # newly created forms with unrelated existing templates sharing common
+            # words (such as 'khai', 'thue', 'phi nong nghiep').
             match_condition = (
                 (overlap >= 2)
                 or (overlap >= 1 and title_hits >= 1)
-                or (title_hits >= min(2, len(name_tokens)) and title_hits >= 2)
             )
             if not match_condition:
                 continue

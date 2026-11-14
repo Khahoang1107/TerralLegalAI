@@ -116,3 +116,19 @@ db_check*.py
 sample_form.json
 b7413_*.docx
 dummy.docx
+
+# Temporary test images and local diagram generation scripts
+/t*.png
+/temp.png
+/test_*.png
+/current_diagram.png
+/luanvan_p10.png
+/hinh_3_1_final_locked.png
+/generate_*.py
+/render_*.py
+/lock_architecture_*.py
+/architecture_diagram.puml
+/mermaid_official.md
+/TT23_content.txt
+/HINH_3_1_5_LOP_KIEN_TRUC.*
+/HINH_3_1_KIEN_TRUC_CHINH_THUC.*

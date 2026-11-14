@@ -883,8 +883,11 @@ async def update_form_template(
         raise HTTPException(status_code=404, detail="Không tìm thấy biểu mẫu")
 
     template_path = writable_template_path(str(form.id))
+    raw_template_path = writable_template_path(f"{form.id}_raw")
     content = await file.read()
     with open(template_path, "wb") as f:
+        f.write(content)
+    with open(raw_template_path, "wb") as f:
         f.write(content)
 
     import shutil
@@ -892,14 +895,24 @@ async def update_form_template(
         try:
             os.makedirs(d, exist_ok=True)
             p = os.path.join(d, f"{form.id}.docx")
+            p_raw = os.path.join(d, f"{form.id}_raw.docx")
             if os.path.abspath(p) != os.path.abspath(template_path):
                 shutil.copy2(template_path, p)
+            if os.path.abspath(p_raw) != os.path.abspath(raw_template_path):
+                shutil.copy2(raw_template_path, p_raw)
         except Exception:
             pass
 
     if form.mapping:
         try:
             _inject_jinja_tags(template_path, form.mapping)
+            for d in [os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+                try:
+                    p = os.path.join(d, f"{form.id}.docx")
+                    if os.path.abspath(p) != os.path.abspath(template_path):
+                        shutil.copy2(template_path, p)
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -1179,18 +1192,34 @@ async def preview_pdf_form(
         )
 
         # ── Step 4: Render ────────────────────────────────────────────────────────
-        doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
-        print("DEBUG PREVIEW DATA:", preview_data)
-        doc.render(preview_data)
-        _populate_table_data(doc, payload, form)
-
         temp_id = f"preview_{uuid.uuid4().hex}"
         temp_dir = os.path.join("data", "exports")
         os.makedirs(temp_dir, exist_ok=True)
 
         output_docx = os.path.join(temp_dir, f"{temp_id}.docx")
         output_pdf  = os.path.join(temp_dir, f"{temp_id}.pdf")
-        doc.save(output_docx)
+
+        # For admin visual zone editor preview without submitted payload data,
+        # use the untouched original DOCX (_raw.docx) if available. This preserves
+        # original blank dots, tabs, line spacing, and square boxes 100% identically
+        # to the Step 2 labeling screen.
+        raw_candidates = [
+            writable_template_path(f"{form_id}_raw"),
+            os.path.join("data", "templates", f"{form_id}_raw.docx"),
+            os.path.join("backend", "data", "templates", f"{form_id}_raw.docx"),
+        ]
+        raw_source = next((p for p in raw_candidates if os.path.exists(p)), None)
+        has_real_payload = bool(payload and any(str(v).strip() for v in payload.values() if v is not None))
+
+        if mode == "admin" and format == "images" and not has_real_payload and raw_source:
+            import shutil
+            shutil.copy2(raw_source, output_docx)
+        else:
+            doc = DocxTemplate(bound_template_stream(template_path, form.mapping or {}, form.fields or []))
+            print("DEBUG PREVIEW DATA:", preview_data)
+            doc.render(preview_data)
+            _populate_table_data(doc, payload, form)
+            doc.save(output_docx)
         # Convert sang PDF bằng LibreOffice
         try:
             subprocess.run([
@@ -1761,9 +1790,23 @@ async def create_visual_form(
         
         if os.path.exists(raw_path):
             template_path = writable_template_path(str(form.id))
+            raw_backup_path = writable_template_path(f"{form.id}_raw")
             
             import shutil
             shutil.copy2(raw_path, template_path)
+            shutil.copy2(raw_path, raw_backup_path)
+
+            for d in [os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+                try:
+                    os.makedirs(d, exist_ok=True)
+                    p = os.path.join(d, f"{form.id}.docx")
+                    p_raw = os.path.join(d, f"{form.id}_raw.docx")
+                    if os.path.abspath(p) != os.path.abspath(template_path):
+                        shutil.copy2(template_path, p)
+                    if os.path.abspath(p_raw) != os.path.abspath(raw_backup_path):
+                        shutil.copy2(raw_backup_path, p_raw)
+                except Exception:
+                    pass
             
             # Auto-patch TerraLegal square shapes to support mst_ jinja tags
             try:
@@ -1835,6 +1878,13 @@ async def create_visual_form(
             
             if data.mapping:
                 _inject_jinja_tags(template_path, data.mapping)
+                for d in [os.path.join("data", "templates"), os.path.join("backend", "data", "templates")]:
+                    try:
+                        p = os.path.join(d, f"{form.id}.docx")
+                        if os.path.abspath(p) != os.path.abspath(template_path):
+                            shutil.copy2(template_path, p)
+                    except Exception:
+                        pass
                 
             os.remove(raw_path)
             final_pdf = os.path.join(temp_dir, f"{data.temp_id}_final.pdf")

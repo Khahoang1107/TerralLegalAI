@@ -34,6 +34,7 @@ def detect_explicit_chat_mode(question: str) -> ChatMode:
     exit_patterns = (
         "dung dien", "thoat dien", "huy dien", "dung ke khai",
         "thoat ke khai", "khong dien nua", "bo bieu mau",
+        "huy tac vu", "huy don", "huy to khai", "huy giup toi", "dung lai",
     )
     if any(pattern in text for pattern in exit_patterns):
         return "exit_form"
@@ -56,6 +57,17 @@ def detect_explicit_chat_mode(question: str) -> ChatMode:
         return "form"
 
     return "unknown"
+
+
+def detect_out_of_scope(question: str) -> bool:
+    """Kiểm tra xem câu hỏi có yêu cầu hành vi vượt quá thẩm quyền của trợ lý AI hay không (ký thay, nộp thay, phê duyệt)."""
+    text = _plain(question)
+    out_patterns = (
+        "ky chung thuc", "ky so", "ky dien tu", "ky ten thay", "ky thay",
+        "nop thang ho so", "nop ho so len so", "nop thay", "nop ho",
+        "phe duyet ho so", "cap so giup", "dong dau giup",
+    )
+    return any(p in text for p in out_patterns)
 
 
 def resolve_active_conversation_mode(saved_mode: str, explicit_mode: ChatMode) -> Literal["rag", "form"]:
@@ -88,19 +100,34 @@ _FILL_PATTERNS = re.compile(
 )
 
 
+_FIELD_DECLARATIONS = re.compile(
+    r"\b(tôi\s*tên|họ\s*tên|cccd|cmnd|căn\s*cước|địa\s*chỉ|điện\s*thoại|sđt|email|"
+    r"nơi\s*tiếp\s*nhận|nơi\s*viết\s*đơn|nội\s*dung\s*biến\s*động\s*là|giấy\s*tờ\s*thứ|giấy\s*tờ\s*liên\s*quan|"
+    r"hợp\s*đồng\s*chuyển\s*nhượng|tờ\s*khai\s*lệ\s*phí|bỏ\s*qua\s*trường|sửa\s*lại\s*giấy\s*tờ)\b",
+    re.IGNORECASE | re.UNICODE,
+)
+
+_INTERROGATIVE_PATTERNS = re.compile(
+    r"(\?|\b(như\s*thế\s*nào|ra\s*sao|ở\s*đâu|mất\s*bao\s*lâu|bao\s*nhiêu|khi\s*nào|ai\s*có\s*thẩm\s*quyền|được\s*không)\b)",
+    re.IGNORECASE | re.UNICODE,
+)
+
+
 def detect_digression(
     user_message: str,
     current_field_name: str = "",
 ) -> DigressionIntent:
     """
     Phân loại ý định khi người dùng đang điền form:
-    - FILL: Câu trả lời cho trường đang hỏi
+    - FILL: Câu trả lời cho trường đang hỏi (hoặc khai báo nhiều trường)
     - ASK_LEGAL: Người dùng hỏi quy định / pháp lý / thủ tục
 
-    Dùng heuristic nhanh trước, không tốn API call:
-    - Câu ngắn (≤ 6 từ) hoặc khớp pattern số → FILL
-    - Câu có dấu "?" hoặc từ khóa pháp lý → ASK_LEGAL
-    - Trường hợp còn lại → FILL (mặc định an toàn)
+    Dùng heuristic an toàn:
+    - Câu có dấu hiệu khai báo trường (chấm phẩy, từ khóa khai báo) → FILL
+    - Câu là số / ngày tháng thuần → FILL
+    - Câu ngắn (≤ 6 từ) không dấu hỏi và không từ khóa luật → FILL
+    - Câu có dấu hỏi hoặc từ khóa pháp lý thực sự mang tính hỏi → ASK_LEGAL
+    - Mặc định an toàn: FILL
     """
     text = user_message.strip()
 
@@ -108,18 +135,25 @@ def detect_digression(
     if _FILL_PATTERNS.match(text):
         return "FILL"
 
-    # Fast-path 2: Câu rất ngắn (≤ 6 từ) và không có dấu hỏi → câu trả lời form
+    # Fast-path 2: Nếu câu chứa dấu chấm phẩy hoặc dấu hiệu khai báo trường → chắc chắn là FILL
+    if ";" in text or _FIELD_DECLARATIONS.search(text):
+        # Trừ khi câu là câu hỏi đơn thuần không có phân tách trường
+        if not (text.endswith("?") and ";" not in text and not _FIELD_DECLARATIONS.search(text)):
+            return "FILL"
+
+    # Fast-path 3: Câu rất ngắn (≤ 6 từ) và không có dấu hỏi → câu trả lời form
     word_count = len(text.split())
     has_question_mark = "?" in text
 
     if word_count <= 6 and not has_question_mark and not _LEGAL_KEYWORDS.search(text):
         return "FILL"
 
-    # Fast-path 3: Có dấu hỏi HOẶC từ khóa pháp lý rõ ràng → hỏi luật
-    if has_question_mark or _LEGAL_KEYWORDS.search(text):
+    # Fast-path 4: Có dấu hỏi HOẶC từ khóa pháp lý mang tính tra cứu → hỏi luật
+    if has_question_mark or _INTERROGATIVE_PATTERNS.search(text) or _LEGAL_KEYWORDS.search(text):
         logger.debug(f"detect_digression → ASK_LEGAL for: '{text[:60]}'")
         return "ASK_LEGAL"
 
     # Mặc định: coi là câu trả lời form (an toàn hơn là gọi RAG nhầm)
     return "FILL"
+
 

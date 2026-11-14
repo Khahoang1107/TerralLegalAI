@@ -476,7 +476,7 @@ Chỉ đối với các trường trong danh sách "CÁC TRƯỜNG TỰ ĐỘNG 
 - Trường "Ngày" → điền "{day_str}"
 - Trường "Tháng" → điền "{month_str}"
 - Trường "Năm" → điền "{year_str}"
-- Trường "Tỉnh (Nơi viết)" hoặc tương tự → lấy tỉnh/thành từ trường Địa chỉ đã thu thập (nếu có) để điền, KHÔNG hỏi người dùng.
+- Trường "Tỉnh (Nơi viết)": CHỈ ĐIỀN khi người dùng nêu rõ hoặc cung cấp trong câu, KHÔNG tự ý suy luận gán sớm.
 
 **BƯỚC 4 — KIỂM TRA HOÀN THÀNH:**
 Sau khi tổng hợp tất cả dữ liệu (bao gồm collected_data cũ + các trường vừa gán ở Bước 1 + các trường tự điền ở Bước 2, Bước 3):

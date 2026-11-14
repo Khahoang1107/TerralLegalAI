@@ -159,11 +159,11 @@ class DocumentChunker:
 
     # Bước N trong QĐ 1467 (dạng bảng OCR có thể bị lỗi)
     BUOC_RE = re.compile(
-        r"(?:^|(?<=\n))\s*B(?:ư|u)\s*[oơ]\s*[cC]\s+(\d+)\s*[|\-–]?\s*",
+        r"(?:^|(?<=\n))\s*B(?:ư|u|ướ|ươ)\s*[oơớó]?\s*[cC]\s+(\d+)\s*[|\-–]?\s*",
         re.MULTILINE | re.IGNORECASE,
     )
     BUOC_ANY_RE = re.compile(
-        r"B\s*[uư]\s*[oơ]\s*c\s+\d+",
+        r"B\s*(?:ư|u|ướ|ươ)\s*[oơớó]?\s*c\s+\d+",
         re.IGNORECASE,
     )
 
@@ -824,7 +824,7 @@ class DocumentChunker:
         Xử lý nhiều cách viết do OCR: "Bước", "Buoc", "Bướóc"...
         """
         buoc_re = re.compile(
-            r"B\s*[uưU]\s*[oơO]\s*[cC]\s+(\d+)",
+            r"B\s*(?:ư|u|ướ|ươ)\s*[oơớó]?\s*[cC]\s+(\d+)",
             re.IGNORECASE,
         )
         matches = list(buoc_re.finditer(text))

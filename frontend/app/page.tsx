@@ -3407,6 +3407,9 @@ function FormsView() {
       };
     });
 
+    const cachedImages = previewData?.page_images || (previewData?.preview_url ? [previewData.preview_url] : []);
+    const cachedDims = previewData?.page_dimensions || [];
+
     setUploading(true);
     setLabelPreviewBackup({ previewData, editableZones, labeledZones: { ...labeledZonesRef.current }, fieldOrder: [...fieldOrderRef.current], fieldData: { ...fieldData }, formName, procedureType, formDesc });
     try {
@@ -3420,7 +3423,7 @@ function FormsView() {
       });
       const form = await formsApi.getForm(created.id || created.form_id);
       resetModal();
-      await openEdit(form, mode, activeZoneIdx);
+      await openEdit(form, mode, activeZoneIdx, cachedImages, cachedDims);
       setEditTab("fields");
       showToast("Đã tạo bản nháp. Hãy hoàn thiện Nhóm logic và Luồng AI trong trình biên tập mới.", "success");
     } catch (err: any) {
@@ -3590,7 +3593,13 @@ function FormsView() {
     }
   };
 
-  const openEdit = async (form: any, initialMode: "label" | "add" | "adjust" | "merge" | "remove" = "adjust", selectedZone: string | null = null) => {
+  const openEdit = async (
+    form: any,
+    initialMode: "label" | "add" | "adjust" | "merge" | "remove" = "adjust",
+    selectedZone: string | null = null,
+    initialImages?: string[],
+    initialDims?: { page: number; width: number; height: number }[]
+  ) => {
     setEditSplitPercent(40);
     setEditZoomMode("a4");
     setEditingForm(form);
@@ -3677,7 +3686,18 @@ function FormsView() {
 
     setEditSections(Array.from(sectionsMap.values()));
     
-    await refreshEditPreview(form.id);
+    if (initialImages && initialImages.length > 0) {
+      setEditPageDimensions(initialDims || []);
+      setEditPageImages(initialImages.map((src: string) => src.startsWith("/") ? `${API_BASE_URL}${src.replace(/^\/api\/v1/, "")}` : src));
+      formsApi.previewPdf(form.id, {}, "admin").then(blob => {
+        if (blob) {
+          if (editPdfUrl) URL.revokeObjectURL(editPdfUrl);
+          setEditPdfUrl(URL.createObjectURL(blob));
+        }
+      }).catch(() => null);
+    } else {
+      await refreshEditPreview(form.id);
+    }
   };
 
   const refreshEditPreview = useCallback(async (formId: string) => {

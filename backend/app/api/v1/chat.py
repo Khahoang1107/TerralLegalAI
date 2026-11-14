@@ -160,6 +160,81 @@ async def _execute_chat(
                 raise HTTPException(status_code=404, detail="Không tìm thấy cuộc trò chuyện")
             conv_record = existing_conv
 
+        from backend.app.core.intent_router import detect_explicit_chat_mode, detect_out_of_scope
+        if detect_out_of_scope(request.question):
+            user_msg = Message(
+                id=str(uuid.uuid4()),
+                conversation_id=conversation_id,
+                role="user",
+                content=request.question,
+            )
+            db.add(user_msg)
+            answer_text = (
+                "Rất tiếc, tôi là Trợ lý AI hỗ trợ tra cứu thông tin và chuẩn bị dự thảo biểu mẫu hành chính đất đai. "
+                "Hệ thống không có thẩm quyền pháp lý để ký chứng thực điện tử hay nộp hồ sơ trực tiếp thay cho công dân. "
+                "Sau khi hoàn thiện biểu mẫu, bạn vui lòng tải về, kiểm tra lại, ký tên và nộp trực tiếp tại Bộ phận Một cửa "
+                "hoặc Cổng Dịch vụ công theo đúng quy định."
+            )
+            assistant_msg = Message(
+                id=str(uuid.uuid4()),
+                conversation_id=conversation_id,
+                role="assistant",
+                content=answer_text,
+                intent="out_of_scope",
+            )
+            db.add(assistant_msg)
+            await db.commit()
+            return ChatResponse(
+                answer=answer_text,
+                citations=[],
+                confidence=1.0,
+                intent="out_of_scope",
+                procedure_type="",
+                conversation_id=conversation_id,
+                message_id=assistant_msg.id,
+                latency_ms=15,
+                is_fallback=False,
+                form_completed=False,
+                form_id=None,
+                collected_data={},
+            )
+
+        if detect_explicit_chat_mode(request.question) == "exit_form":
+            prev_data = conv_record.state.get("collected_data", {}) if conv_record.state else {}
+            conv_record.state = {"active_form_id": None, "collected_data": prev_data, "flow_state": {}, "is_cancelled": True}
+            flag_modified(conv_record, "state")
+            user_msg = Message(
+                id=str(uuid.uuid4()),
+                conversation_id=conversation_id,
+                role="user",
+                content=request.question,
+            )
+            db.add(user_msg)
+            answer_text = "Dạ, tôi đã hủy tác vụ điền biểu mẫu theo yêu cầu của bạn. Nếu cần hỗ trợ tra cứu quy định pháp luật đất đai hoặc thủ tục khác, bạn cứ hỏi tôi nhé!"
+            assistant_msg = Message(
+                id=str(uuid.uuid4()),
+                conversation_id=conversation_id,
+                role="assistant",
+                content=answer_text,
+                intent="cancel_task",
+            )
+            db.add(assistant_msg)
+            await db.commit()
+            return ChatResponse(
+                answer=answer_text,
+                citations=[],
+                confidence=1.0,
+                intent="cancel_task",
+                procedure_type="",
+                conversation_id=conversation_id,
+                message_id=assistant_msg.id,
+                latency_ms=10,
+                is_fallback=False,
+                form_completed=False,
+                form_id=None,
+                collected_data=prev_data,
+            )
+
         # Detect form intent
         is_form_intent = False
         active_form = None
@@ -323,6 +398,12 @@ Yêu cầu:
                 logging.getLogger(__name__).error(f"Lỗi khi lấy RAG context cho biểu mẫu: {e}")
 
             agent = get_form_agent(req)
+            from backend.app.core.form_flow import extract_multi_fields_deterministic
+            det_fields = extract_multi_fields_deterministic(request.question, active_form.fields or [])
+            if det_fields:
+                logger.info(f"Deterministic extraction pre-run captured {len(det_fields)} fields: {list(det_fields.keys())}")
+                collected_data.update(det_fields)
+
             result = await agent.run_extraction(
                 form_name=active_form.name,
                 form_fields=active_form.fields,
@@ -366,6 +447,10 @@ Yêu cầu:
                         continue
 
                 collected_data[extracted.key] = normalized_value
+
+            # Re-apply deterministic fields to ensure they are never clobbered
+            for det_k, det_v in det_fields.items():
+                collected_data[det_k] = det_v
 
             # Deterministic flow: applies/reopens dependent branches and settles
             # one-of groups.  The provenance lets a later parent answer reopen
