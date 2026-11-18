@@ -347,52 +347,105 @@ async def _execute_chat(
             forms_result = await db.execute(select(FormSchema).where(FormSchema.is_active == True))
             available_forms = forms_result.scalars().all()
             normalized_question = " ".join(request.question.casefold().split())
-            form_intent_markers = (
-                "điền mẫu", "điền biểu mẫu", "điền đơn", "kê khai", "tạo đơn",
-                "làm đơn", "xuất đơn", "điền form", "tạo biểu mẫu", "mở biểu mẫu",
-                "điền tờ khai", "làm tờ khai", "tạo tờ khai", "tờ khai", "khai trước bạ",
-            )
-            needs_form_router = any(marker in normalized_question for marker in form_intent_markers)
 
-            if available_forms and needs_form_router:
-                from google import genai
-                from google.genai import types
-                from backend.app.core.config import settings
-                import json
-                
-                form_list_str = "\n".join([f"- ID: {f.id} | Tên: {f.name} | Loại thủ tục: {f.procedure_type}" for f in available_forms])
-                router_prompt = f"""Phân tích câu hỏi của người dùng và xác định xem họ có muốn ĐIỀN BIỂU MẪU hay không.
-Danh sách các biểu mẫu hiện có:
+            # ── TẦNG 1: KHỚP TRỰC TIẾP Ý ĐỊNH VÀ BIỂU MẪU (DETERMINISTIC FAST MATCH - 0ms) ──
+            matched_direct_form = None
+            if available_forms:
+                action_words = [
+                    "khai", "kê khai", "điền", "làm", "tạo", "soạn", "viết", "lập", "nhập",
+                    "hướng dẫn", "giúp", "hỗ trợ", "muốn", "cần", "cho tôi", "xuất"
+                ]
+                has_action = any(act in normalized_question for act in action_words)
+
+                for f in available_forms:
+                    f_name_lower = f.name.lower()
+                    # Khớp form Thuế phi nông nghiệp:
+                    if "phi nông nghiệp" in f_name_lower or "thuế" in f_name_lower:
+                        if has_action and any(k in normalized_question for k in ["phi nông nghiệp", "thuế phi nông", "thuế đất", "khai thuế"]):
+                            matched_direct_form = f
+                            break
+                    # Khớp form Đơn đăng ký biến động:
+                    if "biến động" in f_name_lower or "mẫu số 18" in f_name_lower or "mẫu 18" in f_name_lower:
+                        if has_action and any(k in normalized_question for k in ["biến động", "mẫu số 18", "mẫu 18", "đơn số 18", "đăng ký biến động", "sang tên"]):
+                            matched_direct_form = f
+                            break
+                    # Khớp form Tờ khai trước bạ:
+                    if "trước bạ" in f_name_lower:
+                        if has_action and any(k in normalized_question for k in ["trước bạ", "lệ phí trước bạ"]):
+                            matched_direct_form = f
+                            break
+
+            if matched_direct_form:
+                logger.info(f"Direct deterministic form match: {matched_direct_form.name} for question '{request.question}'")
+                active_form = matched_direct_form
+                is_form_intent = True
+                conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}, "flow_state": {}}
+                flag_modified(conv_record, "state")
+                await db.flush()
+            elif available_forms:
+                # ── TẦNG 2: MỞ RỘNG TỪ KHÓA ĐỜI THƯỜNG VÀ DÙNG GEMINI ROUTER THÔNG MINH ──
+                form_intent_markers = (
+                    "điền mẫu", "điền biểu mẫu", "điền đơn", "kê khai", "tạo đơn",
+                    "làm đơn", "xuất đơn", "điền form", "tạo biểu mẫu", "mở biểu mẫu",
+                    "điền tờ khai", "làm tờ khai", "tạo tờ khai", "tờ khai", "khai trước bạ",
+                    "khai thuế", "làm thuế", "nộp thuế", "tự khai", "khai báo",
+                    "giúp tôi khai", "muốn khai", "cần khai", "cho tôi khai",
+                    "giúp tôi điền", "muốn điền", "cần điền", "cho tôi điền",
+                    "hướng dẫn khai", "hướng dẫn điền", "hỗ trợ khai", "hỗ trợ điền",
+                    "viết đơn", "soạn đơn", "soạn tờ khai", "lập tờ khai", "nhập tờ khai",
+                )
+                has_form_title_keyword = any(
+                    any(part in normalized_question for part in f.name.lower().split() if len(part) >= 4)
+                    for f in available_forms
+                )
+                needs_form_router = any(marker in normalized_question for marker in form_intent_markers) or has_form_title_keyword
+
+                if needs_form_router:
+                    from google import genai
+                    from google.genai import types
+                    from backend.app.core.config import settings
+                    import json
+                    
+                    form_list_str = "\n".join([f"- ID: {f.id} | Tên: {f.name} | Loại thủ tục: {f.procedure_type}" for f in available_forms])
+                    router_prompt = f"""Bạn là bộ định tuyến ý định cho hệ thống thủ tục đất đai.
+Nhiệm vụ: Phân tích câu hỏi của người dùng (bằng ngôn ngữ đời thường) và xác định xem người dùng có muốn BẮT ĐẦU ĐIỀN / KHAI một biểu mẫu hay không.
+
+Danh sách các biểu mẫu hiện có trong hệ thống:
 {form_list_str}
+
+Bảng đối chiếu ngôn ngữ đời thường và biểu mẫu pháp lý:
+- "khai thuế", "khai thuế phi nông nghiệp", "khai thuế đất", "nộp thuế đất" -> Tờ khai thuế phi nông nghiệp
+- "sang tên", "chuyển nhượng", "tặng cho", "đổi sổ đỏ", "đăng ký biến động", "mẫu 18" -> Đơn đăng ký biến động
+- "khai trước bạ", "lệ phí trước bạ" -> Tờ khai lệ phí trước bạ
 
 Câu hỏi người dùng: "{request.question}"
 
 Yêu cầu:
-- Nếu người dùng muốn điền một biểu mẫu có trong danh sách, hãy trả về JSON: {{"intent": "form", "form_id": "<id_của_biểu_mẫu>"}}
-- Nếu không (chỉ hỏi thông tin, hỏi luật), hãy trả về JSON: {{"intent": "rag", "form_id": null}}
+- Nếu người dùng có ý định điền/khai một biểu mẫu trong danh sách (dù dùng từ đời thường như "khai thuế", "giúp tôi khai", "điền đơn"...), hãy trả về JSON: {{"intent": "form", "form_id": "<id_của_biểu_mẫu>"}}
+- Nếu người dùng chỉ muốn hỏi luật, tra cứu thông tin (ví dụ: "thủ tục gồm những gì?", "thuế suất bao nhiêu?"), hãy trả về JSON: {{"intent": "rag", "form_id": null}}
 """
-                try:
-                    router_client = genai.Client(api_key=settings.gemini_api_key)
-                    router_resp = await router_client.aio.models.generate_content(
-                        model='gemini-2.5-flash',
-                        contents=router_prompt,
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            temperature=0.0
+                    try:
+                        router_client = genai.Client(api_key=settings.gemini_api_key)
+                        router_resp = await router_client.aio.models.generate_content(
+                            model='gemini-2.5-flash',
+                            contents=router_prompt,
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                temperature=0.0
+                            )
                         )
-                    )
-                    router_data = json.loads(router_resp.text)
-                    if router_data.get("intent") == "form" and router_data.get("form_id"):
-                        selected_id = router_data.get("form_id")
-                        active_form = next((f for f in available_forms if str(f.id) == str(selected_id)), None)
-                        if active_form:
-                            is_form_intent = True
-                            conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}, "flow_state": {}}
-                            flag_modified(conv_record, "state")
-                            await db.flush()
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).error(f"Lỗi khi route intent: {e}")
+                        router_data = json.loads(router_resp.text)
+                        if router_data.get("intent") == "form" and router_data.get("form_id"):
+                            selected_id = router_data.get("form_id")
+                            active_form = next((f for f in available_forms if str(f.id) == str(selected_id)), None)
+                            if active_form:
+                                is_form_intent = True
+                                conv_record.state = {"active_form_id": str(active_form.id), "collected_data": {}, "flow_state": {}}
+                                flag_modified(conv_record, "state")
+                                await db.flush()
+                    except Exception as e:
+                        import logging
+                        logging.getLogger(__name__).error(f"Lỗi khi route intent: {e}")
 
         # 2. Load lịch sử hội thoại (cho multi-turn context)
         chat_history = await _load_chat_history(db, conversation_id)

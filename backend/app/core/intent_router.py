@@ -51,7 +51,9 @@ def detect_explicit_chat_mode(question: str) -> ChatMode:
     form_patterns = (
         "dien bieu mau", "dien form", "dien to khai", "dien don",
         "tao bieu mau", "tao to khai", "lap to khai", "ke khai bieu mau",
-        "ke khai to khai", "hoan thien bieu mau",
+        "ke khai to khai", "hoan thien bieu mau", "khai thue", "ke khai thue",
+        "khai phi nong nghiep", "khai thue phi nong nghiep", "giup toi khai",
+        "muon khai thue", "khai truoc ba", "ke khai",
     )
     if any(pattern in text for pattern in form_patterns):
         return "form"
