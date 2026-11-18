@@ -4100,7 +4100,16 @@ function FormsView() {
         const emptyZonesCount = physicalFields.filter(f => !f.visual_zones || f.visual_zones.length === 0).length;
 
         const handleDeleteField = (fieldKey: string) => {
-          setEditFields(prev => prev.filter(f => f.key !== fieldKey));
+          setEditFields(prev => prev
+            .filter(f => f.key !== fieldKey)
+            .map(f => {
+              if (f.depends_on) {
+                const depKey = typeof f.depends_on === "object" ? f.depends_on?.field : f.depends_on;
+                if (depKey === fieldKey) return { ...f, depends_on: null };
+              }
+              return f;
+            })
+          );
           setEditSections(prev => prev.map(s => {
             if (s.mode === "one_of" && s.oneOfStyle === "branches") {
               return { ...s, branches: s.branches.map(b => ({ ...b, fieldIds: b.fieldIds.filter(id => id !== fieldKey) })) };
@@ -4111,6 +4120,43 @@ function FormsView() {
             return s;
           }));
           showToast("Đã xóa trường!", "success");
+        };
+
+        const handleCleanEmptyZones = () => {
+          const emptyKeys = new Set(
+            physicalFields
+              .filter(f => !f.visual_zones || f.visual_zones.length === 0)
+              .map(f => f.key)
+          );
+          if (emptyKeys.size === 0) return;
+          if (!confirm(`Bạn có muốn xóa bỏ ${emptyKeys.size} trường không còn ô trên tài liệu (do đã gộp hoặc xóa) không?`)) return;
+
+          setEditFields(prev => prev
+            .filter(f => f.is_virtual || !emptyKeys.has(f.key))
+            .map(f => {
+              if (f.depends_on) {
+                const depKey = typeof f.depends_on === "object" ? f.depends_on?.field : f.depends_on;
+                if (depKey && emptyKeys.has(depKey)) return { ...f, depends_on: null };
+              }
+              return f;
+            })
+          );
+
+          setEditSections(prev => prev.map(s => {
+            if (s.mode === "one_of" && s.oneOfStyle === "branches") {
+              return { ...s, branches: s.branches.map(b => ({ ...b, fieldIds: b.fieldIds.filter(id => !emptyKeys.has(id)) })) };
+            }
+            if (s.pdfBehavior === "checkboxes") {
+              return {
+                ...s,
+                tickYesField: emptyKeys.has(s.tickYesField) ? "" : s.tickYesField,
+                tickNoField: emptyKeys.has(s.tickNoField) ? "" : s.tickNoField
+              };
+            }
+            return s;
+          }));
+
+          showToast(`Đã dọn dẹp ${emptyKeys.size} trường rỗng!`, "success");
         };
 
         const editVisualZones = physicalFields.flatMap((field) =>
@@ -4615,12 +4661,7 @@ function FormsView() {
                             {emptyZonesCount > 0 && (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (confirm(`Bạn có muốn xóa bỏ ${emptyZonesCount} trường không còn ô trên tài liệu (do đã gộp hoặc xóa) không?`)) {
-                                    setEditFields(prev => prev.filter(f => f.is_virtual || (f.visual_zones && f.visual_zones.length > 0)));
-                                    showToast(`Đã dọn dẹp ${emptyZonesCount} trường rỗng!`, "success");
-                                  }
-                                }}
+                                onClick={handleCleanEmptyZones}
                                 style={{
                                   padding: "3px 8px", borderRadius: 20,
                                   border: "1px solid #fca5a5",
