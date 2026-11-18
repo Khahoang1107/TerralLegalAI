@@ -4722,7 +4722,16 @@ function FormsView() {
                             const advOpen = editAdvancedOpen[field.key] ?? false;
 
                             return (
-                              <div id={`form-field-${field.key}`} key={field.key} style={{
+                              <div
+                                id={`form-field-${field.key}`}
+                                key={field.key}
+                                onClick={() => {
+                                  const matchingZone = editVisualZones.find((z: any) => z.field_key === field.key);
+                                  if (matchingZone) {
+                                    setEditActiveZoneIdx(String(matchingZone.idx));
+                                  }
+                                }}
+                                style={{
                                 padding: "10px 12px",
                                 border: `2px solid ${editActiveZoneIdx && editLabeledZones[editActiveZoneIdx] === field.key ? "#2563eb" : hasGroup ? "#c4b5fd" : "#e2e8f0"}`,
                                 borderRadius: 8,

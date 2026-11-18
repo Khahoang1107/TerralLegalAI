@@ -732,13 +732,37 @@ function PageCanvas({
                 <span style={{ fontSize: 14, color: "#ef4444", fontWeight: "bold", background: "rgba(255,255,255,0.85)", padding: "0 4px", borderRadius: 2, lineHeight: 1.4 }}>✕</span>
               )}
               {mode !== 'remove' && (
-                <span style={{
-                  fontSize: 10, fontWeight: "bold", color: borderColor,
-                  background: "rgba(255,255,255,0.88)", padding: "0 3px", borderRadius: 2, lineHeight: 1.4,
-                  maxWidth: "95%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>
-                  {displayLabel}
-                </span>
+                renderWidth <= 28 ? (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -14,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      fontSize: 8.5,
+                      fontWeight: 800,
+                      color: "#ffffff",
+                      background: borderColor,
+                      padding: "0 3px",
+                      borderRadius: 2,
+                      lineHeight: 1.3,
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                      zIndex: 5,
+                    }}
+                  >
+                    {detail?.num ?? globalSeqNum}
+                  </span>
+                ) : (
+                  <span style={{
+                    fontSize: 10, fontWeight: "bold", color: borderColor,
+                    background: "rgba(255,255,255,0.88)", padding: "0 3px", borderRadius: 2, lineHeight: 1.4,
+                    maxWidth: "95%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {displayLabel}
+                  </span>
+                )
               )}
               {mode === 'adjust' && isActive && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(handle => {
                 const positions: Record<string, React.CSSProperties> = {
