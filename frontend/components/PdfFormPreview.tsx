@@ -164,7 +164,7 @@ export default function PdfFormPreview({
         {!readOnly && onModeChange && (
           <>
             <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.2)", margin: "0 2px" }} />
-            
+
             <button
               type="button"
               onClick={() => onModeChange("label")}
@@ -293,38 +293,38 @@ export default function PdfFormPreview({
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "58px 20px 20px"
       }}>
-      {pageImages && pageImages.map((imgUrl, index) => {
-        const pageNumber = index + 1;
-        const pageZones = zones.filter(z => z.page === pageNumber);
-        
-        const pageDim = pageDimensions?.find(p => p.page === pageNumber);
-        const pdfWidth = pageDim ? pageDim.width : 595.28;
-        const scale = pageWidth / pdfWidth;
+        {pageImages && pageImages.map((imgUrl, index) => {
+          const pageNumber = index + 1;
+          const pageZones = zones.filter(z => z.page === pageNumber);
 
-        return (
-          <PageCanvas
-            key={`page_${pageNumber}`}
-            imgUrl={imgUrl}
-            token={token}
-            pageWidth={pageWidth}
-            scale={scale}
-            pageNumber={pageNumber}
-            pageZones={pageZones}
-            pageTextBlocks={textBlocks.filter(tb => tb.page === pageNumber)}
-            mode={mode}
-            labeledZones={labeledZones}
-            mergeSelection={mergeSelection}
-            activeZoneIdx={activeZoneIdx}
-            onZoneClick={readOnly ? () => {} : onZoneClick}
-            onTextBlockClick={onTextBlockClick}
-            onZonesChange={readOnly ? undefined : onZonesChange}
-            allZones={zones}
-            readOnly={readOnly}
-            aiPredictions={aiPredictions}
-            fieldDetails={fieldDetails}
-          />
-        );
-      })}
+          const pageDim = pageDimensions?.find(p => p.page === pageNumber);
+          const pdfWidth = pageDim ? pageDim.width : 595.28;
+          const scale = pageWidth / pdfWidth;
+
+          return (
+            <PageCanvas
+              key={`page_${pageNumber}`}
+              imgUrl={imgUrl}
+              token={token}
+              pageWidth={pageWidth}
+              scale={scale}
+              pageNumber={pageNumber}
+              pageZones={pageZones}
+              pageTextBlocks={textBlocks.filter(tb => tb.page === pageNumber)}
+              mode={mode}
+              labeledZones={labeledZones}
+              mergeSelection={mergeSelection}
+              activeZoneIdx={activeZoneIdx}
+              onZoneClick={readOnly ? () => { } : onZoneClick}
+              onTextBlockClick={onTextBlockClick}
+              onZonesChange={readOnly ? undefined : onZonesChange}
+              allZones={zones}
+              readOnly={readOnly}
+              aiPredictions={aiPredictions}
+              fieldDetails={fieldDetails}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -361,8 +361,8 @@ function PageCanvas({
   const [blobUrl, setBlobUrl] = useState<string>("");
   // Drawing state for "add" mode
   const [drawing, setDrawing] = useState(false);
-  const [drawStart, setDrawStart] = useState<{x: number, y: number} | null>(null);
-  const [drawRect, setDrawRect] = useState<{x: number, y: number, w: number, h: number} | null>(null);
+  const [drawStart, setDrawStart] = useState<{ x: number, y: number } | null>(null);
+  const [drawRect, setDrawRect] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
   const [adjustment, setAdjustment] = useState<{
     zoneIdx: string;
     handle: string;
@@ -597,7 +597,7 @@ function PageCanvas({
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         width: pageWidth,
         background: "white",
-            cursor: readOnly ? 'default' : (mode === 'add' ? 'crosshair' : 'default'),
+        cursor: readOnly ? 'default' : (mode === 'add' ? 'crosshair' : 'default'),
         userSelect: 'none',
         pointerEvents: readOnly ? 'none' : 'auto',
       }}
@@ -666,13 +666,13 @@ function PageCanvas({
           // Label text hiển thị trên zone
           let displayLabel = "";
           let hoverTitle = "";
-          
+
           // Ưu tiên dùng detail.num (rank toàn form) thay vì index local của trang
           const fieldId = isLabeled ? labeledZones[idxStr] : null;
           const detail = fieldId ? fieldDetails[fieldId] : null;
           // Số thứ tự nhất quán: dùng detail.num nếu đã labeled, fallback về index trong allZones
           const globalSeqNum = detail?.num ?? (allZones.findIndex(z => String(z.idx) === idxStr) + 1);
-          
+
           if (mode === 'remove') {
             hoverTitle = `Xóa vùng #${globalSeqNum}`;
           } else if (mode === 'merge') {
@@ -687,7 +687,7 @@ function PageCanvas({
             }
           } else if (pred) {
             displayLabel = pred.label;
-            hoverTitle = `🤖 AI đề xuất: ${pred.label} (${Math.round(conf*100)}%)`;
+            hoverTitle = `🤖 AI đề xuất: ${pred.label} (${Math.round(conf * 100)}%)`;
           } else {
             displayLabel = zone.suggested_label || `+`;
             hoverTitle = zone.suggested_label

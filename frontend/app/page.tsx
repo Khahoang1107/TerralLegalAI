@@ -5140,10 +5140,20 @@ function FormsView() {
                             const memberKeys = section.mode === "one_of" && section.oneOfStyle === "branches"
                               ? section.branches.flatMap(branch => branch.fieldIds)
                               : physicalFields.filter(f => (section.mode === "one_of" ? f.alternative_group_id : f.section_id) === section.id).map(f => f.key);
-                            const memberIndices = physicalFields
-                              .map((f, idx) => memberKeys.includes(f.key) ? idx : -1)
-                              .filter(idx => idx >= 0);
-                            const hasGap = memberIndices.length > 1 && (memberIndices[memberIndices.length - 1] - memberIndices[0] + 1 !== memberIndices.length);
+                            const checkGap = (keys: string[]) => {
+                              const indices = physicalFields
+                                .map((f, idx) => keys.includes(f.key) ? idx : -1)
+                                .filter(idx => idx >= 0);
+                              return indices.length > 1 && (indices[indices.length - 1] - indices[0] + 1 !== indices.length);
+                            };
+                            const hasGap = section.mode === "always"
+                              ? checkGap(memberKeys)
+                              : section.mode === "yes_no"
+                                ? (checkGap(physicalFields.filter(f => f.section_id === section.id && (typeof f.depends_on === "object" ? f.depends_on?.value !== false : true)).map(f => f.key)) ||
+                                   checkGap(physicalFields.filter(f => f.section_id === section.id && (typeof f.depends_on === "object" ? f.depends_on?.value === false : false)).map(f => f.key)))
+                                : section.oneOfStyle === "branches"
+                                  ? section.branches.some(b => checkGap(b.fieldIds))
+                                  : checkGap(memberKeys);
                             const isCollapsed = editCollapsedSections[section.id] ?? false;
 
                             return (
