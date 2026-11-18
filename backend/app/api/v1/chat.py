@@ -210,7 +210,7 @@ async def _execute_chat(
                 raise HTTPException(status_code=404, detail="Không tìm thấy cuộc trò chuyện")
             conv_record = existing_conv
 
-        from backend.app.core.intent_router import detect_explicit_chat_mode, detect_out_of_scope
+        from backend.app.core.intent_router import detect_explicit_chat_mode, detect_out_of_scope, match_form_intent
         if detect_out_of_scope(request.question):
             user_msg = Message(
                 id=str(uuid.uuid4()),
@@ -349,31 +349,7 @@ async def _execute_chat(
             normalized_question = " ".join(request.question.casefold().split())
 
             # ── TẦNG 1: KHỚP TRỰC TIẾP Ý ĐỊNH VÀ BIỂU MẪU (DETERMINISTIC FAST MATCH - 0ms) ──
-            matched_direct_form = None
-            if available_forms:
-                action_words = [
-                    "khai", "kê khai", "điền", "làm", "tạo", "soạn", "viết", "lập", "nhập",
-                    "hướng dẫn", "giúp", "hỗ trợ", "muốn", "cần", "cho tôi", "xuất"
-                ]
-                has_action = any(act in normalized_question for act in action_words)
-
-                for f in available_forms:
-                    f_name_lower = f.name.lower()
-                    # Khớp form Thuế phi nông nghiệp:
-                    if "phi nông nghiệp" in f_name_lower or "thuế" in f_name_lower:
-                        if has_action and any(k in normalized_question for k in ["phi nông nghiệp", "thuế phi nông", "thuế đất", "khai thuế"]):
-                            matched_direct_form = f
-                            break
-                    # Khớp form Đơn đăng ký biến động:
-                    if "biến động" in f_name_lower or "mẫu số 18" in f_name_lower or "mẫu 18" in f_name_lower:
-                        if has_action and any(k in normalized_question for k in ["biến động", "mẫu số 18", "mẫu 18", "đơn số 18", "đăng ký biến động", "sang tên"]):
-                            matched_direct_form = f
-                            break
-                    # Khớp form Tờ khai trước bạ:
-                    if "trước bạ" in f_name_lower:
-                        if has_action and any(k in normalized_question for k in ["trước bạ", "lệ phí trước bạ"]):
-                            matched_direct_form = f
-                            break
+            matched_direct_form = match_form_intent(request.question, available_forms) if available_forms else None
 
             if matched_direct_form:
                 logger.info(f"Direct deterministic form match: {matched_direct_form.name} for question '{request.question}'")

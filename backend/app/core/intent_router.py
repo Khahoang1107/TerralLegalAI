@@ -72,6 +72,52 @@ def detect_out_of_scope(question: str) -> bool:
     return any(p in text for p in out_patterns)
 
 
+def match_form_intent(question: str, available_forms: list) -> any:
+    """
+    Xác định nhanh biểu mẫu mà người dùng muốn điền/kê khai dựa trên ngôn ngữ tự nhiên.
+    Trả về FormSchema tương ứng nếu có ý định điền/khai form rõ ràng, hoặc None nếu là câu hỏi tra cứu/RAG.
+    """
+    if not question or not available_forms:
+        return None
+
+    q_plain = _plain(question)
+
+    # Nếu câu hỏi chứa từ khóa tra cứu thông tin/thủ tục/quy định -> để RAG giải đáp
+    info_markers = [
+        "nhung gi", "can nhung giay to gi", "bao nhieu tien", "thue suat",
+        "nop o dau", "o dau", "bao lau", "mat bao lau", "thoi han", "quy dinh",
+        "co duoc khong", "la gi", "the nao", "huong dan thu tuc"
+    ]
+    if any(m in q_plain for m in info_markers):
+        return None
+
+    tax_keywords = [
+        "phi nong nghiep", "thue phi nong", "thue dat", "khai thue",
+        "ke khai thue", "to khai thue", "nop thue dat", "lam thue dat", "khai phi nong nghiep"
+    ]
+    transfer_keywords = [
+        "bien dong", "mau 18", "mau so 18", "don so 18", "dang ky bien dong",
+        "sang ten", "chuyen nhuong", "tang cho", "doi so do", "cap doi so"
+    ]
+    registration_tax_keywords = [
+        "truoc ba", "le phi truoc ba", "khai truoc ba", "to khai truoc ba"
+    ]
+
+    for f in available_forms:
+        f_plain = _plain(f.name)
+        if "phi nong nghiep" in f_plain or "thue" in f_plain:
+            if any(k in q_plain for k in tax_keywords):
+                return f
+        if "bien dong" in f_plain or "18" in f_plain:
+            if any(k in q_plain for k in transfer_keywords):
+                return f
+        if "truoc ba" in f_plain:
+            if any(k in q_plain for k in registration_tax_keywords):
+                return f
+
+    return None
+
+
 def resolve_active_conversation_mode(saved_mode: str, explicit_mode: ChatMode) -> Literal["rag", "form"]:
     """Resolve one turn without discarding the active form or its answers."""
     if explicit_mode in {"rag", "exit_form"}:
