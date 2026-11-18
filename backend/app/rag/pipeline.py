@@ -659,6 +659,103 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
         logger.info("Gemini finish_reason=%s | response_chars=%s", finish_reason, len(response.text or ""))
         return response.text
 
+    @staticmethod
+    def _clean_legal_snippet(text: str) -> str:
+        """Làm sạch các lỗi font chữ, OCR ligatures và rác bảng biểu trong đoạn trích pháp lý."""
+        if not text:
+            return ""
+        import re
+
+        # 0. Khắc phục lỗi gãy dòng do bảng OCR quét ngang trong QĐ 1467
+        cleaned = re.sub(
+            r"gửi người sử dụng\s+Văn phòng Đăng [^\n]*\s*Bước\s*2\s*đất để bổ sung hoàn chỉnh;?\s*Đất đai/Chi nhánh Văn làm việc",
+            "gửi người sử dụng đất để bổ sung hoàn chỉnh.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai (02 ngày làm việc)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"Cập nhật cơ sở dữ liệu đất [^\n]*\|\s*Phòng Đăng ký Đất đai\s*\n\s*lập hồ sơ để Nhà nước quản lý\.\s*\n\s*phòng Đăng ký Đất đai làm việc",
+            "Cập nhật cơ sở dữ liệu đất đai và lập hồ sơ để Nhà nước quản lý.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"Xác nhận\s*iãy chứng nhận đã cấp\s+Văn phòng Đăng ký\s+0[\.,]5\s*ngà\s*\n\s*Bước\s*4\s*\|\s*hoặc in giấy chứng nhận[^\n]*",
+            "Bước 4: Xác nhận Giấy chứng nhận đã cấp hoặc in Giấy chứng nhận.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai (0,5 ngày làm việc)",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+
+        # 1. Sửa lỗi OCR từ vựng tiếng Việt phổ biến
+        cleaned = re.sub(r"[&§]\s*Ễy\s*đủ", "đầy đủ", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"&Ễy", "đầy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bỄy\s*đủ", "đầy đủ", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"chưa\s*&[^\s]+\s*đủ", "chưa đầy đủ", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"(?<=[a-zà-ỹA-ZÀ-Ỹ])iãy", " Giấy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"iãy\s*chứng\s*nhận", "Giấy chứng nhận", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\biãy\b", "giấy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bgiãy\b", "giấy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"Đăng\s*Ối\b", "Đăng ký", cleaned)
+        cleaned = re.sub(r"Đăng\s*ối\b", "Đăng ký", cleaned)
+        cleaned = re.sub(r"0[\.,]5\s*ngà\b", "0,5 ngày", cleaned)
+        cleaned = re.sub(r"\bngà\s+làm\s*việc", "ngày làm việc", cleaned)
+        cleaned = re.sub(r"\bđất\s*đi\s*và\b", "đất đai và", cleaned)
+        cleaned = re.sub(r"\bdất\s*đai\b", "đất đai", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bdât\s*dai\b", "đất đai", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\bthửa\s*đắt\b", "thửa đất", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"Cấp\s*đồi", "Cấp đổi", cleaned)
+        cleaned = re.sub(r"gắn\s*liên\b", "gắn liền", cleaned)
+        cleaned = re.sub(r"Nghị\s*định\s*sô\b", "Nghị định số", cleaned)
+        cleaned = re.sub(r"yêu\s*câu\b", "yêu cầu", cleaned)
+        cleaned = re.sub(r"ghi\s*đây\s*đủ\b", "ghi đầy đủ", cleaned)
+        cleaned = re.sub(r"quyen\s*sử\s*dung\b", "quyền sử dụng", cleaned)
+        cleaned = re.sub(r"tải\s*sản\b", "tài sản", cleaned)
+        cleaned = re.sub(r"đo\s*đạc\s*đề\b", "đo đạc để", cleaned)
+        cleaned = re.sub(r"ffl[l1íiìỉĩị]*t\s*đai", "đất đai", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"ffl[l1íiìỉĩị]*t", "đất", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"fflấy", "giấy", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"[øo][1la]\s*đình", "gia đình", cleaned, flags=re.IGNORECASE)
+
+        # 2. Dọn rác bảng và rác OCR
+        cleaned = re.sub(r"[,;]?\s*\bm\s*[:;,]\s*", ", ", cleaned)
+        cleaned = re.sub(r"\|\s*[,;]?\s*\??\s*[A-ZĐ0-9_]{2,8}\b", "", cleaned)
+        cleaned = re.sub(r"\|\s*[,;?\s]+(?=\n|$)", "", cleaned)
+        cleaned = re.sub(r"^[ \t]*[\\\/][ \t]*", "", cleaned, flags=re.MULTILINE)
+        cleaned = re.sub(r"\bBước\s*(\d+)\s*[:\-|]?\s*", r"\nBước \1: ", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*\|\s*", " - ", cleaned)
+        cleaned = re.sub(r"[,;][,\s;]+", ", ", cleaned)
+
+        # 3. Lọc bỏ từ mồ côi dòng đầu
+        raw_lines = [l.strip() for l in cleaned.split("\n")]
+        lines = []
+        for l in raw_lines:
+            if not l:
+                continue
+            if len(lines) == 0 and len(l.split()) <= 2 and not l.startswith(("Điều", "Mục", "Bước", "[", "(")):
+                continue
+            lines.append(l)
+
+        # 4. Hợp nhất dòng bị ngắt câu giữa chừng
+        merged = []
+        for l in lines:
+            if l.startswith("Bước "):
+                merged.append(l)
+            elif (
+                merged
+                and (
+                    merged[-1].endswith((",", ";", " -", " và", " hoặc"))
+                    or not re.search(r"[\.\?!:]$", merged[-1])
+                )
+                and not l.startswith(("-", "+", "•", "Bước", "Điều", "(", "["))
+            ):
+                merged[-1] = merged[-1] + " " + l
+            else:
+                merged.append(l)
+
+        res = "\n\n".join(merged)
+        res = re.sub(r"[ \t]+", " ", res)
+        return res.strip()
+
     def _extract_citations(self, chunks: list[RetrievedChunk], answer: str) -> list[Citation]:
         """Return only source passages with lexical evidence in the generated answer."""
         answer_terms = set(_tokens(answer))
@@ -676,10 +773,7 @@ Hãy tóm tắt và diễn giải lại nội dung pháp lý bằng lời dễ h
                 source_name=c.source_name,
                 article=c.article,
                 clause=c.clause,
-                # A citation is already a bounded document chunk. Keep the
-                # complete chunk so the expandable source does not end in the
-                # middle of a sentence (the old 200-character slice did).
-                text_snippet=c.text.strip(),
+                text_snippet=self._clean_legal_snippet(c.text),
                 relevance_score=round(0.7 * c.score + 0.3 * support, 3),
             )
             for c, support in supported

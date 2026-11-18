@@ -2,16 +2,54 @@ import React from "react";
 import { FileText, Bookmark, Info, CheckCircle2, Scale } from "lucide-react";
 
 /**
- * Làm sạch các lỗi chính tả, font chữ và OCR ligatures tiếng Việt
- * phổ biến trong dữ liệu trích xuất văn bản pháp luật / đất đai
+ * Làm sạch các lỗi chính tả, font chữ, OCR ligatures tiếng Việt
+ * và rác bảng biểu thường gặp trong văn bản TTHC / đất đai (QĐ 1467, QĐ 1085, Luật Đất đai)
  */
 export function cleanLegalText(raw: string): string {
   if (!raw) return "";
 
   let text = raw;
 
+  // 0. Sửa các lỗi OCR đặc thù do quét bảng ngang dòng trong QĐ 1467 (Quy trình nội bộ)
+  text = text.replace(
+    /gửi người sử dụng\s+Văn phòng Đăng [^\n]*\s*Bước\s*2\s*đất để bổ sung hoàn chỉnh;?\s*Đất đai\/Chi nhánh Văn làm việc/gi,
+    "gửi người sử dụng đất để bổ sung hoàn chỉnh.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai (02 ngày làm việc)"
+  );
+  text = text.replace(
+    /Cập nhật cơ sở dữ liệu đất [^\n]*\|\s*Phòng Đăng ký Đất đai\s*\n\s*lập hồ sơ để Nhà nước quản lý\.\s*\n\s*phòng Đăng ký Đất đai làm việc/gi,
+    "Cập nhật cơ sở dữ liệu đất đai và lập hồ sơ để Nhà nước quản lý.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai"
+  );
+  text = text.replace(
+    /Xác nhận\s*iãy chứng nhận đã cấp\s+Văn phòng Đăng ký\s+0[\.,]5\s*ngà\s*\n\s*Bước\s*4\s*\|\s*hoặc in giấy chứng nhận[^\n]*/gi,
+    "Bước 4: Xác nhận Giấy chứng nhận đã cấp hoặc in Giấy chứng nhận.\n- Cơ quan thực hiện: Văn phòng Đăng ký Đất đai / Chi nhánh Văn phòng Đăng ký Đất đai (0,5 ngày làm việc)"
+  );
+
   // 1. Khắc phục các lỗi dính chữ (ligature) và lỗi font OCR tiếng Việt
   text = text
+    .replace(/[&§]\s*Ễy\s*đủ/gi, "đầy đủ")
+    .replace(/&Ễy/gi, "đầy")
+    .replace(/\bỄy\s*đủ/gi, "đầy đủ")
+    .replace(/chưa\s*&[^\s]+\s*đủ/gi, "chưa đầy đủ")
+    .replace(/(?<=[a-zà-ỹA-ZÀ-Ỹ])iãy/gi, " Giấy")
+    .replace(/iãy\s*chứng\s*nhận/gi, "Giấy chứng nhận")
+    .replace(/\biãy\b/gi, "giấy")
+    .replace(/\bgiãy\b/gi, "giấy")
+    .replace(/Đăng\s*Ối\b/g, "Đăng ký")
+    .replace(/Đăng\s*ối\b/g, "Đăng ký")
+    .replace(/0[\.,]5\s*ngà\b/gi, "0,5 ngày")
+    .replace(/\bngà\s+làm\s*việc/gi, "ngày làm việc")
+    .replace(/\bđất\s*đi\s*và\b/gi, "đất đai và")
+    .replace(/\bdất\s*đai\b/gi, "đất đai")
+    .replace(/\bdât\s*dai\b/gi, "đất đai")
+    .replace(/\bthửa\s*đắt\b/gi, "thửa đất")
+    .replace(/Cấp\s*đồi/gi, "Cấp đổi")
+    .replace(/gắn\s*liên\b/gi, "gắn liền")
+    .replace(/Nghị\s*định\s*sô\b/gi, "Nghị định số")
+    .replace(/yêu\s*câu\b/gi, "yêu cầu")
+    .replace(/ghi\s*đây\s*đủ\b/gi, "ghi đầy đủ")
+    .replace(/quyen\s*sử\s*dung\b/gi, "quyền sử dụng")
+    .replace(/tải\s*sản\b/gi, "tài sản")
+    .replace(/đo\s*đạc\s*đề\b/gi, "đo đạc để")
     .replace(/ffl[l1íiìỉĩị]*t\s*đai/gi, "đất đai")
     .replace(/ffl[l1íiìỉĩị]*t/gi, "đất")
     .replace(/đất\s*ffl[l1íiìỉĩị]*t/gi, "đất đai")
@@ -20,46 +58,85 @@ export function cleanLegalText(raw: string): string {
     .replace(/fflấy/gi, "giấy")
     .replace(/[øo][1la]\s*đình/gi, "gia đình")
     .replace(/[øo][1la]/gi, "gia")
-    .replace(/Cấp\s*đồi/gi, "Cấp đổi")
-    .replace(/gắn\s*liên\b/gi, "gắn liền")
-    .replace(/Nghị\s*định\s*sô\b/gi, "Nghị định số")
-    .replace(/yêu\s*câu\b/gi, "yêu cầu")
-    .replace(/ghi\s*đây\s*đủ\b/gi, "ghi đầy đủ")
-    .replace(/quyen\s*sử\s*dung\b/gi, "quyền sử dụng")
-    .replace(/tải\s*sản\b/gi, "tài sản")
-    .replace(/thửa\s*đắt\b/gi, "thửa đất")
-    .replace(/đo\s*đạc\s*đề\b/gi, "đo đạc để")
-    .replace(/dât\s*dai/gi, "đất đai")
-    .replace(/dất\s*đai/gi, "đất đai")
     .replace(/cơ\s*quan\s*có\s*thẩm\s*quy[êe]n/gi, "cơ quan có thẩm quyền")
     .replace(/s[ồổ]\s*đ[ỏo]/gi, "sổ đỏ")
     .replace(/sổ\s*đ[ồổ]/gi, "sổ đỏ")
     .replace(/giấy\s*chứng\s*nhận\s*quy[êe]n/gi, "giấy chứng nhận quyền");
 
-  // 2. Chuẩn hóa khoảng trắng và dòng trống
+  // 2. Dọn dẹp rác ký tự bảng biểu OCR, dấu pipe, backslash thừa
+  text = text
+    .replace(/[,;]?\s*\bm\s*[:;,]\s*/g, ", ")
+    .replace(/\|\s*[,;]?\s*\??\s*[A-ZĐ0-9_]{2,8}\b/g, "")
+    .replace(/\|\s*[,;?\s]+(?=\n|$)/g, "")
+    .replace(/^[ \t]*[\\\/][ \t]*/gm, "")
+    .replace(/\bBước\s*(\d+)\s*[:\-|]?\s*/gi, "\nBước $1: ")
+    .replace(/\s*\|\s*/g, " - ")
+    .replace(/[,;][,\s;]+/g, ", ");
+
+  // 3. Chuẩn hóa khoảng trắng
   text = text.replace(/[ \t]+/g, " ");
 
-  // 3. Tách dòng và lọc các từ rác / nhiễu OCR (như chữ "lời", "lði", số trang lẻ đứng một mình)
-  const lines = text.split("\n");
+  // 4. Lọc bỏ các dòng rác OCR và các từ mồ côi
+  const rawLines = text.split("\n");
   const filteredLines: string[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    // Bỏ qua các dòng rác OCR như "lời", "lði", "lòi", "trang 1"
+  for (let i = 0; i < rawLines.length; i++) {
+    const trimmed = rawLines[i].trim();
+    // Bỏ qua dòng rác OCR
     if (
       trimmed === "lời" ||
       trimmed === "lði" ||
       trimmed === "lòi" ||
       trimmed === "lơi" ||
       /^[0-9]+$/.test(trimmed) ||
-      /^trang\s+[0-9]+$/i.test(trimmed)
+      /^trang\s+[0-9]+$/i.test(trimmed) ||
+      /^[,\.;:\|\/\\?!\s-]+$/.test(trimmed)
     ) {
       continue;
     }
-    filteredLines.push(lines[i]);
+    // Bỏ qua từ mồ côi 1-2 từ ở dòng đầu tiên nếu không phải tiêu đề
+    if (
+      filteredLines.length === 0 &&
+      trimmed.split(" ").length <= 2 &&
+      !trimmed.startsWith("Điều") &&
+      !trimmed.startsWith("Mục") &&
+      !trimmed.startsWith("Bước") &&
+      !trimmed.startsWith("[") &&
+      !trimmed.startsWith("(")
+    ) {
+      continue;
+    }
+    filteredLines.push(trimmed);
   }
 
-  return filteredLines.join("\n").replace(/\n{3,}/g, "\n\n");
+  // 5. Ghép các dòng bị gãy giữa chừng (dòng kết thúc bằng dấu phẩy, và, hoặc, -)
+  const merged: string[] = [];
+  for (const line of filteredLines) {
+    if (line.startsWith("Bước ")) {
+      merged.push(line);
+    } else if (
+      merged.length > 0 &&
+      (merged[merged.length - 1].endsWith(",") ||
+        merged[merged.length - 1].endsWith(";") ||
+        merged[merged.length - 1].endsWith(" -") ||
+        merged[merged.length - 1].endsWith(" và") ||
+        merged[merged.length - 1].endsWith(" hoặc") ||
+        !/[\.\?!:]$/.test(merged[merged.length - 1])) &&
+      !line.startsWith("-") &&
+      !line.startsWith("+") &&
+      !line.startsWith("•") &&
+      !line.startsWith("Bước") &&
+      !line.startsWith("Điều") &&
+      !line.startsWith("(") &&
+      !line.startsWith("[")
+    ) {
+      merged[merged.length - 1] = merged[merged.length - 1] + " " + line;
+    } else {
+      merged.push(line);
+    }
+  }
+
+  return merged.join("\n\n").replace(/\n{3,}/g, "\n\n");
 }
 
 /**
@@ -112,7 +189,7 @@ export default function LegalSnippetViewer({ rawText }: LegalSnippetViewerProps)
   let procedureTitle = "";
   let sectionTitle = "";
   const bodyParagraphs: {
-    type: "heading" | "subheading" | "item" | "case_note" | "text";
+    type: "heading" | "step" | "subheading" | "agency_time" | "item" | "case_note" | "text";
     content: string;
   }[] = [];
 
@@ -140,8 +217,20 @@ export default function LegalSnippetViewer({ rawText }: LegalSnippetViewerProps)
       continue;
     }
 
+    // Các Bước quy trình hành chính (Bước 1:, Bước 2...)
+    if (/^Bước\s+[0-9]+/i.test(line)) {
+      bodyParagraphs.push({ type: "step", content: line });
+      continue;
+    }
+
+    // Cơ quan thực hiện / Thời hạn giải quyết
+    if (/^-\s*(Cơ quan thực hiện|Thời hạn|Địa điểm tiếp nhận)/i.test(line)) {
+      bodyParagraphs.push({ type: "agency_time", content: line.replace(/^-\s*/, "") });
+      continue;
+    }
+
     // Tiêu đề phụ như "- Thành phần hồ sơ:" hoặc "- Số lượng hồ sơ:"
-    if (/^-\s*(Thành phần|Số lượng|Trình tự|Thời hạn|Cách thức|Cơ quan|Yêu cầu|Điều kiện|Hồ sơ)/i.test(line)) {
+    if (/^-\s*(Thành phần|Số lượng|Trình tự|Cách thức|Cơ quan|Yêu cầu|Điều kiện|Hồ sơ)/i.test(line)) {
       bodyParagraphs.push({ type: "subheading", content: line.replace(/^-\s*/, "") });
       continue;
     }
@@ -261,6 +350,73 @@ export default function LegalSnippetViewer({ rawText }: LegalSnippetViewerProps)
               >
                 <Scale size={16} style={{ color: "#166b45", flexShrink: 0 }} />
                 <span>{para.content}</span>
+              </div>
+            );
+          }
+
+          // Bước trong quy trình hành chính (Bước 1, Bước 2, Bước 4...)
+          if (para.type === "step") {
+            const stepMatch = para.content.match(/^(Bước\s+[0-9]+(?:\.[0-9]+)?):?\s*(.*)/i);
+            const badge = stepMatch ? stepMatch[1] : "Bước";
+            const rest = stepMatch ? stepMatch[2] : para.content;
+            return (
+              <div
+                key={idx}
+                style={{
+                  marginTop: idx > 0 ? "14px" : "6px",
+                  marginBottom: "10px",
+                  padding: "12px 14px",
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                  boxShadow: "0 1px 2px rgba(22, 107, 69, 0.04)",
+                }}
+              >
+                <span
+                  style={{
+                    background: "#166b45",
+                    color: "#ffffff",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    flexShrink: 0,
+                    marginTop: "1px",
+                    letterSpacing: "0.3px",
+                  }}
+                >
+                  {badge}
+                </span>
+                <div style={{ flex: 1, fontSize: "13.5px", lineHeight: 1.68, color: "#0f172a" }}>
+                  {highlightLegalTerms(rest)}
+                </div>
+              </div>
+            );
+          }
+
+          // Cơ quan thực hiện / Thời hạn giải quyết
+          if (para.type === "agency_time") {
+            return (
+              <div
+                key={idx}
+                style={{
+                  margin: "6px 0 10px 12px",
+                  padding: "8px 12px",
+                  background: "#f8fafc",
+                  borderLeft: "3.5px solid #0284c7",
+                  borderRadius: "0 6px 6px 0",
+                  fontSize: "12.5px",
+                  color: "#334155",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Info size={14} style={{ color: "#0284c7", flexShrink: 0 }} />
+                <span>{highlightLegalTerms(para.content)}</span>
               </div>
             );
           }
