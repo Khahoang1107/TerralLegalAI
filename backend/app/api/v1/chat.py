@@ -128,15 +128,41 @@ def build_polished_question(field: dict, is_first: bool = False) -> str:
             return reply[0].lower() + reply[1:] if len(reply) > 1 else reply
         return reply[0].upper() + reply[1:] if len(reply) > 1 else reply
 
-    if field_type in ("boolean", "checkbox"):
-        if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
-            q = f"bạn cho biết: **{field_name}**? (Có / Không)"
+    # 1. Các trường kiểu Checkbox / Boolean hoặc mang tính xác nhận Có-Không
+    is_bool_like = (
+        field_type in ("boolean", "checkbox") or
+        any(k in fn_lower for k in [
+            "duy nhất", "duy nhat", "lần đầu", "lan dau", "bổ sung", "bo sung",
+            "miễn giảm", "mien giam", "đồng sở hữu", "dong so huu",
+            "đã có", "da co", "chưa có", "chua co"
+        ])
+    )
+
+    if is_bool_like:
+        if any(k in fn_lower for k in ["thửa duy nhất", "đất duy nhất", "duy nhất"]):
+            q = "đây có phải là **thửa đất duy nhất** của bạn không ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["đã có giấy", "có giấy"]):
+            q = "thửa đất của bạn **đã có Giấy chứng nhận (Sổ đỏ)** chưa ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["chưa có giấy"]):
+            q = "thửa đất của bạn là trường hợp **chưa có Giấy chứng nhận** phải không ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["miễn", "giảm"]):
+            q = "trường hợp của bạn có thuộc diện được **miễn hoặc giảm thuế** không ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["đồng sở hữu"]):
+            q = "thửa đất này có thuộc diện **đồng sở hữu (nhiều người đứng tên)** không ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["lần đầu"]):
+            q = "đây là **lần kê khai đầu tiên** của bạn có phải không ạ? *(Có / Không)*"
+        elif any(k in fn_lower for k in ["bổ sung"]):
+            q = "đây là **hồ sơ kê khai bổ sung** có phải không ạ? *(Có / Không)*"
+        elif fn_lower.startswith(("có", "phải", "được", "đồng ý")):
+            q = f"bạn cho biết: **{field_name}**? *(Có / Không)*"
         else:
-            q = f"trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
+            q = f"trường hợp của bạn có phải là **{field_name}** không ạ? *(Có / Không)*"
+
         if not is_first:
             q = q[0].upper() + q[1:]
         return q
 
+    # 2. Các trường thông thường
     sec_title = field.get("section_name") or ""
     prefix = f"về **{sec_title}**, " if (sec_title and sec_title.lower() not in fn_lower) else ""
     is_opt = not field.get("required")
@@ -148,7 +174,7 @@ def build_polished_question(field: dict, is_first: bool = False) -> str:
         q = f"{prefix}**{field_name}** là năm nào ạ?{opt_suffix}"
     elif any(k in fn_lower for k in ["ngày", "thời điểm", "tháng"]):
         q = f"{prefix}**{field_name}** là ngày nào (ngày/tháng/năm) ạ?{opt_suffix}"
-    elif any(k in fn_lower for k in ["diện tích", "hạn mức", "số tiền", "giá", "chi phí", "tỷ lệ"]):
+    elif any(k in fn_lower for k in ["diện tích", "hạn mức", "số tiền", "giá", "chi phí", "tỷ lệ", "hệ số"]):
         q = f"{prefix}**{field_name}** là bao nhiêu ạ?{opt_suffix}"
     elif any(k in fn_lower for k in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm"]):
         q = f"{prefix}bạn cho biết **{field_name}** là gì ạ? *(nếu không có có thể bỏ qua)*"
@@ -656,13 +682,27 @@ Yêu cầu:
             # Lưu last_asked_field để lượt sau biết trường nào vừa được hỏi
             new_last_asked = None
             if not result.is_complete and result.next_field_key:
+                asked_field = field_map.get(result.next_field_key, {})
+                fn_lower = str(asked_field.get("name", "")).lower()
+                ft_lower = str(asked_field.get("type", "string")).lower()
+                is_bool_like = (
+                    ft_lower in ("boolean", "checkbox") or
+                    any(k in fn_lower for k in [
+                        "duy nhất", "duy nhat", "lần đầu", "lan dau", "bổ sung", "bo sung",
+                        "miễn giảm", "mien giam", "đồng sở hữu", "dong so huu",
+                        "đã có", "da co", "chưa có", "chua co"
+                    ])
+                )
+
                 if not form_intro_shown:
-                    asked_field = field_map.get(result.next_field_key, {})
                     members = get_one_of_members(personal_fields, asked_field)
                     if members and not asked_field.get("depends_on"):
                         result.assistant_reply = build_one_of_choice_question(members)
                     else:
                         result.assistant_reply = f"Để bắt đầu, {build_polished_question(asked_field, is_first=True)}"
+                elif is_bool_like or ("là gì" in result.assistant_reply.lower() and not any(k in fn_lower for k in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm"])):
+                    # Chuẩn hóa ngay câu hỏi Có/Không hoặc câu hỏi ngô nghê do LLM sinh ra
+                    result.assistant_reply = build_polished_question(asked_field, is_first=False)
                 result.assistant_reply, flow_state["introduced_groups"] = prepend_group_introduction(
                     active_form.fields or [], result.next_field_key,
                     result.assistant_reply, flow_state.get("introduced_groups", []),
