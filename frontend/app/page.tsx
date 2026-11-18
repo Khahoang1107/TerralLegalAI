@@ -4097,6 +4097,22 @@ function FormsView() {
           return Boolean(f.section_id || f.condition_group_id || f.alternative_group_id || isOneOfBranch || isTickPdf);
         }).length;
         const unassignedCount = physicalFields.length - assignedCount;
+        const emptyZonesCount = physicalFields.filter(f => !f.visual_zones || f.visual_zones.length === 0).length;
+
+        const handleDeleteField = (fieldKey: string) => {
+          setEditFields(prev => prev.filter(f => f.key !== fieldKey));
+          setEditSections(prev => prev.map(s => {
+            if (s.mode === "one_of" && s.oneOfStyle === "branches") {
+              return { ...s, branches: s.branches.map(b => ({ ...b, fieldIds: b.fieldIds.filter(id => id !== fieldKey) })) };
+            }
+            if (s.pdfBehavior === "checkboxes") {
+              return { ...s, tickYesField: s.tickYesField === fieldKey ? "" : s.tickYesField, tickNoField: s.tickNoField === fieldKey ? "" : s.tickNoField };
+            }
+            return s;
+          }));
+          showToast("Đã xóa trường!", "success");
+        };
+
         const editVisualZones = physicalFields.flatMap((field) =>
           (Array.isArray(field.visual_zones) ? field.visual_zones : []).map((zone: any) => ({ ...zone, field_key: field.key }))
         );
@@ -4170,20 +4186,23 @@ function FormsView() {
           const targetFieldKey = targetZone.field_key;
           const selectedZones = editVisualZones.filter((zone: any) => selectedSet.has(String(zone.idx)));
 
-          setEditFields((previous) => previous.map((field) => {
-            if (field.is_virtual) return field;
-            const existing = Array.isArray(field.visual_zones) ? field.visual_zones : [];
-            if (field.key === targetFieldKey) {
-              const merged = [...existing, ...selectedZones]
-                .filter((zone, index, zones) => zones.findIndex((candidate: any) => String(candidate.idx) === String(zone.idx)) === index)
-                .map((zone: any) => ({ ...zone, field_key: undefined }));
-              return { ...field, visual_zones: merged };
-            }
-            return {
-              ...field,
-              visual_zones: existing.filter((zone: any) => !selectedSet.has(String(zone.idx))),
-            };
-          }));
+          setEditFields((previous) => {
+            const mapped = previous.map((field) => {
+              if (field.is_virtual) return field;
+              const existing = Array.isArray(field.visual_zones) ? field.visual_zones : [];
+              if (field.key === targetFieldKey) {
+                const merged = [...existing, ...selectedZones]
+                  .filter((zone, index, zones) => zones.findIndex((candidate: any) => String(candidate.idx) === String(zone.idx)) === index)
+                  .map((zone: any) => ({ ...zone, field_key: undefined }));
+                return { ...field, visual_zones: merged };
+              }
+              return {
+                ...field,
+                visual_zones: existing.filter((zone: any) => !selectedSet.has(String(zone.idx))),
+              };
+            });
+            return mapped.filter((field) => field.is_virtual || field.key === targetFieldKey || (field.visual_zones && field.visual_zones.length > 0));
+          });
           setEditMergeSelection(new Set());
           setEditZoneMode("label");
           setEditActiveZoneIdx(String(targetZone.idx));
@@ -4593,6 +4612,29 @@ function FormsView() {
                               Đã gom ({assignedCount})
                             </button>
 
+                            {emptyZonesCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Bạn có muốn xóa bỏ ${emptyZonesCount} trường không còn ô trên tài liệu (do đã gộp hoặc xóa) không?`)) {
+                                    setEditFields(prev => prev.filter(f => f.is_virtual || (f.visual_zones && f.visual_zones.length > 0)));
+                                    showToast(`Đã dọn dẹp ${emptyZonesCount} trường rỗng!`, "success");
+                                  }
+                                }}
+                                style={{
+                                  padding: "3px 8px", borderRadius: 20,
+                                  border: "1px solid #fca5a5",
+                                  background: "#fef2f2",
+                                  color: "#b91c1c",
+                                  fontSize: "0.72rem", fontWeight: 700, cursor: "pointer",
+                                  display: "inline-flex", alignItems: "center", gap: 3
+                                }}
+                                title="Các trường này không còn ô nào trên tài liệu sau khi gộp vùng. Bấm để xóa bỏ ngay"
+                              >
+                                🧹 Dọn ô rỗng ({emptyZonesCount})
+                              </button>
+                            )}
+
                             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
                               <select
                                 value={editTypeFilter}
@@ -4695,6 +4737,12 @@ function FormsView() {
                                     <option value="date">📅 Ngày tháng</option>
                                     <option value="digit_group">🔢 Dãy số</option>
                                   </select>
+
+                                  {(!field.visual_zones || field.visual_zones.length === 0) && (
+                                    <span style={{ fontSize: "0.65rem", padding: "2px 6px", borderRadius: 4, background: "#fee2e2", color: "#b91c1c", fontWeight: 700, flexShrink: 0 }} title="Trường này không còn ô nào trên tài liệu (do đã gộp vào ô khác hoặc chưa vẽ ô)">
+                                      ⚠️ Ô rỗng
+                                    </span>
+                                  )}
                                 </div>
 
                                 {/* Row 2: Logic nhánh, Group dropdown, Required, Advanced */}
@@ -4856,6 +4904,27 @@ function FormsView() {
                                   >
                                     {hasAdvanced && <span style={{ color: "#a855f7", fontWeight: "bold" }}>●</span>}
                                     {advOpen ? "▴ Bớt" : "⋯ Thêm"}
+                                  </button>
+
+                                  {/* Nút Xóa trường */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Bạn có chắc muốn xóa trường "${field.name || field.key}" không?`)) {
+                                        handleDeleteField(field.key);
+                                      }
+                                    }}
+                                    title="Xóa trường này khỏi biểu mẫu"
+                                    style={{
+                                      border: "1px solid #fca5a5",
+                                      borderRadius: 4, padding: "2px 6px",
+                                      background: "#fff1f2",
+                                      color: "#e11d48",
+                                      cursor: "pointer", fontSize: "0.7rem",
+                                      display: "flex", alignItems: "center", justifyContent: "center"
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
                                   </button>
                                 </div>
 
