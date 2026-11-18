@@ -3607,14 +3607,21 @@ function FormsView() {
     setEditName(form.name || "");
     setEditProcedure(form.procedure_type || "");
     setEditDesc(form.description || "");
-    const rawFields = (form.fields || []).map((f: any, idx: number) => ({
-      ...f,
-      key: f.key || f.id || `field_${idx + 1}`,
-      name: f.name || f.label || `Trường ${idx + 1}`,
-      type: f.type || "string",
-      required: f.required !== false,
-      value_source: f.value_source || (f.is_auto_fill ? "ai_document" : "user_input"),
-    }));
+    const rawFields = (form.fields || []).map((f: any, idx: number) => {
+      let beh = f.condition_behavior;
+      if (!beh && f.depends_on && typeof f.depends_on === "object" && String(f.depends_on.field || "").startsWith("section_condition_")) {
+        beh = f.depends_on.value === false ? "no" : f.depends_on.value === true ? "yes" : undefined;
+      }
+      return {
+        ...f,
+        condition_behavior: beh || (f.condition_group_id ? "yes" : undefined),
+        key: f.key || f.id || `field_${idx + 1}`,
+        name: f.name || f.label || `Trường ${idx + 1}`,
+        type: f.type || "string",
+        required: f.required !== false,
+        value_source: f.value_source || (f.is_auto_fill ? "ai_document" : "user_input"),
+      };
+    });
     setEditFields(rawFields);
     setEditTab("fields");
     setEditSearchQuery("");
@@ -3635,7 +3642,10 @@ function FormsView() {
     const sectionsMap = new Map<string, FormSection>();
     
     physical.forEach((f: any) => {
-      const gId = f.alternative_group_id || f.condition_group_id || f.section_id;
+      let gId = f.alternative_group_id || f.condition_group_id || f.section_id;
+      if (!gId && f.derived_from && typeof f.derived_from === "object" && String(f.derived_from.field || "").startsWith("section_condition_")) {
+        gId = String(f.derived_from.field).replace("section_condition_", "");
+      }
       if (!gId) return;
       if (!sectionsMap.has(gId)) {
         const isOneOf = Boolean(f.alternative_group_id);
@@ -3801,7 +3811,8 @@ function FormsView() {
   const removeEditSection = (sectionId: string) => {
     setEditSections(prev => prev.filter(s => s.id !== sectionId));
     setEditFields(prev => prev.map(f => {
-      if (f.section_id === sectionId || f.condition_group_id === sectionId || f.alternative_group_id === sectionId) {
+      const isDerived = f.derived_from?.field === `section_condition_${sectionId}`;
+      if (f.section_id === sectionId || f.condition_group_id === sectionId || f.alternative_group_id === sectionId || isDerived) {
         const next = { ...f };
         delete next.section_id;
         delete next.section_name;
@@ -3947,7 +3958,12 @@ function FormsView() {
             : "current_date_day";
         }
         
-        const sec = editSections.find(s => s.id === (res.section_id || res.condition_group_id || res.alternative_group_id));
+        const sec = editSections.find(s =>
+          s.id === (res.section_id || res.condition_group_id || res.alternative_group_id) ||
+          (s.mode === "yes_no" && s.pdfBehavior === "checkboxes" && (s.tickYesField === res.key || s.tickNoField === res.key)) ||
+          (s.mode === "one_of" && s.oneOfStyle === "branches" && s.branches.some(b => b.fieldIds.includes(res.key)))
+        );
+
         if (sec) {
           res.parent_category = sec.parent_category ? sec.parent_category.trim() : "";
           if (sec.mode === "always") {
@@ -3960,6 +3976,7 @@ function FormsView() {
             delete res.alternative_group_id;
             delete res.alternative_group_name;
             delete res.alternative_branch_name;
+            delete res.derived_from;
           } else if (sec.mode === "yes_no") {
             res.section_id = sec.id;
             res.section_name = sec.name.trim();
@@ -3974,10 +3991,16 @@ function FormsView() {
                 value: sec.tickYesField === res.key,
               };
               res.required = false;
+              delete res.condition_behavior;
+              res.depends_on = null;
             } else {
               delete res.derived_from;
-              if (res.condition_behavior === "yes" || res.condition_behavior === "no") {
-                res.depends_on = { field: `section_condition_${sec.id}`, value: res.condition_behavior === "yes" };
+              const beh = res.condition_behavior || "yes";
+              res.condition_behavior = beh;
+              if (beh === "yes" || beh === "no") {
+                res.depends_on = { field: `section_condition_${sec.id}`, value: beh === "yes" };
+              } else {
+                res.depends_on = null;
               }
             }
           } else if (sec.mode === "one_of") {
@@ -3995,10 +4018,28 @@ function FormsView() {
               if (b) {
                 res.alternative_branch_name = b.name.trim();
                 res.depends_on = { field: `section_condition_${sec.id}`, value: b.name.trim() };
+              } else {
+                delete res.alternative_branch_name;
+                res.depends_on = null;
               }
             } else {
               res.depends_on = { field: `section_condition_${sec.id}`, value: res.name.trim() };
             }
+          }
+        } else {
+          // If section was removed or field was unassigned, clean up all group metadata
+          delete res.section_id;
+          delete res.section_name;
+          delete res.question_group;
+          delete res.condition_group_id;
+          delete res.condition_group_name;
+          delete res.condition_behavior;
+          delete res.alternative_group_id;
+          delete res.alternative_group_name;
+          delete res.alternative_branch_name;
+          delete res.derived_from;
+          if (typeof res.depends_on === "object" && String(res.depends_on?.field || "").startsWith("section_condition_")) {
+            res.depends_on = null;
           }
         }
         return res;
