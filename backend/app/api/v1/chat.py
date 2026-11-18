@@ -114,6 +114,56 @@ async def _load_chat_history(
     return [{"role": m.role, "content": m.content} for m in reversed(messages)]
 
 
+def build_polished_question(field: dict, is_first: bool = False) -> str:
+    from backend.app.rag.agent import get_friendly_name
+    field_name = get_friendly_name(field)
+    field_type = str(field.get("type", "string")).lower()
+    fn_lower = field_name.strip().lower()
+
+    if field.get("is_virtual") or str(field.get("key", "")).startswith("section_condition_"):
+        reply = field.get("name") or field.get("description") or "bạn vui lòng cho biết phương án phù hợp nhé?"
+        if not reply.endswith("?") and not reply.endswith(":"):
+            reply += "?"
+        if is_first:
+            return reply[0].lower() + reply[1:] if len(reply) > 1 else reply
+        return reply[0].upper() + reply[1:] if len(reply) > 1 else reply
+
+    if field_type in ("boolean", "checkbox"):
+        if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
+            q = f"bạn cho biết: **{field_name}**? (Có / Không)"
+        else:
+            q = f"trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
+        if not is_first:
+            q = q[0].upper() + q[1:]
+        return q
+
+    sec_title = field.get("section_name") or ""
+    prefix = f"về **{sec_title}**, " if (sec_title and sec_title.lower() not in fn_lower) else ""
+    is_opt = not field.get("required")
+    opt_suffix = " *(nếu chưa rõ hoặc không có, bạn có thể bỏ qua)*" if is_opt else ""
+
+    if any(k in fn_lower for k in ["họ và tên", "họ tên", "tên người", "người nộp thuế", "người sử dụng"]):
+        q = f"{prefix}bạn vui lòng cho biết **{field_name}** là ai ạ?"
+    elif fn_lower.startswith("kỳ tính thuế") or "năm" in fn_lower:
+        q = f"{prefix}**{field_name}** là năm nào ạ?{opt_suffix}"
+    elif any(k in fn_lower for k in ["ngày", "thời điểm", "tháng"]):
+        q = f"{prefix}**{field_name}** là ngày nào (ngày/tháng/năm) ạ?{opt_suffix}"
+    elif any(k in fn_lower for k in ["diện tích", "hạn mức", "số tiền", "giá", "chi phí", "tỷ lệ"]):
+        q = f"{prefix}**{field_name}** là bao nhiêu ạ?{opt_suffix}"
+    elif any(k in fn_lower for k in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm"]):
+        q = f"{prefix}bạn cho biết **{field_name}** là gì ạ? *(nếu không có có thể bỏ qua)*"
+    elif any(k in fn_lower for k in ["phường", "xã", "quận", "huyện", "tỉnh", "thành phố", "nơi cấp", "địa chỉ"]):
+        q = f"{prefix}**{field_name}** là ở đâu ạ?{opt_suffix}"
+    elif any(k in fn_lower for k in ["số điện thoại", "điện thoại", "sđt", "số cccd", "số cmnd", "mã số thuế", "mst", "số giấy chứng nhận", "thửa đất số", "tờ bản đồ số"]):
+        q = f"{prefix}cho tôi xin thông tin **{field_name}** nhé?{opt_suffix}"
+    else:
+        q = f"{prefix}bạn cho biết thông tin **{field_name}** nhé?{opt_suffix}"
+
+    if not is_first:
+        q = q[0].upper() + q[1:]
+    return q
+
+
 # ─── Endpoints ────────────────────────────────────────────────────
 
 async def _execute_chat(
@@ -554,34 +604,14 @@ Yêu cầu:
                     else:
                         logger.warning(f"LLM asked for invalid/skipped field {result.next_field_key}, overriding...")
                         
-                    from backend.app.rag.agent import FormExtractionResult, get_friendly_name
+                    from backend.app.rag.agent import FormExtractionResult
                     next_reply = result.assistant_reply
                     if next_field:
-                        field_name = get_friendly_name(next_field)
-                        field_type = str(next_field.get("type", "string")).lower()
-                        if next_field.get("is_virtual") or str(next_field.get("key", "")).startswith("section_condition_"):
-                            next_reply = next_field.get("name") or next_field.get("description") or "Bạn vui lòng cho biết phương án phù hợp nhé?"
-                            if not next_reply.endswith("?") and not next_reply.endswith(":"):
-                                next_reply += "?"
-                        elif field_type in ("boolean", "checkbox"):
-                            fn_lower = field_name.strip().lower()
-                            if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
-                                next_reply = f"Bạn cho biết: **{field_name}**? (Có / Không)"
-                            else:
-                                next_reply = f"Trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
-                        else:
-                            sec_title = next_field.get("section_name") or ""
-                            fn_lower = field_name.lower()
-                            is_addr = any(sub in fn_lower for sub in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm"])
-                            if is_addr and sec_title and sec_title.lower() not in fn_lower:
-                                next_reply = f"Về **{sec_title}**, bạn vui lòng cung cấp thông tin **{field_name}** (nếu không có có thể bỏ qua) nhé?"
-                            elif not next_field.get("required"):
-                                next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** (nếu chưa biết có thể bỏ qua) nhé?"
-                            else:
-                                next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
                         members = get_one_of_members(personal_fields, next_field)
                         if members and not next_field.get("depends_on"):
                             next_reply = build_one_of_choice_question(members)
+                        else:
+                            next_reply = build_polished_question(next_field, is_first=False)
 
                     result = FormExtractionResult(
                         extracted_fields=result.extracted_fields,
@@ -600,21 +630,8 @@ Yêu cầu:
                     members = get_one_of_members(personal_fields, asked_field)
                     if members and not asked_field.get("depends_on"):
                         result.assistant_reply = build_one_of_choice_question(members)
-                    elif asked_field.get("is_virtual") or str(asked_field.get("key", "")).startswith("section_condition_"):
-                        result.assistant_reply = asked_field.get("name") or asked_field.get("description") or "Bạn vui lòng chọn một phương án phù hợp nhé?"
                     else:
-                        field_name = get_friendly_name(asked_field)
-                        field_type = str(asked_field.get("type", "string")).lower()
-                        if field_type in ("boolean", "checkbox"):
-                            fn_lower = field_name.strip().lower()
-                            if fn_lower.startswith(("có", "phải", "được", "đồng ý")):
-                                result.assistant_reply = f"Để bắt đầu, bạn cho biết: **{field_name}**? (Có / Không)"
-                            else:
-                                result.assistant_reply = f"Để bắt đầu, trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
-                        else:
-                            result.assistant_reply = (
-                                f"Để bắt đầu, bạn vui lòng cung cấp thông tin **{field_name}** nhé?"
-                            )
+                        result.assistant_reply = f"Để bắt đầu, {build_polished_question(asked_field, is_first=True)}"
                 result.assistant_reply, flow_state["introduced_groups"] = prepend_group_introduction(
                     active_form.fields or [], result.next_field_key,
                     result.assistant_reply, flow_state.get("introduced_groups", []),
