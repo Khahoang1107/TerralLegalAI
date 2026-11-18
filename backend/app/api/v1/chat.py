@@ -497,7 +497,7 @@ Yêu cầu:
                         is_optional = not l_field.get("required")
                         l_name_lower = str(l_field.get("name", "")).lower()
                         is_address_subfield = any(sub in l_name_lower for sub in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm", "tòa nhà"])
-                        is_skippable_name = any(sub in l_name_lower for sub in ["tỷ lệ", "email", "đại lý", "hạn mức", "ghi chú"])
+                        is_skippable_name = any(sub in l_name_lower for sub in ["tỷ lệ", "hệ số", "phân bổ", "email", "đại lý", "hạn mức", "ghi chú"])
 
                         if is_optional or is_address_subfield or is_skippable_name:
                             skip_phrases = [
@@ -505,6 +505,8 @@ Yêu cầu:
                                 "chua ro", "chưa rõ", "khong ro", "không rõ", "ko ro", "k ro",
                                 "bo qua", "bỏ qua", "skip", "de trong", "để trống", "chua co", "chưa có",
                                 "khong co", "không có", "ko co", "k co", "khong can", "không cần",
+                                "de sau", "để sau", "chua tinh", "chưa tính", "chua ro", "chưa rõ",
+                                "chua xac dinh", "chưa xác định",
                                 "ko", "k", "khong", "không", "chua", "chưa"
                             ]
                             is_skip = False
