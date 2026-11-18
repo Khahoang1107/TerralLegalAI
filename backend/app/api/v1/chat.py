@@ -404,6 +404,42 @@ Yêu cầu:
                 logger.info(f"Deterministic extraction pre-run captured {len(det_fields)} fields: {list(det_fields.keys())}")
                 collected_data.update(det_fields)
 
+            # ── DETERMINISTIC SKIP DETECTION FOR LAST ASKED FIELD ────────────────
+            if last_asked_field and last_asked_field.get("key"):
+                l_key = last_asked_field["key"]
+                l_field = next((f for f in (active_form.fields or []) if f.get("key") == l_key), None)
+                if l_field:
+                    cleaned_ans = re.sub(r"[^\w\s]", " ", request.question.strip().lower())
+                    words = cleaned_ans.split()
+                    l_type = str(l_field.get("type", "string")).lower()
+                    is_bool_field = (l_type in ("boolean", "checkbox") or l_field.get("is_virtual") or l_key.startswith("section_condition_"))
+                    
+                    if not is_bool_field:
+                        is_optional = not l_field.get("required")
+                        l_name_lower = str(l_field.get("name", "")).lower()
+                        is_address_subfield = any(sub in l_name_lower for sub in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm", "tòa nhà"])
+                        is_skippable_name = any(sub in l_name_lower for sub in ["tỷ lệ", "email", "đại lý", "hạn mức", "ghi chú"])
+
+                        if is_optional or is_address_subfield or is_skippable_name:
+                            skip_phrases = [
+                                "chua biet", "chưa biết", "khong biet", "không biết", "ko biet", "k biet",
+                                "chua ro", "chưa rõ", "khong ro", "không rõ", "ko ro", "k ro",
+                                "bo qua", "bỏ qua", "skip", "de trong", "để trống", "chua co", "chưa có",
+                                "khong co", "không có", "ko co", "k co", "khong can", "không cần",
+                                "ko", "k", "khong", "không", "chua", "chưa"
+                            ]
+                            is_skip = False
+                            if len(words) <= 6:
+                                for sp in skip_phrases:
+                                    if sp in cleaned_ans:
+                                        is_skip = True
+                                        break
+                                if not is_skip and cleaned_ans.strip() in {"ko", "k", "khong", "không", "chua", "chưa", "none", "no"}:
+                                    is_skip = True
+                            if is_skip:
+                                logger.info(f"Deterministic skip triggered for field {l_key} ({l_field.get('name')}): user said '{request.question}'")
+                                collected_data[l_key] = "__SKIPPED__"
+
             result = await agent.run_extraction(
                 form_name=active_form.name,
                 form_fields=active_form.fields,
@@ -534,7 +570,15 @@ Yêu cầu:
                             else:
                                 next_reply = f"Trường hợp của bạn có phải là **{field_name}** không? (Có / Không)"
                         else:
-                            next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
+                            sec_title = next_field.get("section_name") or ""
+                            fn_lower = field_name.lower()
+                            is_addr = any(sub in fn_lower for sub in ["số nhà", "đường", "tổ", "thôn", "ngõ", "hẻm"])
+                            if is_addr and sec_title and sec_title.lower() not in fn_lower:
+                                next_reply = f"Về **{sec_title}**, bạn vui lòng cung cấp thông tin **{field_name}** (nếu không có có thể bỏ qua) nhé?"
+                            elif not next_field.get("required"):
+                                next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** (nếu chưa biết có thể bỏ qua) nhé?"
+                            else:
+                                next_reply = f"Bạn vui lòng cung cấp thông tin **{field_name}** để tôi tiếp tục điền biểu mẫu nhé?"
                         members = get_one_of_members(personal_fields, next_field)
                         if members and not next_field.get("depends_on"):
                             next_reply = build_one_of_choice_question(members)
