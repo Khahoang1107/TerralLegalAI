@@ -4729,6 +4729,12 @@ function FormsView() {
                                   const matchingZone = editVisualZones.find((z: any) => z.field_key === field.key);
                                   if (matchingZone) {
                                     setEditActiveZoneIdx(String(matchingZone.idx));
+                                    setTimeout(() => {
+                                      const zoneEl = document.getElementById(`pdf-zone-${matchingZone.idx}`);
+                                      if (zoneEl) {
+                                        zoneEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                                      }
+                                    }, 50);
                                   }
                                 }}
                                 style={{

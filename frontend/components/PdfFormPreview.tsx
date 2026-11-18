@@ -624,8 +624,8 @@ function PageCanvas({
           let isActive = activeZoneIdx === idxStr;
 
           if (isActive) {
-            borderColor = "#2563eb";
-            bgColor = "rgba(37,99,235,0.4)";
+            borderColor = "#1d4ed8";
+            bgColor = "rgba(37,99,235,0.45)";
           } else if (mode === 'remove') {
             borderColor = "#ef4444";
             bgColor = "rgba(239,68,68,0.1)";
@@ -703,6 +703,7 @@ function PageCanvas({
 
           return (
             <div
+              id={`pdf-zone-${zone.idx}`}
               key={`zone_${zone.idx}_${i}`}
               onClick={(e) => handleZoneClick(e, zone)}
               onMouseDown={(e) => mode === 'adjust'
@@ -714,17 +715,17 @@ function PageCanvas({
                 top: renderTop,
                 width: renderWidth,
                 height: renderHeight,
-                border: `2px solid ${borderColor}`,
+                border: `${isActive ? 3 : 2}px solid ${borderColor}`,
                 backgroundColor: bgColor,
                 cursor,
                 pointerEvents: mode === 'add' ? "none" : "auto",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.15s",
+                transition: "all 0.15s ease",
                 boxSizing: "border-box",
-                boxShadow: isActive ? "0 0 0 4px rgba(37,99,235,0.3)" : "none",
-                zIndex: isActive ? 10 : 2,
+                boxShadow: isActive ? "0 0 0 5px rgba(59,130,246,0.45), 0 4px 14px rgba(37,99,235,0.35)" : "none",
+                zIndex: isActive ? 50 : 2,
               }}
               title={hoverTitle}
             >
@@ -736,29 +737,38 @@ function PageCanvas({
                   <span
                     style={{
                       position: "absolute",
-                      top: -14,
+                      top: isActive ? -18 : -14,
                       left: "50%",
                       transform: "translateX(-50%)",
-                      fontSize: 8.5,
+                      fontSize: isActive ? 9.5 : 8.5,
                       fontWeight: 800,
                       color: "#ffffff",
-                      background: borderColor,
-                      padding: "0 3px",
-                      borderRadius: 2,
+                      background: isActive ? "#1d4ed8" : borderColor,
+                      padding: isActive ? "1px 5px" : "0 3px",
+                      borderRadius: 3,
                       lineHeight: 1.3,
                       whiteSpace: "nowrap",
                       pointerEvents: "none",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                      zIndex: 5,
+                      boxShadow: isActive ? "0 2px 6px rgba(0,0,0,0.35)" : "0 1px 2px rgba(0,0,0,0.25)",
+                      zIndex: isActive ? 60 : 5,
                     }}
                   >
-                    {detail?.num ?? globalSeqNum}
+                    {isActive && detail?.label ? `[${detail?.num ?? globalSeqNum}] ${detail.label}` : (detail?.num ?? globalSeqNum)}
                   </span>
                 ) : (
                   <span style={{
-                    fontSize: 10, fontWeight: "bold", color: borderColor,
-                    background: "rgba(255,255,255,0.88)", padding: "0 3px", borderRadius: 2, lineHeight: 1.4,
-                    maxWidth: "95%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    fontSize: isActive ? 10.5 : 10,
+                    fontWeight: "bold",
+                    color: isActive ? "#ffffff" : borderColor,
+                    background: isActive ? "#1d4ed8" : "rgba(255,255,255,0.88)",
+                    padding: isActive ? "1px 5px" : "0 3px",
+                    borderRadius: 2,
+                    lineHeight: 1.4,
+                    maxWidth: "95%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
                   }}>
                     {displayLabel}
                   </span>
